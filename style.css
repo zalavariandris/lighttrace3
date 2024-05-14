@@ -1,0 +1,41 @@
+/* Layout main panel compnents*/
+#viewport{
+    position: fixed;
+    left:0;
+    right:0;
+    width: 100vw;
+    height: 100vh;
+}
+
+#outliner{
+    position: fixed;
+    left: 0;
+    top:0;
+}
+
+#inspector{
+    position: fixed;
+    right: 0;
+    top:0;
+}
+
+/*RESET*/
+body{
+    margin: 0;
+    padding: 0;
+}
+ul{
+    margin: 0;
+}
+
+/* Color style*/
+body{
+    background-color: black;
+    color: white;
+}
+
+.panel
+{
+    padding: 1em;
+    background-color: hsla(0, 0%, 50%, 0.4);
+}

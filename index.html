@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>lighttrace3</title>
+
+    <link rel="stylesheet" href="style.css">
+	<script type="importmap">
+		{
+			"imports": {
+                "react-dom": "https://cdn.jsdelivr.net/npm/react-dom@18.2.0/+esm",
+                "react": "https://cdn.jsdelivr.net/npm/react@18.2.0/+esm",
+                "gl-matrix": "https://cdn.jsdelivr.net/npm/gl-matrix@3.4.3/+esm",
+				"regl": "https://cdn.jsdelivr.net/npm/regl@2.1/+esm",
+				"lodash": "https://cdn.jsdelivr.net/npm/lodash@4.17.21/+esm",
+				"immer": "https://cdn.jsdelivr.net/npm/immer@10.1.1/+esm",
+                "immutable": "https://cdn.jsdelivr.net/npm/immutable@5.0.0-beta.5/+esm"
+			}
+		}
+	</script>
+</head>
+
+<body>
+	<main id="main">
+		<div id="root">
+		</div>
+	</main>
+	<script type="module">
+        import React from "react";
+        import ReactDOM from "react-dom";
+        import App from "./src/app.js"
+
+        const rdom = ReactDOM.createRoot(document.getElementById('root'));
+        rdom.render(React.createElement(App));
+    </script>
+</body>
+</html>

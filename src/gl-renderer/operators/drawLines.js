@@ -17,11 +17,13 @@ function drawLines(regl, {
     startpoints,
     endpoints,
     outputResolution,
+    viewport,
     linesColor=[0.9,0.5,0.0,0.3]
 }={})
 {
     const projection = mat4.create();
-    mat4.ortho(projection, 0,outputResolution[0],0,outputResolution[1],-1.0, 1.0);
+    mat4.ortho(projection, viewport.x, viewport.x+viewport.width,viewport.y,viewport.y+viewport.height,-1.0, 1.0);
+    // mat4.ortho(projection,0, outputResolution[0], 0, outputResolution[1], -1.0, 1.0);
     regl({
         viewport: {
             x: 0,
@@ -38,12 +40,7 @@ function drawLines(regl, {
                 dstRGB: 'one',
                 srcAlpha: 'src alpha',
                 dstAlpha: 'one',
-            },
-            equation: {
-                rgb: 'add',
-                alpha: 'add'
-            },
-            color: [0,0,0,0]
+            }
         },
 
         primitive: "lines",

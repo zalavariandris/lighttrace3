@@ -12,11 +12,19 @@ function drawRays(regl, {
     raysTexture,
     raysLength,
     outputResolution,
+    viewport,
     raysColor=[0.9,0.5,0.0,0.3]
 }={})
 {
+    const projection = mat4.create();
+    mat4.ortho(projection, viewport.x, viewport.x+viewport.width,viewport.y,viewport.y+viewport.height,-1.0, 1.0);
     regl({
-        // viewport: {x: 0, y: 0, w: 1, h: 1},
+        viewport: {
+            x: 0,
+            y: 0,
+            width: outputResolution[0],
+            height: outputResolution[1]
+        },
         primitive: "lines",
         attributes: {
             vertexIdx: _.range(raysCount*2),
@@ -27,7 +35,8 @@ function drawRays(regl, {
             raysTextureResolution: [raysTexture.width, raysTexture.height],
             raysLength: raysLength,
             outputResolution: outputResolution,
-            raysColor: raysColor
+            raysColor: raysColor,
+            projection: projection
         },
         depth: { enable: false },
         blend: {
@@ -50,16 +59,12 @@ function drawRays(regl, {
             uniform float raysLength;
             
             uniform vec2 outputResolution;
+            uniform mat4 projection;
 
             float modI(float a,float b)
             {
                 float m = a-floor((a+0.5)/b)*b;
                 return floor(m+0.5);
-            }
-
-            vec2 mapToScreen(vec2 P)
-            {
-                return (P / outputResolution.xy * 2.0 - 1.0);
             }
 
             void main()
@@ -79,15 +84,14 @@ function drawRays(regl, {
                 if(IsLineStartPoint)
                 {
                     // map world position to screen
-                    vec2 screenPos = mapToScreen(rayOrigin);
-                    gl_Position = vec4(screenPos, 0, 1);
+                    gl_Position = projection * vec4(rayOrigin, 0, 1);
     
                 }
                 else
                 {
                     // map world position to screen
-                    vec2 screenPos = mapToScreen(rayOrigin+rayDirection*raysLength);
-                    gl_Position = vec4(screenPos, 0, 1);
+                    vec2 rayEnd = rayOrigin+rayDirection*raysLength;
+                    gl_Position = projection * vec4(rayEnd, 0, 1);
                 }
             }`,
 

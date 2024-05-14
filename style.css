@@ -28,7 +28,7 @@ ul{
     margin: 0;
 }
 
-/* Color style*/
+/* UI Color style*/
 body{
     background-color: black;
     color: white;
@@ -38,4 +38,9 @@ body{
 {
     padding: 1em;
     background-color: hsla(0, 0%, 50%, 0.4);
+}
+
+/* SVG Color style*/
+circle{
+    opacity: 0.3;
 }

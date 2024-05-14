@@ -3,6 +3,7 @@ import createREGL from "regl"
 /*
  * GL Renderer
  */
+import castRaysFromLights from "./operators/castRaysFromLights.js";
 import { drawTexture } from "./operators/drawTexture.js";
 import { drawCSGToSDF } from "./operators/drawCSGToSDF.js";
 import { intersectRaysWithCSG } from "./operators/intersectRaysWithCSG.js"
@@ -12,17 +13,18 @@ import { drawRays} from "./operators/drawRays.js"
 import { bounceRays } from "./operators/bounceRays.js";
 
 
-class GLRenderer{
+class GLRaytracer{
     constructor(canvas)
     {
         this.canvas = canvas;
-        this.LightSamples = Math.pow(4,7);//128*128; //Math.pow(4,4);
-        this.outputResolution = [512, 512]
+        this.LightSamples = Math.pow(4,6);//128*128; //Math.pow(4,4);
+        this.viewBox = {x: 0, y: 0, w: 512, h: 512};
+        this.outputResolution = [512, 512];
     }
 
     initGL()
     {
-        console.log("init gl", this.outputResolution)
+        // console.log("init gl", this.outputResolution)
         this.regl = createREGL({
             canvas: this.canvas,
             // pixelRatio: 2.0,
@@ -31,7 +33,7 @@ class GLRenderer{
                 alpha: false,
                 depth: false,
                 stencil: false,
-                antialias: false,
+                antialias: true,
                 premultipliedAlpha: false,
                 preserveDrawingBuffer: true,
                 preferLowPowerToHighPerformance: false,
@@ -79,7 +81,7 @@ class GLRenderer{
         });
 
         this.rayDataFbo = regl.framebuffer({
-            color: this.rayDataTexture,
+            color: [this.rayDataTexture],
             depth: false
         });
 
@@ -118,27 +120,28 @@ class GLRenderer{
         this.canvas.width = width;
         this.canvas.height = height;
         this.outputResolution = [width, height]
-        console.log("resizeGL", this.outputResolution);
+        // console.log("resizeGL", this.outputResolution);
+    }
+
+    setViewBox(viewBox){
+        this.viewBox = viewBox;
     }
 
     renderGL(scene)
     {
-        console.log("renderGL", this.outputResolution)
+        // console.log("renderGL", this.outputResolution)
         const regl = this.regl;
 
-        regl.clear({color: [0.03,0.03,0.03,1.0]});
+        const lightness = 0.03;
+        regl.clear({color: [lightness,lightness,lightness,1.0]});
 
-        const circleData = Object.entries(scene)
-            .filter(([key, entity])=>entity.hasOwnProperty("pos") && entity.hasOwnProperty("shape") && entity.shape.type=="circle")
-            .map( ([key, entity])=>[entity.pos.x, entity.pos.y, entity.shape.radius] )
-
-        // this.sdfTexture = regl.texture({
-        //     width: this.canvas.width, 
-        //     height: this.canvas.height,
-        //     wrap: 'clamp',
-        //     format: "rgba",
-        //     type: "float"
-        // });
+        this.sdfTexture = regl.texture({
+            width: this.canvas.width, 
+            height: this.canvas.height,
+            wrap: 'clamp',
+            format: "rgba",
+            type: "float"
+        });
 
         // drawCSGToSDF(regl, {
         //     framebuffer: this.sdfFbo,
@@ -153,51 +156,18 @@ class GLRenderer{
         //     exposure: 0.001
         // });
 
-        /*
-        Cast Rays from lightsources
-        */
-        // Create packed lightraydata for each light [[Cx,Cy,Dx,Dy]...]
-        function castRaysFromLights({
-            lightSamples,
-            lightEntities,
-            outputRayDataTexture
-        })
-        {   
-            const lightsCount =  lightEntities.length;
-            const RaysCount = lightSamples*lightsCount;
-    
-            // calc output texture resolution to hold rays data
-            const [dataWidth, dataHeight] = [Math.ceil(Math.sqrt(RaysCount)),Math.ceil(Math.sqrt(RaysCount))];
-    
-            let rayData = lightEntities.map( ([key, entity])=>{
-                return Array.from({length: lightSamples}).map((_, k)=>{
-                    const angle = k/lightSamples*Math.PI*2+Math.PI/8.0;
-                    return [entity.pos.x, entity.pos.y, Math.cos(angle), Math.sin(angle)];
-                })
-            }).flat(1);
-            
-            // upload data to an RGBA float texture
-            outputRayDataTexture({
-                width: dataWidth,
-                height: dataHeight,
-                format: "rgba",
-                type: "float",
-                data: rayData
-            });
-
-            return RaysCount;
-        }
-
+        /* filter entities to lights */
         const lightEntities = Object.entries(scene)
             .filter( ([key, entity])=>entity.hasOwnProperty("light") )
 
+        /* Cast Rays from lightsources */
         const RaysCount = castRaysFromLights({
             lightSamples: this.LightSamples,
             lightEntities: lightEntities,
             outputRayDataTexture: this.rayDataTexture
         });
 
-        // reformat hitpoints to match the rays count
+        /* reformat hitpoints to match the rays count */
         this.hitDataTexture({
             width: this.rayDataTexture.width,
             height: this.rayDataTexture.height,
@@ -205,15 +175,21 @@ class GLRenderer{
             type: "float"
         });
 
-        const MAX_BOUNCE = 3;
+        /* maps scene data to circles */
+        const circleData = Object.entries(scene)
+            .filter(([key, entity])=>entity.hasOwnProperty("pos") && entity.hasOwnProperty("shape") && entity.shape.type=="circle")
+            .map( ([key, entity])=>[entity.pos.x, entity.pos.y, entity.shape.radius] )
+
+        const MAX_BOUNCE = 9;
         for(let i=0; i<MAX_BOUNCE; i++)
         {
-            // draw initial Rays
+            // /* Draw initial Rays */
             // drawRays(regl, {
             //     raysCount: RaysCount,
             //     raysTexture: this.rayDataTexture,
-            //     raysLength: 10.0,
-            //     outputResolution: [512,512],
+            //     raysLength: 100.0,
+            //     outputResolution: this.outputResolution,
+            //     viewport: {x: this.viewBox.x, y: this.viewBox.y, width: this.viewBox.w, height: this.viewBox.h},
             //     raysColor: [1,1,0,1]
             // });
 
@@ -223,25 +199,33 @@ class GLRenderer{
                 framebuffer: this.hitDataFbo
             });
 
-            /* Draw RAYS to hitPoints*/
+            // intersectRaysWithSDF(regl, {
+            //     incidentRayDataTexture: this.rayDataTexture,
+            //     sdfTexture: this.sdfTexture,
+            //     framebuffer: this.hitDataFbo
+            // });
+
+            /* Draw RAYS to hitPoints */
             drawLines(regl, {
                 linesCount: RaysCount,
                 startpoints: this.rayDataTexture,
                 endpoints: this.hitDataTexture,
                 outputResolution: this.outputResolution,
+                viewport: {x: this.viewBox.x, y: this.viewBox.y, width: this.viewBox.w, height: this.viewBox.h},
                 linesColor: [1.0,1.0,1.0,100.0/this.LightSamples]
             });
 
-            // // draw hitPoints
+            /* Draw hitPoints */
             // drawRays(regl, {
             //     raysCount: RaysCount,
             //     raysTexture: this.hitDataFbo,
             //     raysLength: 30.0,
-            //     outputResolution: [512,512],
+            //     outputResolution: this.outputResolution,
+            //     viewport: {x: this.viewBox.x, y: this.viewBox.y, width: this.viewBox.w, height: this.viewBox.h},
             //     raysColor: [0,1,0,1]
             // });
 
-            // Bounce rays with hitPoints
+            /* Bounce rays with hitPoints */
             bounceRays(regl, {
                 incidentRaysTexture: this.rayDataTexture, 
                 hitDataTexture: this.hitDataTexture,
@@ -249,11 +233,11 @@ class GLRenderer{
                 outputResolution: [this.rayDataTexture.width, this.rayDataTexture.height],
             });
 
-            // Swap Buffers
+            /* Swap Buffers */
             [this.rayDataFbo, this.secondaryRayDataFbo] = [this.secondaryRayDataFbo, this.rayDataFbo];
             [this.rayDataTexture, this.secondaryRayDataTexture] = [this.secondaryRayDataTexture, this.rayDataTexture];
         }
     }
 }
 
-export default GLRenderer;
+export default GLRaytracer;

@@ -1,5 +1,6 @@
 import QUAD from "../QUAD.js"
-import PASS_THROUGH_VERTEX_SHADER from "../shaders/PASS_THROUGH_VERTEX_SHADER.js"
+import { loadShader } from "../shaders/load-shader.js"
+const PASS_THROUGH_VERTEX_SHADER = await loadShader("./src/gl-renderer/shaders/PASS_THROUGH_VERTEX_SHADER.fs")
 /**
  * draw Scene to SignedDistanceField FBO
  * @param {FBO} framebuffer - The OUTPUT framebuffer to render SDF scene

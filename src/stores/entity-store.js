@@ -1,27 +1,41 @@
 import {produce} from "immer";
 
-/*
- * STORE
- */
+
 let scene = {
     "ball": {
         pos: {x: 265.0, y:260.0},
-        shape: {type: "circle", radius: 50},
-        material: "mirror"
+        shape: {
+            type: "circle", 
+            radius: 50
+        },
+        material: "mirror",
+        selected: false
     },
     "ball2": {
         pos: {x: 128.0, y:350.0},
-        shape: {type: "circle", radius: 70},
-        material: "mirror"
+        shape: {
+            type: "circle", 
+            radius: 70
+        },
+        material: "mirror",
+        selected: false
     },
     "ball3": {
         pos: {x: 18.0, y:350.0},
-        shape: {type: "circle", radius: 70},
-        material: "mirror"
+        shape: {
+            type: "circle", 
+            radius: 70
+        },
+        material: "mirror",
+        selected: false
     },
     "light": {
         pos: {x: 216, y: 110},
-        light: {type: "point"}
+        light: {
+            type: "point",
+            temperature: 5500
+        },
+        selected: false
     }
 };
 

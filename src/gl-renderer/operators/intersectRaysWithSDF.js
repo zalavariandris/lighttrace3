@@ -1,5 +1,6 @@
 import QUAD from "../QUAD.js"
-import PASS_THROUGH_VERTEX_SHADER from "../shaders/PASS_THROUGH_VERTEX_SHADER.js"
+import { loadShader } from "../shaders/load-shader.js"
+const PASS_THROUGH_VERTEX_SHADER = await loadShader("./src/gl-renderer/shaders/PASS_THROUGH_VERTEX_SHADER.fs")
 
 /**
  * Intersect rays with an sdf
@@ -9,17 +10,15 @@ import PASS_THROUGH_VERTEX_SHADER from "../shaders/PASS_THROUGH_VERTEX_SHADER.js
  */
 function intersectRaysWithSDF(regl, {
     framebuffer, 
-    outputResolution,
-    rayDataTexture, 
+    incidentRayDataTexture, 
     sdfTexture,
 })
 {
     regl({...QUAD, vert:PASS_THROUGH_VERTEX_SHADER,
         framebuffer: framebuffer,
         uniforms:{
-            outputResolution: outputResolution,
-            rayDataTexture: rayDataTexture,
-            rayDataResolution: [rayDataTexture.width, rayDataTexture.height],
+            rayDataTexture: incidentRayDataTexture,
+            rayDataResolution: [incidentRayDataTexture.width, incidentRayDataTexture.height],
             sdfTexture: sdfTexture,
             sdfResolution: [sdfTexture.width, sdfTexture.height]
         },
@@ -28,11 +27,10 @@ function intersectRaysWithSDF(regl, {
         uniform vec2 rayDataResolution;
         uniform sampler2D sdfTexture;
         uniform vec2 sdfResolution;
-        uniform vec2 outputResolution;
 
-        #define MAX_RAYMARCH_STEPS 30
+        #define MAX_RAYMARCH_STEPS 9
         #define MIN_HIT_DISTANCE 1.0
-        #define MAX_TRACE_DISTANCE 2048.0
+        #define MAX_TRACE_DISTANCE 9999.0
 
         vec2 sdfNormalAtPoint(vec2 P, sampler2D sdfTexture)
         {
@@ -57,7 +55,7 @@ function intersectRaysWithSDF(regl, {
             float totalDistanceTraveled = 0.0;
             for(int i=0; i<MAX_RAYMARCH_STEPS; i++)
             {
-                vec2 texCoord = pos/outputResolution;
+                vec2 texCoord = pos/sdfResolution;
                 float currentDistance = texture2D(sdfTexture, texCoord).r;
                 totalDistanceTraveled+=currentDistance;
 

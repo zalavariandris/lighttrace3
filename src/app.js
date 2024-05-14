@@ -1,31 +1,10 @@
 import React from "react";
-import Outliner from "./components/Outliner.js"
+import Outliner  from "./components/Outliner.js"
 import Inspector from "./components/Inspector.js"
-import SVGViewport from "./components/SVGViewport.js";
-import GLViewport from "./components/GLViewport.js";
+import Viewport  from "./components/Viewport.js"
+
 
 const h = React.createElement;
-
-function Viewport(props){
-    return h("div", props,
-        h(GLViewport, {
-            style: {
-                position: "absolute", 
-                width: "100%", 
-                height:"100%",
-                pointerEvents: "none",
-                transform: "scale(1, -1)"
-            }
-        }),
-        h(SVGViewport, {
-            style: {
-                position: "absolute", 
-                width: "100%", 
-                height:"100%"
-            }
-        })
-    )
-}
 
 function App({})
 {

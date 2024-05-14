@@ -1,4 +1,4 @@
-import entityStore from "../entity-store.js"
+import entityStore from "../stores/entity-store.js"
 import React from "react";
 const h = React.createElement;
 

@@ -2,8 +2,22 @@ import {produce} from "immer";
 
 
 let scene = {
+    "light": {
+        transform:{
+            translate: {x: 200, y: 10},
+            rotate: 0.0
+        },
+        light: {
+            type: "point",
+            temperature: 6000
+        },
+        selected: false
+    },
     "ball": {
-        pos: {x: 265.0, y:260.0},
+        transform:{
+            translate: {x: 200, y: 180},
+            rotate: 0.0
+        },
         shape: {
             type: "circle", 
             radius: 50
@@ -12,7 +26,10 @@ let scene = {
         selected: false
     },
     "ball2": {
-        pos: {x: 128.0, y:350.0},
+        transform:{
+            translate: {x: 200, y: 310},
+            rotate: 0.0
+        },
         shape: {
             type: "circle", 
             radius: 70
@@ -21,22 +38,18 @@ let scene = {
         selected: false
     },
     "ball3": {
-        pos: {x: 18.0, y:350.0},
+        transform:{
+            translate: {x: 200, y: 480},
+            rotate: 0.0
+        },
         shape: {
             type: "circle", 
-            radius: 70
+            radius: 30
         },
         material: "mirror",
         selected: false
     },
-    "light": {
-        pos: {x: 216, y: 110},
-        light: {
-            type: "point",
-            temperature: 5500
-        },
-        selected: false
-    }
+
 };
 
 let listeners = [];
@@ -48,10 +61,11 @@ function emitChange() {
 };
 
 export default {
-    updateComponent(key, component, newAttributes)
+    updateComponent(entityKey, component, newAttributes)
     {
         const updatedScene = produce(scene, draft=>{
-            Object.assign(draft[key][component], newAttributes);
+            // draft[key][component] = _.update(draft[key][component], newAttributes)
+            Object.assign(draft[entityKey][component], newAttributes);
         });
 
         if(scene!=updatedScene){

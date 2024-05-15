@@ -11,6 +11,28 @@ import { intersectRaysWithSDF } from "./operators/intersectRaysWithSDF.js";
 import { drawLines} from "./operators/drawLines.js";
 import { drawRays} from "./operators/drawRays.js"
 import { bounceRays } from "./operators/bounceRays.js";
+import { wavelengthToColor } from "./operators/wavelengthToColor.js";
+
+function loadImageData(imagePath){
+    return new Promise(resolve => {
+        const im = new Image();
+        im.crossOrigin = "anonymous";
+        im.src = imagePath;
+        im.onload = () => {
+            var canvas = document.createElement("canvas");
+            canvas.width = im.width;
+            canvas.height = im.height;
+            var ctx = canvas.getContext("2d");
+            ctx.drawImage(im, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, im.width, im.height);
+    
+            resolve(imageData);
+        };
+    })
+}
+
+const spectralImage = await loadImageData("./src/Spectrum-cropped.png");
 
 
 class GLRaytracer{
@@ -53,7 +75,10 @@ class GLRaytracer{
                     color: [0,0,0,0]
                 },
             },
-            extensions: ['OES_texture_float', "OES_texture_half_float"]
+            extensions: [
+                'webgl_draw_buffers', // multiple render targets
+                'OES_texture_float'
+            ]
         });
         const regl = this.regl;
 
@@ -80,10 +105,52 @@ class GLRaytracer{
             type: "float",
         });
 
+        this.lightDataTexture = regl.texture({
+            width: Math.sqrt(this.LightSamples),
+            height: Math.sqrt(this.LightSamples),
+            wrap: 'clamp',
+            min: "nearest", 
+            mag: "nearest",
+            format: "rgba",
+            type: "float",
+        });
+
         this.rayDataFbo = regl.framebuffer({
-            color: [this.rayDataTexture],
+            color: [
+                this.rayDataTexture,
+                // this.lightDataTexture   
+            ],
             depth: false
         });
+
+        this.colorsTexture = regl.texture({
+            width: Math.sqrt(this.LightSamples),
+            height: Math.sqrt(this.LightSamples),
+            wrap: 'clamp',
+            min: "nearest", 
+            mag: "nearest",
+            format: "rgba",
+            type: "float",
+        });
+
+        this.rayColorFbo = regl.framebuffer({
+            color: this.colorsTexture,
+            depth: false
+        });
+
+        console.log(spectralImage)
+
+        
+        this.spectralTexture = regl.texture({
+            data: spectralImage.data,
+            flipY:false,
+            width: spectralImage.width, 
+            height: spectralImage.height,
+            wrap: 'clamp',
+            format: "rgba",
+            type: "uint8"
+        });
+
 
         this.hitDataTexture = regl.texture({
             width: Math.sqrt(this.LightSamples), 
@@ -164,7 +231,9 @@ class GLRaytracer{
         const RaysCount = castRaysFromLights({
             lightSamples: this.LightSamples,
             lightEntities: lightEntities,
-            outputRayDataTexture: this.rayDataTexture
+            outputRayDataTexture: this.rayDataTexture,
+            outputLightDataTexture: this.lightDataTexture,
+            outputColorTexture: this.colorsTexture
         });
 
         /* reformat hitpoints to match the rays count */
@@ -175,10 +244,17 @@ class GLRaytracer{
             type: "float"
         });
 
+        this.colorsTexture({
+            width: this.rayDataTexture.width,
+            height: this.rayDataTexture.height,
+            format: "rgba",
+            type: "float"
+        })
+
         /* maps scene data to circles */
         const circleData = Object.entries(scene)
-            .filter(([key, entity])=>entity.hasOwnProperty("pos") && entity.hasOwnProperty("shape") && entity.shape.type=="circle")
-            .map( ([key, entity])=>[entity.pos.x, entity.pos.y, entity.shape.radius] )
+            .filter(([key, entity])=>entity.hasOwnProperty("transform") && entity.hasOwnProperty("shape") && entity.shape.type=="circle")
+            .map( ([key, entity])=>[entity.transform.translate.x, entity.transform.translate.y, entity.shape.radius] )
 
         const MAX_BOUNCE = 9;
         for(let i=0; i<MAX_BOUNCE; i++)
@@ -206,13 +282,27 @@ class GLRaytracer{
             // });
 
             /* Draw RAYS to hitPoints */
+
+            // this.rayColorFbo.resize({
+            //     width: this.rayDataTexture.width,
+            //     height: this.rayDataTexture.height,
+            // });
+
+            wavelengthToColor(regl, {
+                outputFramebuffer: this.rayColorFbo,
+                outputResolution: [this.rayColorFbo.width, this.rayColorFbo.height],
+                lightDataTexture: this.lightDataTexture,
+                spectralTexture: this.spectralTexture
+            });
+
             drawLines(regl, {
                 linesCount: RaysCount,
                 startpoints: this.rayDataTexture,
                 endpoints: this.hitDataTexture,
+                colors: this.colorsTexture,
+                lightDataTexture: this.lightDataTexture,
                 outputResolution: this.outputResolution,
                 viewport: {x: this.viewBox.x, y: this.viewBox.y, width: this.viewBox.w, height: this.viewBox.h},
-                linesColor: [1.0,1.0,1.0,100.0/this.LightSamples]
             });
 
             /* Draw hitPoints */
@@ -228,6 +318,7 @@ class GLRaytracer{
             /* Bounce rays with hitPoints */
             bounceRays(regl, {
                 incidentRaysTexture: this.rayDataTexture, 
+                incidentLightDataTexture: this.lightDataTexture,
                 hitDataTexture: this.hitDataTexture,
                 outputFramebuffer: this.secondaryRayDataFbo,
                 outputResolution: [this.rayDataTexture.width, this.rayDataTexture.height],

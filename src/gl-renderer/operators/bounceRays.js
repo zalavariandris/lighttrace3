@@ -17,6 +17,7 @@ function bounceRays(regl, {
     outputFramebuffer,
     outputResolution,
     incidentRaysTexture,
+    incidentLightDataTexture,
     hitDataTexture
 }){
     regl({...QUAD, vert: PASS_THROUGH_VERTEX_SHADER,
@@ -25,12 +26,14 @@ function bounceRays(regl, {
             outputResolution: outputResolution,
             incidentRaysTexture: incidentRaysTexture,
             rayDataResolution: [incidentRaysTexture.width, incidentRaysTexture.height],
+            incidentLightsTexture: incidentLightDataTexture,
             hitDataTexture: hitDataTexture,
             hitDataResolution: [hitDataTexture.width, hitDataTexture.height]
         },
         frag:`precision mediump float;
         uniform vec2 outputResolution;
         uniform sampler2D incidentRaysTexture;
+        uniform sampler2D incidentLightsTexture;
         uniform vec2 rayDataResolution;
         uniform sampler2D hitDataTexture;
         uniform vec2 hitDataResolution;
@@ -40,7 +43,22 @@ function bounceRays(regl, {
             return reflect(V, N);
         }
 
-        vec2 sampleGlass(vec2 V, vec2 N, float ior)
+        float sellmeierIor(vec3 b, vec3 c, float lambda)
+        {
+            // Calculate the square of the wavelength
+            float lSq = (lambda * 1e-3) * (lambda * 1e-3);
+
+            // Calculate the contribution of each Sellmeier term and sum them up
+            float sum = 0.0;
+            sum += (b.x * lSq) / (lSq - c.x);
+            sum += (b.y * lSq) / (lSq - c.y);
+            sum += (b.z * lSq) / (lSq - c.z);
+
+            // Add 1.0 to the sum to get the refractive index squared
+            return 1.0 + sum;
+        }
+
+        vec2 sampleTransparent(vec2 V, vec2 N, float ior)
         {
          
             float cosI = -dot(V, N); // Corrected to ensure cosI is always positive
@@ -67,16 +85,18 @@ function bounceRays(regl, {
 
         void main()
         {
-
             vec2 rayDir = texture2D(incidentRaysTexture, gl_FragCoord.xy/outputResolution.xy).zw;
-
             vec4 hitData = texture2D(hitDataTexture, gl_FragCoord.xy/outputResolution.xy);
             vec2 hitNormal = hitData.zw;
             vec2 hitPos = hitData.xy;
+            float wavelength = texture2D(incidentLightsTexture, gl_FragCoord.xy/outputResolution.xy).r;
 
 
             // vec2 secondaryDir = sampleMirror(rayDir, hitNormal);
-            vec2 secondaryDir = sampleGlass(rayDir, hitNormal, 1.44);
+            vec3 b = vec3(1.6215, 0.2563, 1.6445);
+            vec3 c = vec3(0.0122, 0.0596, 147.4688);
+            float dispersiveIor =  sellmeierIor(b, c, wavelength)/1.44;
+            vec2 secondaryDir = sampleTransparent(rayDir, hitNormal, dispersiveIor);
             vec2 secondaryPos = hitPos;
             gl_FragColor = vec4(secondaryPos, secondaryDir);
         }`

@@ -93,32 +93,52 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
         onWheel: (e) => zoomViewportWithmouseWheel(e)   
     }, 
 
-        settings.svgDisplay.shapes?Object.entries(scene).filter(([key, entity])=>entity.hasOwnProperty("shape")).map( ([key, entity])=>{
-            return h(Manipulator, {
-                referenceX: entity.pos.x,
-                referenceY: entity.pos.y,
-                onDrag: e=>entityStore.updateComponent(key, "pos", {
-                    x: e.sceneX+e.referenceOffsetX, 
-                    y: e.sceneY+e.referenceOffsetY
-                }),
-            }, 
-                h("circle", {cx: entity.pos.x, cy: entity.pos.y, r:entity.shape.radius})
-            )
-        }):null,
         Object.entries(scene)
-            .filter(([key, entity])=>entity.hasOwnProperty("pos") && entity.hasOwnProperty("light"))
+            .filter(([key, entity])=>{
+                return entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform");
+            })
             .map( ([key, entity])=>{
-            return h(Manipulator, {
-                referenceX: entity.pos.x,
-                referenceY: entity.pos.y,
-                onDrag: e=>entityStore.updateComponent(key, "pos", {
-                    x: e.sceneX+e.referenceOffsetX, 
-                    y: e.sceneY+e.referenceOffsetY
-                }),
-            }, 
-                h("circle", {cx: entity.pos.x, cy: entity.pos.y, r:10, style:{fill:"orange"}})
-            )
-        })
+                return h(Manipulator, {
+                    referenceX: entity.transform.translate.x,
+                    referenceY: entity.transform.translate.y,
+                    onDrag: e=>entityStore.updateComponent(key, "transform", {
+                        translate: {
+                            x: e.sceneX+e.referenceOffsetX, 
+                            y: e.sceneY+e.referenceOffsetY
+                        }
+                    }),
+                }, 
+                    h("circle", {
+                        cx: entity.transform.translate.x, 
+                        cy: entity.transform.translate.y, 
+                        r:entity.shape.radius
+                    })
+                )
+            }),
+
+        Object.entries(scene)
+            .filter(([key, entity])=>entity.hasOwnProperty("transform") && entity.hasOwnProperty("light"))
+            .map( ([key, entity])=>{
+                return h(Manipulator, {
+                    referenceX: entity.transform.translate.x,
+                    referenceY: entity.transform.translate.y,
+                    onDrag: e=>entityStore.updateComponent(key, "transform", {
+                        translate: {
+                            x: e.sceneX+e.referenceOffsetX, 
+                            y: e.sceneY+e.referenceOffsetY
+                        }
+                    }),
+                }, 
+                    h("circle", {
+                        cx: entity.transform.translate.x, 
+                        cy: entity.transform.translate.y, 
+                        r:10, 
+                        style:{
+                            fill:"orange"
+                        }
+                    })
+                )
+            })
     );
 }
 

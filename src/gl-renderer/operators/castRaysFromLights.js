@@ -1,4 +1,4 @@
-// Create packed lightraydata for each light [[Cx,Cy,Dx,Dy]...]
+import {sampleBlackbody} from "./blackbody.js"
 /**
  * Cast rays from lightsources
  * @param {Object} params - The options object
@@ -11,6 +11,7 @@ function castRaysFromLights({
     lightSamples,
     lightEntities,
     outputRayDataTexture,
+    outputLightDataTexture
 })
 {   
     const lightsCount =  lightEntities.length;
@@ -19,12 +20,21 @@ function castRaysFromLights({
     // calc output texture resolution to hold rays data
     const [dataWidth, dataHeight] = [Math.ceil(Math.sqrt(RaysCount)),Math.ceil(Math.sqrt(RaysCount))];
 
-    let rayData = lightEntities.map( ([key, entity])=>{
+    // generate rays
+    let rays = lightEntities.map( ([key, entity])=>{
         return Array.from({length: lightSamples}).map((_, k)=>{
             const angle = k/lightSamples*Math.PI*2+Math.PI/8.0;
-            return [entity.pos.x, entity.pos.y, Math.cos(angle), Math.sin(angle)];
+            return {
+                x:entity.transform.translate.x, 
+                y:entity.transform.translate.y, 
+                dx:Math.cos(angle), 
+                dy:Math.sin(angle),
+                wavelength: sampleBlackbody(entity.light.temperature)
+            };
         })
     }).flat(1);
+
+    // generate wavelength data for
     
     // upload data to an RGBA float texture
     outputRayDataTexture({
@@ -32,7 +42,15 @@ function castRaysFromLights({
         height: dataHeight,
         format: "rgba",
         type: "float",
-        data: rayData
+        data: rays.map(ray=>[ray.x, ray.y, ray.dx, ray.dy])
+    });
+
+    outputLightDataTexture({
+        width: dataWidth,
+        height: dataHeight,
+        format: "rgba",
+        type: "float",
+        data: rays.map(ray=>[ray.x, ray.y, ray.dx, ray.dy])
     });
 
     return RaysCount;

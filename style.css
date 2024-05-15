@@ -43,4 +43,9 @@ body{
 /* SVG Color style*/
 circle{
     opacity: 0.3;
+    stroke: white
+}
+
+.gizmo{
+    fill: red;
 }

@@ -54,7 +54,8 @@ function drawLines(regl, {
             startpointsResolution: [startpoints.width, startpoints.height],
             endpointsTexture: endpoints,
             endpointsResolution: [endpoints.width, endpoints.height],
-            colorTexture: colors,
+            colorsTexture: colors,
+            colorsResolution: [colors.width, colors.height],
             projection: projection
         },
         vert: `precision mediump float;
@@ -67,7 +68,8 @@ function drawLines(regl, {
             uniform vec2 startpointsResolution;
             uniform sampler2D endpointsTexture;
             uniform vec2 endpointsResolution;
-            uniform sampler2D colorTexture;
+            uniform sampler2D colorsTexture;
+            uniform vec2 colorsResolution; 
             uniform mat4 projection;
 
             varying vec4 vColor;
@@ -83,11 +85,11 @@ function drawLines(regl, {
             {
                 float lineIdx = floor(vertexIdx/2.0);
 
-                // Unpack wavelength
-                float pixelX = mod(lineIdx, startpointsResolution.x);
-                float pixelY = floor(lineIdx / startpointsResolution.x);
-                vec2 texCoords = (vec2(pixelX, pixelY) + 0.5) / startpointsResolution;
-                vColor = texture2D(colorTexture, texCoords).rgba;
+                // Unpack colors
+                float pixelX = mod(lineIdx, colorsResolution.x);
+                float pixelY = floor(lineIdx / colorsResolution.x);
+                vec2 texCoords = (vec2(pixelX, pixelY) + 0.5) / colorsResolution;
+                vColor = texture2D(colorsTexture, texCoords).rgba;
 
                 bool IsLineStartPoint = modI(vertexIdx, 2.0) < 1.0;
                 if(IsLineStartPoint)

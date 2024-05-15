@@ -22,16 +22,48 @@ function castRaysFromLights({
 
     // generate rays
     let rays = lightEntities.map( ([key, entity])=>{
-        return Array.from({length: lightSamples}).map((_, k)=>{
-            const angle = k/lightSamples*Math.PI*2+Math.PI/8.0;
-            return {
-                x:entity.transform.translate.x, 
-                y:entity.transform.translate.y, 
-                dx:Math.cos(angle), 
-                dy:Math.sin(angle),
-                wavelength: sampleBlackbody(entity.light.temperature)
-            };
-        })
+        switch (entity.light.type) {
+            case "point":
+                return Array.from({length: lightSamples}).map((_, k)=>{
+                    const angle = k/lightSamples*Math.PI*2+Math.PI/8.0;
+                    return {
+                        x:entity.transform.translate.x, 
+                        y:entity.transform.translate.y, 
+                        dx:Math.cos(angle), 
+                        dy:Math.sin(angle),
+                        intensity: 1.0/lightSamples,
+                        wavelength: sampleBlackbody(entity.light.temperature)
+                    };
+                });
+            case "laser":
+                return Array.from({length: lightSamples}).map((_, k)=>{
+                    const angle = entity.transform.rotate;
+                    return {
+                        x:entity.transform.translate.x, 
+                        y:entity.transform.translate.y, 
+                        dx:Math.cos(angle), 
+                        dy:Math.sin(angle),
+                        intensity: 1.0/lightSamples,
+                        wavelength: sampleBlackbody(entity.light.temperature)
+                    };
+                });
+            case "directional":
+                return Array.from({length: lightSamples}).map((_, k)=>{
+                    const angle = k/lightSamples*Math.PI*2+Math.PI/8.0;
+                    return {
+                        x:entity.transform.translate.x, 
+                        y:entity.transform.translate.y, 
+                        dx:Math.cos(angle), 
+                        dy:Math.sin(angle),
+                        intensity: 1.0/lightSamples,
+                        wavelength: sampleBlackbody(entity.light.temperature)
+                    };
+                });
+        
+            default:
+                break;
+        }
+
     }).flat(1);
 
     // generate wavelength data for
@@ -50,7 +82,7 @@ function castRaysFromLights({
         height: dataHeight,
         format: "rgba",
         type: "float",
-        data: rays.map(ray=>[ray.x, ray.y, ray.dx, ray.dy])
+        data: rays.map(ray=>[ray.wavelength, ray.wavelength, ray.wavelength, ray.intensity])
     });
 
     return RaysCount;

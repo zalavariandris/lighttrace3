@@ -93,6 +93,7 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
         onWheel: (e) => zoomViewportWithmouseWheel(e)   
     }, 
 
+        // SHAPES
         Object.entries(scene)
             .filter(([key, entity])=>{
                 return entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform");
@@ -116,6 +117,7 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                 )
             }),
 
+        // LIGHTS
         Object.entries(scene)
             .filter(([key, entity])=>entity.hasOwnProperty("transform") && entity.hasOwnProperty("light"))
             .map( ([key, entity])=>{
@@ -136,7 +138,20 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                         style:{
                             fill:"orange"
                         }
-                    })
+                    }),
+
+                    h(Manipulator, {
+                        referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
+                        referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
+                        onDrag: e=>entityStore.updateComponent(key, "transform", {
+                            rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
+                        })
+                    }, h("circle", {
+                        cx: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50, 
+                        cy: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50, 
+                        r:10,
+                        className: "gizmo"
+                    }),)
                 )
             })
     );

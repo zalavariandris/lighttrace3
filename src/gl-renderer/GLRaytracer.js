@@ -39,7 +39,8 @@ class GLRaytracer{
     constructor(canvas)
     {
         this.canvas = canvas;
-        this.LightSamples = Math.pow(4,6);//128*128; //Math.pow(4,4);
+        this.LightSamples = Math.pow(4,5);//128*128; //Math.pow(4,4);
+        this.MAX_BOUNCE = 6;
         this.viewBox = {x: 0, y: 0, w: 512, h: 512};
         this.outputResolution = [512, 512];
     }
@@ -55,7 +56,7 @@ class GLRaytracer{
                 alpha: false,
                 depth: false,
                 stencil: false,
-                antialias: true,
+                antialias: false,
                 premultipliedAlpha: false,
                 preserveDrawingBuffer: true,
                 preferLowPowerToHighPerformance: false,
@@ -118,7 +119,7 @@ class GLRaytracer{
         this.rayDataFbo = regl.framebuffer({
             color: [
                 this.rayDataTexture,
-                // this.lightDataTexture   
+                this.lightDataTexture   
             ],
             depth: false
         });
@@ -153,6 +154,14 @@ class GLRaytracer{
 
 
         this.hitDataTexture = regl.texture({
+            width: Math.sqrt(this.LightSamples), 
+            height: Math.sqrt(this.LightSamples),
+            wrap: 'clamp',
+            format: "rgba",
+            type: "float"
+        });
+
+        this.hitMaterialTexture = regl.texture({
             width: Math.sqrt(this.LightSamples), 
             height: Math.sqrt(this.LightSamples),
             wrap: 'clamp',
@@ -232,8 +241,7 @@ class GLRaytracer{
             lightSamples: this.LightSamples,
             lightEntities: lightEntities,
             outputRayDataTexture: this.rayDataTexture,
-            outputLightDataTexture: this.lightDataTexture,
-            outputColorTexture: this.colorsTexture
+            outputLightDataTexture: this.lightDataTexture
         });
 
         /* reformat hitpoints to match the rays count */
@@ -249,15 +257,22 @@ class GLRaytracer{
             height: this.rayDataTexture.height,
             format: "rgba",
             type: "float"
-        })
+        });
+
+        wavelengthToColor(regl, {
+            outputFramebuffer: this.rayColorFbo,
+            outputResolution: [this.rayColorFbo.width, this.rayColorFbo.height],
+            lightDataTexture: this.lightDataTexture,
+            spectralTexture: this.spectralTexture
+        });
 
         /* maps scene data to circles */
         const circleData = Object.entries(scene)
             .filter(([key, entity])=>entity.hasOwnProperty("transform") && entity.hasOwnProperty("shape") && entity.shape.type=="circle")
             .map( ([key, entity])=>[entity.transform.translate.x, entity.transform.translate.y, entity.shape.radius] )
 
-        const MAX_BOUNCE = 9;
-        for(let i=0; i<MAX_BOUNCE; i++)
+        
+        for(let i=0; i<this.MAX_BOUNCE; i++)
         {
             // /* Draw initial Rays */
             // drawRays(regl, {
@@ -287,20 +302,11 @@ class GLRaytracer{
             //     width: this.rayDataTexture.width,
             //     height: this.rayDataTexture.height,
             // });
-
-            wavelengthToColor(regl, {
-                outputFramebuffer: this.rayColorFbo,
-                outputResolution: [this.rayColorFbo.width, this.rayColorFbo.height],
-                lightDataTexture: this.lightDataTexture,
-                spectralTexture: this.spectralTexture
-            });
-
             drawLines(regl, {
                 linesCount: RaysCount,
                 startpoints: this.rayDataTexture,
                 endpoints: this.hitDataTexture,
                 colors: this.colorsTexture,
-                lightDataTexture: this.lightDataTexture,
                 outputResolution: this.outputResolution,
                 viewport: {x: this.viewBox.x, y: this.viewBox.y, width: this.viewBox.w, height: this.viewBox.h},
             });

@@ -60,13 +60,12 @@ function bounceRays(regl, {
 
         vec2 sampleTransparent(vec2 V, vec2 N, float ior)
         {
-         
             float cosI = -dot(V, N); // Corrected to ensure cosI is always positive
-            
-            float refractiveIndexRatio = cosI < 0.0 ? ior : 1.0 / ior; // Adjust ratio based on entering or exiting
+            bool IsEntering = cosI > 0.0;
+            float refractiveIndexRatio = IsEntering ? ior : 1.0 / ior; // Adjust ratio based on entering or exiting
         
             // Corrected to flip the normal vector when exiting
-            vec2 normal = cosI < 0.0 ? -N : N;
+            vec2 normal = IsEntering ? N : -N;
             cosI = abs(cosI); // cosI should be positive after adjustment
         
             float sinT2 = refractiveIndexRatio * refractiveIndexRatio * (1.0 - cosI * cosI);

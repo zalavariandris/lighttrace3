@@ -184,8 +184,21 @@ class GLRaytracer{
             type: "float",
         });
 
+        this.secondaryLightDataTexture = regl.texture({
+            width: Math.sqrt(this.LightSamples),
+            height: Math.sqrt(this.LightSamples),
+            wrap: 'clamp',
+            min: "nearest", 
+            mag: "nearest",
+            format: "rgba",
+            type: "float",
+        });
+
         this.secondaryRayDataFbo = regl.framebuffer({
-            color: this.secondaryRayDataTexture,
+            color: [
+                this.secondaryRayDataTexture, 
+                this.secondaryLightDataTexture
+            ],
             depth: false
         });
     }
@@ -333,6 +346,7 @@ class GLRaytracer{
             /* Swap Buffers */
             [this.rayDataFbo, this.secondaryRayDataFbo] = [this.secondaryRayDataFbo, this.rayDataFbo];
             [this.rayDataTexture, this.secondaryRayDataTexture] = [this.secondaryRayDataTexture, this.rayDataTexture];
+            [this.lightDataTexture, this.secondaryLightDataTexture] = [this.secondaryLightDataTexture, this.lightDataTexture];
         }
     }
 }

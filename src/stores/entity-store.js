@@ -15,7 +15,7 @@ let scene = {
     // },
     "laser": {
         transform:{
-            translate: {x: 170, y: 10},
+            translate: {x: 195, y: 10},
             rotate: 90.0*Math.PI/180.0
         },
         light: {

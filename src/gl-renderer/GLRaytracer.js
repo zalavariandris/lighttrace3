@@ -54,7 +54,7 @@ class GLRaytracer{
     {
         this.canvas = canvas;
         this.LightSamples = Math.pow(4,5);//128*128; //Math.pow(4,4);
-        this.MAX_BOUNCE = 6;
+        this.MAX_BOUNCE = 5;
         this.viewBox = {x: 0, y: 0, w: 512, h: 512};
         this.outputResolution = [512, 512];
     }
@@ -325,9 +325,6 @@ class GLRaytracer{
                 {"circle": 1, "rectangle": 2, "sphericalLens": 3}[entity.shape.type]
             ]);
 
-        console.log(transformData);
-        console.log(shapeData);
-        console.log(circleData);
         /* CLEAR THE CANVAS */
         regl.clear({color: [backgroundLightness,backgroundLightness,backgroundLightness,1.0]});
 

@@ -18,7 +18,7 @@ let scene = {
     "pointer": {
         transform:{
             translate: {x: 195, y: 10},
-            rotate: 90.0*Math.PI/180.0
+            rotate: 80.0*Math.PI/180.0
         },
         light: {
             type: "laser",
@@ -40,20 +40,20 @@ let scene = {
     //     },
     //     selected: false
     // },
-    "ball": {
-        transform:{
-            translate: {x: 200, y: 180},
-            rotate: 0.0
-        },
-        shape: {
-            type: "circle", 
-            radius: 50
-        },
-        material: {
-            type: "mirror"
-        },
-        selected: false
-    },
+    // "ball": {
+    //     transform:{
+    //         translate: {x: 200, y: 180},
+    //         rotate: 0.0
+    //     },
+    //     shape: {
+    //         type: "circle", 
+    //         radius: 50
+    //     },
+    //     material: {
+    //         type: "mirror"
+    //     },
+    //     selected: false
+    // },
     // "ball2": {
     //     transform:{
     //         translate: {x: 200, y: 310},
@@ -84,8 +84,8 @@ let scene = {
     // },
     "box": {
         transform: {
-            translate: {x: 300, y: 60},
-            roate: 0
+            translate: {x: 272, y: 325},
+            rotate: 0.3
         },
         material: {
             type: "mirror"

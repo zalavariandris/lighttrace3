@@ -135,6 +135,10 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                                 y: entity.transform.translate.y-entity.shape.height/2, 
                                 width: entity.shape.width,
                                 height: entity.shape.height,
+                                style: {
+                                    transform: `rotate(${entity.transform.rotate}rad)`,
+                                    transformOrigin: `${entity.transform.translate.x}px ${entity.transform.translate.y}px`
+                                }
                             })
                         )
                     default:

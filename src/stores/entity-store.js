@@ -96,21 +96,21 @@ let scene = {
             height: 200
         }
     },
-    // "lens": {
-    //     transform: {
-    //         translate: {x: 50, y: 100},
-    //         rotate: 0
-    //     },
-    //     material: {
-    //         type: "glass"
-    //     },
-    //     shape: {
-    //         type: "sphericalLens",
-    //         diameter: 140,
-    //         edgeThickness: 5,
-    //         centerThickness: 80
-    //     }
-    // }
+    "lens": {
+        transform: {
+            translate: {x: 200, y: 200},
+            rotate: 0
+        },
+        material: {
+            type: "glass"
+        },
+        shape: {
+            type: "sphericalLens",
+            diameter: 140,
+            edgeThickness: 5,
+            centerThickness: 80
+        }
+    }
 
 };
 

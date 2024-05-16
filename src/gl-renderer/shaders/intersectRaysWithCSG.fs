@@ -136,6 +136,10 @@ HitInfo intersectRectangle(Ray incidentRay, vec2 center, float angle, float widt
     }
 }
 
+HitInfo intersectSphericalLens(Ray incidentRay, vec2 center, float angle, float diameter, float edgeThickness, float centerThickness){
+    return HitInfo(9999.0, vec2(0.0), vec2(0.0));
+}
+
 HitInfo intersectScene(Ray ray)
 {
     HitInfo hitInfo = HitInfo(9999.0, vec2(ray.origin+ray.direction*9999.0), vec2(0.0));

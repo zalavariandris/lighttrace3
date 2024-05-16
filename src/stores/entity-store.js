@@ -85,7 +85,7 @@ let scene = {
     "box": {
         transform: {
             translate: {x: 272, y: 325},
-            rotate: 0.3
+            rotate: 0.1
         },
         material: {
             type: "mirror"

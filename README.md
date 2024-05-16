@@ -6,7 +6,7 @@
 - [x] support different light types: Point, Laser, Directional, Spot?
 - [ ] support different shapes: Rectangle, Spherical Lens, LineSegment
 - [ ] support multiple materials for each shape
-- [ ] support rotation transform
+- [x] support rotation transform
 - [ ] select object with mouse click
 - [ ] implement raytracing on the CPU for svg viewport
 - [ ] progressive rendering

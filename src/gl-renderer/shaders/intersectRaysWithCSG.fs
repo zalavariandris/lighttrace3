@@ -2,20 +2,25 @@ precision mediump float;
 #define e 2.71828
 #define PI 3.14159
 #define MAX_CIRCLES 10
+#define MAX_SHAPES 10
 #define EPSILON 0.001
 
 uniform sampler2D rayDataTexture;
 uniform vec2 rayDataResolution;
 
-uniform vec3 circleData[MAX_CIRCLES];
+uniform vec4 circleData[MAX_CIRCLES];
 uniform float circleCount;
+uniform vec3 transformData[MAX_SHAPES];
+uniform vec4 shapeData[MAX_SHAPES];
+uniform float shapesCount;
 
 struct Ray{
     vec2 origin;
     vec2 direction;
 };
 
-struct HitPoint{
+struct HitInfo{
+    float t;
     vec2 position;
     vec2 normal;
 };
@@ -48,7 +53,7 @@ float smallestPositive(float a, float b, float value)
 }
 
 /*return closest intersection along the ray*/
-float intersectCircle(Ray ray, vec2 center, float radius)
+HitInfo intersectCircle(Ray ray, vec2 center, float radius)
 {
     vec2 p = ray.origin - center;
     float B = dot(p, ray.direction);
@@ -60,48 +65,108 @@ float intersectCircle(Ray ray, vec2 center, float radius)
         float tNear = -B - det;
         float tFar  = -B + det;
 
-        return smallestPositive(tNear, tFar, 9999.0);
+        float t = smallestPositive(tNear, tFar, 9999.0);
+
+        vec2 I = ray.origin+ray.direction*t;
+        vec2 N = normalize(I-center);
+        return HitInfo(t, I, N);
     }
     else
     {
-        return 9999.0;
+        return HitInfo(9999.0, vec2(0.0), vec2(0.0));
     }
 }
 
-HitPoint intersectScene(Ray ray)
+HitInfo intersectRectangle(Ray ray, vec2 center, float width, float height)
 {
-    float t = 9999.0;
-    vec2 N = vec2(0.0,0.0);
-    
-    vec2 hitPos = vec2(ray.origin+ray.direction*9999.0);
-    vec2 hitNormal = vec2(0.0,0.0);
+    float tNearX = (center.x - width  / 2.0 - ray.origin.x) / ray.direction.x;
+    float tNearY = (center.y - height / 2.0 - ray.origin.y) / ray.direction.y;
+    float tFarX =  (center.x + width  / 2.0 - ray.origin.x) / ray.direction.x;
+    float tFarY =  (center.y + height / 2.0 - ray.origin.y) / ray.direction.y;
+
+    float tNear = max(min(tNearX, tFarX), min(tNearY, tFarY));
+    float tFar = min(max(tNearX, tFarX), max(tNearY, tFarY));
+
+    float t = smallestPositive(tNear, tFar, 9999.0);
+
+    if (t == 9999.0) {
+        return HitInfo(9999.0, vec2(ray.origin), vec2(0.0,0.0));
+    }
+
+    vec2 I = ray.origin + ray.direction * t;
+
+    vec2 normal = vec2(0.0, 0.0);
+
+    if (I.x >= center.x - width / 2.0 && I.x <= center.x + width / 2.0 &&
+        I.y >= center.y - height / 2.0 && I.y <= center.y + height / 2.0) {
+        if (abs(I.x - center.x + width / 2.0) < 0.0001) {
+            normal = vec2(-1.0, 0.0);
+        } else if (abs(I.x - center.x - width / 2.0) < 0.0001) {
+            normal = vec2(1.0, 0.0);
+        } else if (abs(I.y - center.y + height / 2.0) < 0.0001) {
+            normal = vec2(0.0, -1.0);
+        } else if (abs(I.y - center.y - height / 2.0) < 0.0001) {
+            normal = vec2(0.0, 1.0);
+        }
+
+        return HitInfo(t, I, normal);
+    } else {
+        return HitInfo(9999.0, I, vec2(0.0, 0.0));
+    }
+}
+
+HitInfo intersectScene(Ray ray)
+{
+    HitInfo hitInfo = HitInfo(9999.0, vec2(ray.origin+ray.direction*9999.0), vec2(0.0));
 
 
-    for(int i=0;i<MAX_CIRCLES;i++)
+    for(int i=0;i<MAX_SHAPES;i++)
     {
-        if(i<int(circleCount))
+        if(i<int(shapesCount))
         {
-            // upack circle
-            vec2 center = circleData[i].xy;
-            float radius = circleData[i].z;
-
-            //
-            float currentT = intersectCircle(ray, center, radius);
-
-            if(currentT<t)
+            if(shapeData[i].x==0.0) // CIRCLE
             {
-                t = currentT;
-                hitPos = ray.origin+ray.direction*t;
-                hitNormal = normalize(hitPos - center);
+                // upack circle
+                vec2 center = transformData[i].xy;
+                float radius = shapeData[i].y;
+
+                // intersect Circle
+                HitInfo currentHit = intersectCircle(ray, center, radius);
+
+                // Update ROUND
+                if(currentHit.t<hitInfo.t)
+                {
+                    hitInfo = currentHit;
+                }
+            }
+            else if(shapeData[i].x==1.0) // RECTANGLE
+            {
+                // upack rectangle
+                vec2 center = transformData[i].xy;
+                float width = shapeData[i].y;
+                float height = shapeData[i].z;
+
+                // intersect Rectangle
+                HitInfo currentHit = intersectRectangle(ray, center, width, height);
+
+                // Update ROUND
+                if(currentHit.t<hitInfo.t)
+                {
+                    hitInfo = currentHit;
+                }
+            }
+            else if(shapeData[i].x==2.0) // SphericalLens
+            {
+                
             }
         }
     }
 
-    if(t>0.0)
+    if(hitInfo.t>0.0)
     {
-        return HitPoint(hitPos, hitNormal);
+        return hitInfo;
     }
-    return HitPoint(vec2(0.0,0.0), vec2(0.0,0.0));
+    return hitInfo;
 }
 
 void main()
@@ -109,6 +174,6 @@ void main()
     // unpack ray from data texture
     Ray incidentRay = sampleCurrentRay();
     incidentRay.origin+=incidentRay.direction*EPSILON;
-    HitPoint hitPoint = intersectScene(incidentRay);
+    HitInfo hitPoint = intersectScene(incidentRay);
     gl_FragColor = vec4(hitPoint.position, hitPoint.normal);
 }

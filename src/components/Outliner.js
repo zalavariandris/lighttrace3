@@ -7,10 +7,9 @@ function Outliner(props)
     const scene = React.useSyncExternalStore(entityStore.subscribe, entityStore.getSnapshot);
     return h("ul", props, 
         Object.entries(scene)
-            .filter(([key, entity])=>entity.hasOwnProperty("pos"))
             .map( ([key, entity])=>{
             return h("li", null, 
-                `${key}: (${entity.pos.x},${entity.pos.y})`
+                `${key}: (${entity.transform.translate.x},${entity.transform.translate.y})`
             )
         })
     );

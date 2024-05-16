@@ -1,19 +1,20 @@
 import {produce} from "immer";
 
 
+
 let scene = {
-    "light": {
-        transform:{
-            translate: {x: 200, y: 10},
-            rotate: 0.0
-        },
-        light: {
-            type: "point",
-            temperature: 6500,
-            intensity:1.0,
-        },
-        selected: false
-    },
+    // "light": {
+    //     transform:{
+    //         translate: {x: 200, y: 10},
+    //         rotate: 0.0
+    //     },
+    //     light: {
+    //         type: "point",
+    //         temperature: 6500,
+    //         intensity:1.0,
+    //     },
+    //     selected: false
+    // },
     "pointer": {
         transform:{
             translate: {x: 195, y: 10},
@@ -26,19 +27,19 @@ let scene = {
         },
         selected: false
     },
-    "sun": {
-        transform:{
-            translate: {x: 195, y: 10},
-            rotate: 90.0*Math.PI/180.0
-        },
-        light: {
-            type: "directional",
-            width: 100,
-            intensity:1.0,
-            temperature: 6500
-        },
-        selected: false
-    },
+    // "sun": {
+    //     transform:{
+    //         translate: {x: 195, y: 10},
+    //         rotate: 90.0*Math.PI/180.0
+    //     },
+    //     light: {
+    //         type: "directional",
+    //         width: 100,
+    //         intensity:1.0,
+    //         temperature: 6500
+    //     },
+    //     selected: false
+    // },
     "ball": {
         transform:{
             translate: {x: 200, y: 180},
@@ -48,33 +49,68 @@ let scene = {
             type: "circle", 
             radius: 50
         },
-        material: "mirror",
+        material: {
+            type: "mirror"
+        },
         selected: false
     },
-    "ball2": {
-        transform:{
-            translate: {x: 200, y: 310},
-            rotate: 0.0
+    // "ball2": {
+    //     transform:{
+    //         translate: {x: 200, y: 310},
+    //         rotate: 0.0
+    //     },
+    //     shape: {
+    //         type: "circle", 
+    //         radius: 70
+    //     },
+    //     material: {
+    //         type: "mirror"
+    //     },
+    //     selected: false
+    // },
+    // "ball3": {
+    //     transform:{
+    //         translate: {x: 200, y: 480},
+    //         rotate: 0.0
+    //     },
+    //     shape: {
+    //         type: "circle", 
+    //         radius: 30
+    //     },
+    //     material: {
+    //         type: "mirror"
+    //     },
+    //     selected: false
+    // },
+    "box": {
+        transform: {
+            translate: {x: 300, y: 60},
+            roate: 0
+        },
+        material: {
+            type: "mirror"
         },
         shape: {
-            type: "circle", 
-            radius: 70
-        },
-        material: "mirror",
-        selected: false
+            type: "rectangle",
+            width: 200,
+            height: 200
+        }
     },
-    "ball3": {
-        transform:{
-            translate: {x: 200, y: 480},
-            rotate: 0.0
-        },
-        shape: {
-            type: "circle", 
-            radius: 30
-        },
-        material: "mirror",
-        selected: false
-    },
+    // "lens": {
+    //     transform: {
+    //         translate: {x: 50, y: 100},
+    //         rotate: 0
+    //     },
+    //     material: {
+    //         type: "glass"
+    //     },
+    //     shape: {
+    //         type: "sphericalLens",
+    //         diameter: 140,
+    //         edgeThickness: 5,
+    //         centerThickness: 80
+    //     }
+    // }
 
 };
 

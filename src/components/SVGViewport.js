@@ -99,22 +99,48 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                 return entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform");
             })
             .map( ([key, entity])=>{
-                return h(Manipulator, {
-                    referenceX: entity.transform.translate.x,
-                    referenceY: entity.transform.translate.y,
-                    onDrag: e=>entityStore.updateComponent(key, "transform", {
-                        translate: {
-                            x: e.sceneX+e.referenceOffsetX, 
-                            y: e.sceneY+e.referenceOffsetY
-                        }
-                    }),
-                }, 
-                    h("circle", {
-                        cx: entity.transform.translate.x, 
-                        cy: entity.transform.translate.y, 
-                        r:entity.shape.radius
-                    })
-                )
+                switch (entity.shape.type) {
+                    case "circle":
+                        return h(Manipulator, {
+                            referenceX: entity.transform.translate.x,
+                            referenceY: entity.transform.translate.y,
+                            onDrag: e=>entityStore.updateComponent(key, "transform", {
+                                translate: {
+                                    x: e.sceneX+e.referenceOffsetX, 
+                                    y: e.sceneY+e.referenceOffsetY
+                                }
+                            }),
+                        }, 
+                            h("circle", {
+                                className: "shape",
+                                cx: entity.transform.translate.x, 
+                                cy: entity.transform.translate.y, 
+                                r:entity.shape.radius
+                            })
+                        )
+                    case "rectangle":
+                        return h(Manipulator, {
+                            referenceX: entity.transform.translate.x,
+                            referenceY: entity.transform.translate.y,
+                            onDrag: e=>entityStore.updateComponent(key, "transform", {
+                                translate: {
+                                    x: e.sceneX+e.referenceOffsetX, 
+                                    y: e.sceneY+e.referenceOffsetY
+                                }
+                            }),
+                        }, 
+                            h("rect", {
+                                className: "shape",
+                                x: entity.transform.translate.x-entity.shape.width/2, 
+                                y: entity.transform.translate.y-entity.shape.height/2, 
+                                width: entity.shape.width,
+                                height: entity.shape.height,
+                            })
+                        )
+                    default:
+                        break;
+                }
+
             }),
 
         // LIGHTS

@@ -41,7 +41,7 @@ body{
 }
 
 /* SVG Color style*/
-circle{
+.shape{
     opacity: 0.3;
     stroke: white
 }

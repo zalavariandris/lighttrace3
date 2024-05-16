@@ -17,8 +17,8 @@ let scene = {
     // },
     "pointer": {
         transform:{
-            translate: {x: 195, y: 10},
-            rotate: 80.0*Math.PI/180.0
+            translate: {x: 50, y: 120},
+            rotate: 3.0*Math.PI/180.0
         },
         light: {
             type: "laser",
@@ -84,7 +84,7 @@ let scene = {
     // },
     "box": {
         transform: {
-            translate: {x: 272, y: 325},
+            translate: {x: 370, y: 130},
             rotate: 0.1
         },
         material: {
@@ -98,7 +98,7 @@ let scene = {
     },
     "lens": {
         transform: {
-            translate: {x: 200, y: 200},
+            translate: {x: 180, y: 120},
             rotate: 0
         },
         material: {

@@ -227,7 +227,38 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                                     }
                                 }),
                                 className: "shape",
-                            })
+                            }),
+                            h(Manipulator, {
+                                onDrag: e=>entityStore.updateComponent(key, "shape", {
+                                   centerThickness:  Math.max(0, Math.min((e.sceneX-entity.transform.translate.x)*2, entity.shape.diameter))
+                                }),
+                                className:"gizmo"
+                            }, h('circle', {
+                                className: "handle",
+                                cx:entity.transform.translate.x+entity.shape.centerThickness/2, 
+                                cy:entity.transform.translate.y,
+                                r: 5,
+                                vectorEffect: "non-scaling-stroke",
+                                style: {cursor: "ew-resize"}
+                            })),
+                            h(Manipulator, {
+                                className:"manip",
+                                onDrag: e=>{
+                                    const newEdgeThickness = Math.max(1, (e.sceneX-entity.transform.translate.x)*2);
+                                    entityStore.updateComponent(key, "shape", {
+                                        edgeThickness: newEdgeThickness,
+                                        centerThickness: Math.max(1, newEdgeThickness-entity.shape.edgeThickness + entity.shape.centerThickness),
+                                        diameter: Math.max(1, (e.sceneY-entity.transform.translate.y)*2)       
+                                    });
+                                }
+                            }, h('circle', {
+                                className: "gizmo",
+                                cx:entity.transform.translate.x+entity.shape.edgeThickness/2, 
+                                cy:entity.transform.translate.y+entity.shape.diameter/2,
+                                r: 5,
+                                vectorEffect: "non-scaling-stroke",
+                                style: {cursor: "nwse-resize"}
+                            })),
                         )
                     default:
                         break;
@@ -253,9 +284,7 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                         cx: entity.transform.translate.x, 
                         cy: entity.transform.translate.y, 
                         r:10, 
-                        style:{
-                            fill:"orange"
-                        }
+                        className: "gizmo"
                     }),
 
                     h(Manipulator, {

@@ -97,7 +97,7 @@ class GLRaytracer{
                 },
             },
             extensions: [
-                'webgl_draw_buffers', // multiple render targets
+                'WEBGL_draw_buffers', // multiple render targets
                 'OES_texture_float'
             ]
         });
@@ -206,7 +206,10 @@ class GLRaytracer{
         });
 
         this.hitDataFbo = regl.framebuffer({
-            color: this.hitDataTexture,
+            color: [
+                this.hitDataTexture,
+                this.hitMaterialTexture
+            ],
             depth: false
         });
 
@@ -289,7 +292,7 @@ class GLRaytracer{
 
         /* maps scene data to circles */
         const transformData = Object.values(scene)
-        .filter(entity=>entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform"))
+        .filter(entity=>entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform") && entity.hasOwnProperty("material"))
         .map(entity=>[
             entity.transform.translate.x, 
             entity.transform.translate.y, 
@@ -297,7 +300,7 @@ class GLRaytracer{
         ]);
 
         const shapeData = Object.values(scene)
-        .filter(entity=>entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform"))
+        .filter(entity=>entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform") && entity.hasOwnProperty("material"))
         .map(entity=>{
             switch (entity.shape.type) {
                 case "circle":
@@ -312,18 +315,23 @@ class GLRaytracer{
             return []
         });
 
-        const circleData = Object.entries(scene)
-            .filter(([key, entity])=>{
-                return entity.hasOwnProperty("transform")
-                    && entity.hasOwnProperty("shape") 
-                    && entity.shape.type=="circle"
-            })
-            .map( ([key, entity])=>[
-                entity.transform.translate.x, 
-                entity.transform.translate.y, 
-                entity.shape.radius,
-                {"circle": 1, "rectangle": 2, "sphericalLens": 3}[entity.shape.type]
-            ]);
+        const materialData = Object.values(scene)
+        .filter(entity=>entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform") && entity.hasOwnProperty("material"))
+        .map(entity=>{
+            switch (entity.material.type) {
+                case "mirror":
+                    return 0;
+                case "glass":
+                    return 1;
+                case "diffuse":
+                    return 2;
+                default:
+                    return -1;
+            }
+        });
+
+        console.log(transformData)
+        console.log(materialData)
 
         /* CLEAR THE CANVAS */
         regl.clear({color: [backgroundLightness,backgroundLightness,backgroundLightness,1.0]});
@@ -340,10 +348,9 @@ class GLRaytracer{
                 uniforms: {
                     rayDataTexture: this.rayDataTexture,
                     rayDataResolution: [this.rayDataTexture.width, this.rayDataTexture.height],
-                    circleData: circleData.flat(),
-                    circleCount: circleData.length,
                     transformData: transformData.flat(),
                     shapeData: shapeData.flat(),
+                    materialData: materialData,
                     shapesCount: shapeData.length
                 },
                 frag: intersectRaysWithCSGShader

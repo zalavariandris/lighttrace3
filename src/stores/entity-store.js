@@ -2,24 +2,39 @@ import {produce} from "immer";
 
 
 let scene = {
-    // "light": {
-    //     transform:{
-    //         translate: {x: 200, y: 10},
-    //         rotate: 0.0
-    //     },
-    //     light: {
-    //         type: "point",
-    //         temperature: 6500
-    //     },
-    //     selected: false
-    // },
-    "laser": {
+    "light": {
+        transform:{
+            translate: {x: 200, y: 10},
+            rotate: 0.0
+        },
+        light: {
+            type: "point",
+            temperature: 6500,
+            intensity:1.0,
+        },
+        selected: false
+    },
+    "pointer": {
         transform:{
             translate: {x: 195, y: 10},
             rotate: 90.0*Math.PI/180.0
         },
         light: {
             type: "laser",
+            temperature: 6500,
+            intensity:1.0,
+        },
+        selected: false
+    },
+    "sun": {
+        transform:{
+            translate: {x: 195, y: 10},
+            rotate: 90.0*Math.PI/180.0
+        },
+        light: {
+            type: "directional",
+            width: 100,
+            intensity:1.0,
             temperature: 6500
         },
         selected: false

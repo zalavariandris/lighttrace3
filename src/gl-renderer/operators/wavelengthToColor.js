@@ -49,9 +49,9 @@ function wavelengthToColor(regl, {
             
             vec4 spectralColor = texture2D(spectralTexture, vec2(t, 0.5)).rgba * vec4(1.0,1.0,1.0, 50.0*intensity);
             vec4 hueColor = vec4(hsv2rgb(vec3(t, 1.0, 1.0)), 50.0*intensity);
-            vec4 whiteColor = vec4(1.0, 1.0, 1.0,1.0);
+            vec4 whiteColor = vec4(1.0, 1.0, 1.0, 50.0*intensity);
 
-            gl_FragColor = whiteColor;
+            gl_FragColor = hueColor;
         }`
     })()
 }

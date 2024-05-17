@@ -17,11 +17,6 @@
 - [x] light inspector
 - [x] manip for directional light width
 
-- [ ] mousetools to create and delete objects
-- [ ] persistent scene
-- [ ] implement settings
-- [ ] persistent settings
-- [ ] fix GLRaytracer memory leak?
 - [ ] implement raytracing on the CPU for svg viewport
 - [ ] physically accurate BSDFs. eg dielectric relfection.
 - [ ] physically accurate wavelength to color wavelength->XYZ->linearRGB->sRGB
@@ -29,8 +24,16 @@
 - [ ] progressive rendering
 - [ ] add linesegment shape
 
-## fix bugs
-- [ ] lens intersect ouside iof diemeter, when edge thickness is greater then zero
-- [ ] direction light width manip is a bit strange. should act on the axis only not by distance
+### UI/UX
+- [ ] mousetools to create and delete objects
+- [ ] persistent scene
+- [ ] implement settings
+- [ ] persistent settings
 - [ ] fix ugly sidebars
 - [ ] fix ugly manipulators
+- [ ] direction light width manip is a bit strange. should act on the axis only not by distance
+
+
+## fix bugs
+- [ ] lens intersect ouside iof diemeter, when edge thickness is greater then zero
+- [ ] fix GLRaytracer memory leak?

@@ -18,13 +18,11 @@ function drawLines(regl, {
     endpoints,
     colors,
     outputResolution,
-    viewport,
-    linesColor=[0.9,0.5,0.0,0.3]
+    viewport
 }={})
 {
     const projection = mat4.create();
     mat4.ortho(projection, viewport.x, viewport.x+viewport.width,viewport.y,viewport.y+viewport.height,-1.0, 1.0);
-    // mat4.ortho(projection,0, outputResolution[0], 0, outputResolution[1], -1.0, 1.0);
     regl({
         viewport: {
             x: 0,
@@ -43,7 +41,6 @@ function drawLines(regl, {
                 dstAlpha: 'one',
             }
         },
-
         primitive: "lines",
         attributes: {
             vertexIdx: _.range(linesCount*2),
@@ -59,11 +56,6 @@ function drawLines(regl, {
             projection: projection
         },
         vert: `precision mediump float;
-            #define MAX_RAYMARCH_STEPS 9
-            #define MIN_HIT_DISTANCE 1.0
-            #define MAX_TRACE_DISTANCE 250.0
-
-            attribute float vertexIdx;
             uniform sampler2D startpointsTexture;
             uniform vec2 startpointsResolution;
             uniform sampler2D endpointsTexture;
@@ -72,48 +64,37 @@ function drawLines(regl, {
             uniform vec2 colorsResolution; 
             uniform mat4 projection;
 
+            attribute float vertexIdx;
+
             varying vec4 vColor;
             
-
-            float modI(float a,float b)
+            vec4 texelFetchByIdx(sampler2D texture, vec2 resolution, float texelIdx)
             {
-                float m = a-floor((a+0.5)/b)*b;
-                return floor(m+0.5);
+                float pixelX = mod(texelIdx, resolution.x);
+                float pixelY = floor(texelIdx / resolution.x);
+                vec2 texCoords = (vec2(pixelX, pixelY) + 0.5) / resolution;
+                return texture2D(texture, texCoords);
             }
 
             void main()
             {
                 float lineIdx = floor(vertexIdx/2.0);
 
-                // Unpack colors
-                float pixelX = mod(lineIdx, colorsResolution.x);
-                float pixelY = floor(lineIdx / colorsResolution.x);
-                vec2 texCoords = (vec2(pixelX, pixelY) + 0.5) / colorsResolution;
-                vColor = texture2D(colorsTexture, texCoords).rgba;
-
-                bool IsLineStartPoint = modI(vertexIdx, 2.0) < 1.0;
+                // Set vertex position
+                bool IsLineStartPoint = mod(vertexIdx, 2.0) < 1.0;
                 if(IsLineStartPoint)
                 {
-                    // Unpack startpoint
-                    float pixelX = mod(lineIdx, startpointsResolution.x);
-                    float pixelY = floor(lineIdx / startpointsResolution.x);
-                    vec2 texCoords = (vec2(pixelX, pixelY) + 0.5) / startpointsResolution;
-                    vec2 startPoint = texture2D(startpointsTexture, texCoords).xy;
-
-                    // map world position to screen
+                    vec2 startPoint = texelFetchByIdx(startpointsTexture, startpointsResolution, lineIdx).xy;
                     gl_Position = projection * vec4(startPoint, 0.0, 1.0);
                 }
                 else
                 {
-                    // Unpack endpoint
-                    float pixelX = mod(lineIdx, endpointsResolution.x);
-                    float pixelY = floor(lineIdx / endpointsResolution.x);
-                    vec2 texCoords = (vec2(pixelX, pixelY) + 0.5) / endpointsResolution;
-                    vec2 endPoint = texture2D(endpointsTexture, texCoords).xy;
-
-                    // map world position to screen
+                    vec2 endPoint = texelFetchByIdx(endpointsTexture, endpointsResolution, lineIdx).xy;
                     gl_Position = projection * vec4(endPoint, 0.0, 1.0);
                 }
+
+                // set vertex colors
+                vColor = texelFetchByIdx(colorsTexture, colorsResolution, lineIdx).rgba;
             }`,
 
         frag:`precision mediump float;

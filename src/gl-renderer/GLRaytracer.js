@@ -53,8 +53,9 @@ class GLRaytracer{
     constructor(canvas)
     {
         this.canvas = canvas;
+        
         this.LightSamples = Math.pow(4,5);//128*128; //Math.pow(4,4);
-        this.MAX_BOUNCE = 5;
+        this.MAX_BOUNCE = 7;
         this.outputResolution = [512, 512];
     }
 
@@ -332,7 +333,6 @@ class GLRaytracer{
         /*
          * Trace Rays
          */
-
         for(let i=0; i<this.MAX_BOUNCE; i++)
         {
             /* INTERSECT RAYS WITH CSG */
@@ -355,11 +355,9 @@ class GLRaytracer{
                 uniforms:{
                     outputResolution: [this.rayDataTexture.width, this.rayDataTexture.height],
                     incidentRaysTexture: this.rayDataTexture,
-                    rayDataResolution: [this.rayDataTexture.width, this.rayDataTexture.height],
                     incidentLightsTexture: this.lightDataTexture,
                     hitDataTexture: this.hitDataTexture,
                     hitMaterialTexture: this.hitMaterialTexture,
-                    hitDataResolution: [this.hitDataTexture.width, this.hitDataTexture.height],
                     SEED: Math.random()
                 },
                 frag:bounceRaysShader

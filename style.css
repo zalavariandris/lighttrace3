@@ -51,7 +51,8 @@ body{
 /* SVG Color style*/
 .shape{
     opacity: 0.3;
-    stroke: white
+    stroke: white;
+    stroke-width: 0.2;
 }
 
 .gizmo{

@@ -133,11 +133,17 @@ function SphericalLens({
                     rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
                 })
             },
-                h("circle", {
-                    cx: entity.transform.translate.x+Math.cos(entity.transform.rotate)*(entity.shape.diameter/2.0+10), 
-                    cy: entity.transform.translate.y+Math.sin(entity.transform.rotate)*(entity.shape.diameter/2.0+10), 
-                    r:10,
-                    className: "gizmo"
+                h("path" /* rotate arrow */,{
+                    stroke: "white",
+                    strokeWidth: 2,
+                    fill: "none",
+                    d: describeArc(0,0, Math.max(entity.shape.centerThickness, entity.shape.edgeThickness)/2+15, 80, 100),
+                    markerEnd:"url(#arrow)",
+                    markerStart:"url(#arrow)",
+                    style: {
+                        opacity: 0.3,
+                        transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`
+                    }
                 })
             ),
 
@@ -241,11 +247,17 @@ function Rectangle({
                     rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
                 })
             },
-                h("circle", {
-                    cx: entity.transform.translate.x+Math.cos(entity.transform.rotate)*(entity.shape.width/2.0+10), 
-                    cy: entity.transform.translate.y+Math.sin(entity.transform.rotate)*(entity.shape.width/2.0+10), 
-                    r:10,
-                    className: "gizmo"
+                h("path" /* rotate arrow */,{
+                    stroke: "white",
+                    strokeWidth: 2,
+                    fill: "none",
+                    d: describeArc(0,0, entity.shape.width/2+20, 80, 100),
+                    markerEnd:"url(#arrow)",
+                    markerStart:"url(#arrow)",
+                    style: {
+                        opacity: 0.3,
+                        transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`
+                    }
                 })
             ),
 
@@ -345,18 +357,24 @@ function PointLight({entityKey, entity})
             onClick: e=>entityStore.setSelection([key])
         }),
 
-        h(Manipulator, {
+        h(Manipulator /* rotate manip*/, {
             referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
             referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
             onDrag: e=>entityStore.updateComponent(key, "transform", {
                 rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
             })
         }, 
-            h("circle", {
-                cx: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50, 
-                cy: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50, 
-                r:10,
-                className: "gizmo"
+            h("path" /* rotate arrow */,{
+                stroke: "white",
+                strokeWidth: 2,
+                fill: "none",
+                d: describeArc(0,0, 50, 80, 100),
+                markerEnd:"url(#arrow)",
+                markerStart:"url(#arrow)",
+                style: {
+                    opacity: 0.3,
+                    transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`
+                }
             })
         )
     )
@@ -364,7 +382,7 @@ function PointLight({entityKey, entity})
 
 function LaserLight({entityKey, entity})
 {
-    return h(Manipulator, {
+    return h(Manipulator /* tmove manip */, {
         referenceX: entity.transform.translate.x,
         referenceY: entity.transform.translate.y,
         onDrag: e=>entityStore.updateComponent(key, "transform", {
@@ -383,19 +401,25 @@ function LaserLight({entityKey, entity})
         }),
 
         h("g", {style: {display: entity.selected?"initial":"none"}}, 
-            h(Manipulator, {
+            h(Manipulator /* rotate manip */, {
                 referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
                 referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
                 onDrag: e=>entityStore.updateComponent(key, "transform", {
                     rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
                 })
             }, 
-                h("circle", {
-                    cx: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50, 
-                    cy: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50, 
-                    r:10,
-                    className: "gizmo"
-                }),
+            h("path" /* rotate arrow */,{
+                stroke: "white",
+                strokeWidth: 2,
+                fill: "none",
+                d: describeArc(0,0, 50, 80, 100),
+                markerEnd:"url(#arrow)",
+                markerStart:"url(#arrow)",
+                style: {
+                    opacity: 0.3,
+                    transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`
+                }
+            })
             )
         )
     )
@@ -453,21 +477,15 @@ function DirectionalLight({entityKey, entity})
                     rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
                 })
             }, 
-                h("circle", {
-                    cx: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50, 
-                    cy: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50, 
-                    r:5,
-                    className: "gizmo"
-                }),
-
-                h("path",{
+                h("path" /* rotate arrow */,{
                     stroke: "white",
-                    strokeWidth: 1,
+                    strokeWidth: 2,
                     fill: "none",
-                    d: describeArc(0,0, 50, 70, 110),
+                    d: describeArc(0,0, 50, 80, 100),
                     markerEnd:"url(#arrow)",
                     markerStart:"url(#arrow)",
                     style: {
+                        opacity: 0.3,
                         transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`
                     }
                 })
@@ -576,14 +594,14 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
         h("marker", {
             id:"arrow",
             viewBox:"0 0 10 10",
-            refX:"5",
+            refX:"1",
             refY:"5",
-            markerWidth:"6",
-            markerHeight:"6",
+            markerWidth:"3",
+            markerHeight:"3",
             orient:"auto-start-reverse"
         },
             h("path", {
-                d: "M 0 0 L 10 5 L 0 10 z", // This path represents an arrow
+                d: "M 0 0 L 5 5 L 0 10 z", // This path represents an arrow
                 fill: "white"
             })
         )

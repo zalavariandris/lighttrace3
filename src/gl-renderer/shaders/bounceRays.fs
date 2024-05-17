@@ -22,6 +22,7 @@ vec2 rotate(vec2 vector, float radAngle)
 	return m * vector;
 }
 
+/* MATERIAL */
 vec2 sampleDiffuse(vec2 V, vec2 N)
 {
     bool IsEntering = -dot(V, N) > 0.0;
@@ -32,6 +33,18 @@ vec2 sampleDiffuse(vec2 V, vec2 N)
 vec2 sampleMirror(vec2 V, vec2 N)
 {
     return reflect(V, N);
+}
+
+vec2 sampleMirror2(vec2 V, vec2 N)
+{
+    float surfaceAngle = atan(N.y, N.x);
+    vec2 w0 = rotate(V, -surfaceAngle);
+
+    // in surface normal space
+    vec2 w1 = vec2(w0.x, -w0.y);
+
+    // back to worldspace
+    return -rotate(w1, surfaceAngle);
 }
 
 float sellmeierIor(vec3 b, vec3 c, float lambda)
@@ -51,6 +64,7 @@ float sellmeierIor(vec3 b, vec3 c, float lambda)
 
 vec2 sampleTransparent(vec2 V, vec2 N, float ior)
 {
+    // version 1
     float cosI = -dot(V, N); // Corrected to ensure cosI is always positive
     bool IsEntering = cosI > 0.0;
     float refractiveIndexRatio = IsEntering ? 1.0 / ior : ior ; // Adjust ratio based on entering or exiting
@@ -85,7 +99,7 @@ void main()
     // vec2 secondaryDir = sampleMirror(rayDir, hitNormal);
     if(hitMaterial < 0.5)
     {
-        gl_FragData[0] = vec4(hitPos, sampleMirror(rayDir, hitNormal));
+        gl_FragData[0] = vec4(hitPos, sampleMirror2(rayDir, hitNormal));
     }
     else if(hitMaterial < 1.5)
     {
@@ -95,7 +109,8 @@ void main()
         vec2 secondaryDir = sampleTransparent(rayDir, hitNormal, dispersiveIor);
         gl_FragData[0] = vec4(hitPos, secondaryDir);
     }
-    else if(hitMaterial<2.5){
+    else if(hitMaterial<2.5)
+    {
         gl_FragData[0] = vec4(hitPos, sampleDiffuse(rayDir, hitNormal));
     }
 

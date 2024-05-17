@@ -6,12 +6,19 @@ const h = React.createElement;
 
 
 // UTILS
+function rotatePoint(x, y, radAngle, pivotX, pivotY)
+{
+    const x1 = pivotX + (x - pivotX) * Math.cos(radAngle) - (y - pivotY) * Math.sin(radAngle);
+    const y1 = pivotY + (x - pivotX) * Math.sin(radAngle) + (y - pivotY) * Math.cos(radAngle);
+
+    return [x1, y1];
+}
+
 function viewboxString(viewBox)
 {
     return viewBox.x+" "+viewBox.y+" "+viewBox.w+" "+viewBox.h;
 }
     
-
 const calcScale = (svg, viewBox)=>{
     // const svg = svgRef.current;
     if(svg)
@@ -22,7 +29,9 @@ const calcScale = (svg, viewBox)=>{
         return 1.0;
     }
 }
-function makeCircleFromThreePoints(S, M, E, {material}={}) {
+
+function makeCircleFromThreePoints(S, M, E, {material}={})
+{
     var Sx = S.x;
     var Sy = S.y;
     var Mx = M.x;
@@ -49,7 +58,8 @@ function makeCircleFromThreePoints(S, M, E, {material}={}) {
         material:material, 
         radius: Math.hypot(Cx - Sx, Cy - Sy)
     };
-  }
+}
+
 function arcFromThreePoints({Sx, Sy, Mx, My, Ex, Ey})
 {
     const circle = makeCircleFromThreePoints({x:Sx, y:Sy}, {x:Mx, y:My}, {x:Ex, y:Ey})
@@ -62,7 +72,8 @@ function arcFromThreePoints({Sx, Sy, Mx, My, Ex, Ey})
     `a ${Math.abs(r)} ${Math.abs(r)} 0 0 ${side} ${Ex-Sx} ${Ey-Sy} `;
 }
 
-const makePathFromLens = ({cx,cy,diameter,edgeThickness, centerThickness})=>{
+function makePathFromLens({cx,cy,diameter,edgeThickness, centerThickness})
+{
     return ""+
     arcFromThreePoints({
         Sx: cx-edgeThickness/2, 
@@ -84,6 +95,401 @@ const makePathFromLens = ({cx,cy,diameter,edgeThickness, centerThickness})=>{
     `L ${cx-edgeThickness/2} ${cy-diameter/2}` // this should work with close path 'Z'
 }
 
+function SphericalLens({
+    entityKey, entity, ...props
+})
+{
+    return h(Manipulator /* Move Manip */, {
+        referenceX: entity.transform.translate.x,
+        referenceY: entity.transform.translate.y,
+        onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
+            translate: {
+                x: e.sceneX+e.referenceOffsetX, 
+                y: e.sceneY+e.referenceOffsetY
+            }
+        }),
+    }, 
+        h("path" /* draw shape */, {
+            className: entity.selected ? "shape selected" : "shape",
+            d: makePathFromLens({
+                cx: entity.transform.translate.x, 
+                cy: entity.transform.translate.y, 
+                diameter: entity.shape.diameter, 
+                edgeThickness: entity.shape.edgeThickness, 
+                centerThickness: entity.shape.centerThickness,
+            }),
+            style: {
+                transform: `rotate(${entity.transform.rotate}rad)`,
+                transformOrigin: `${entity.transform.translate.x}px ${entity.transform.translate.y}px`
+            },
+            ...props
+        }),
+
+        h("g", {style: {display: entity.selected?"initial":"none"}}, 
+            h(Manipulator /* Rotate Manip */, {
+                referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
+                referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
+                onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
+                    rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
+                })
+            },
+                h("circle", {
+                    cx: entity.transform.translate.x+Math.cos(entity.transform.rotate)*(entity.shape.diameter/2.0+10), 
+                    cy: entity.transform.translate.y+Math.sin(entity.transform.rotate)*(entity.shape.diameter/2.0+10), 
+                    r:10,
+                    className: "gizmo"
+                })
+            ),
+
+            h(Manipulator /* manip centerThickness*/, {
+                onDrag: e=>{
+                    const distance = Math.hypot(e.sceneX-entity.transform.translate.x, e.sceneY-entity.transform.translate.y)
+                    entityStore.updateComponent(entityKey, "shape", {
+                        centerThickness:  Math.max(0, Math.min(distance*2, entity.shape.diameter))
+                    })
+                },
+                className:"gizmo"
+            }, 
+                h('circle', {
+                    className: "handle",
+                    cx:entity.transform.translate.x+Math.cos(entity.transform.rotate)*entity.shape.centerThickness/2, 
+                    cy:entity.transform.translate.y+Math.sin(entity.transform.rotate)*entity.shape.centerThickness/2,
+                    r: 5,
+                    vectorEffect: "non-scaling-stroke",
+                    style: {cursor: "ew-resize"}
+                })
+            ),
+
+            h(Manipulator /* manip edgeTicvkness and diameter*/, {
+                onDrag: e=>{
+                    const distance = Math.hypot(e.sceneX-entity.transform.translate.x, e.sceneY-entity.transform.translate.y)
+                    entityStore.updateComponent(entityKey, "shape", {
+                        centerThickness:  Math.max(0, Math.min(distance*2, entity.shape.diameter+entity.shape.edgeThickness))
+                    })
+                },
+                className:"gizmo"
+            }, 
+                h('circle', {
+                    className: "handle",
+                    cx:entity.transform.translate.x+Math.cos(entity.transform.rotate)*entity.shape.centerThickness/2, 
+                    cy:entity.transform.translate.y+Math.sin(entity.transform.rotate)*entity.shape.centerThickness/2,
+                    r: 5,
+                    vectorEffect: "non-scaling-stroke",
+                    style: {cursor: "ew-resize"}
+                })
+            ),
+
+            h(Manipulator /*  manip edgeThickness and diameter*/, {
+                className:"manip",
+                onDrag: e=>{
+                    const [localX, localY] = rotatePoint(e.sceneX, e.sceneY, -entity.transform.rotate, entity.transform.translate.x, entity.transform.translate.y);
+                    const newEdgeThickness = Math.max(1, (localX-entity.transform.translate.x)*2);
+                    const newDiameter = Math.max(1, (localY-entity.transform.translate.y)*2);
+
+                    entityStore.updateComponent(entityKey, "shape", {
+                        edgeThickness: newEdgeThickness,
+                        centerThickness: Math.max(1, newEdgeThickness-entity.shape.edgeThickness + entity.shape.centerThickness),
+                        diameter: newDiameter       
+                    });
+                }
+            },
+                h('circle', {
+                    className: "gizmo",
+                    cx:entity.transform.translate.x+Math.cos(entity.transform.rotate)*entity.shape.edgeThickness/2+Math.cos(entity.transform.rotate+Math.PI/2)*entity.shape.diameter/2, 
+                    cy:entity.transform.translate.y+Math.sin(entity.transform.rotate)*entity.shape.edgeThickness/2+Math.sin(entity.transform.rotate+Math.PI/2)*entity.shape.diameter/2,
+                    r: 5,
+                    vectorEffect: "non-scaling-stroke",
+                    style: {cursor: "nwse-resize"}
+                }),
+            )
+        )
+    )
+}
+
+function Rectangle({
+    entityKey, entity, ...props
+})
+{
+    return h(Manipulator /* Move Manip */, {
+        referenceX: entity.transform.translate.x,
+        referenceY: entity.transform.translate.y,
+        onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
+            translate: {
+                x: e.sceneX+e.referenceOffsetX, 
+                y: e.sceneY+e.referenceOffsetY
+            }
+        }),
+    }, 
+        h("rect"/* draw shape */, {
+            className: entity.selected ? "shape selected" : "shape",
+            x: entity.transform.translate.x-entity.shape.width/2, 
+            y: entity.transform.translate.y-entity.shape.height/2, 
+            width: entity.shape.width,
+            height: entity.shape.height,
+            style: {
+                transform: `rotate(${entity.transform.rotate}rad)`,
+                transformOrigin: `${entity.transform.translate.x}px ${entity.transform.translate.y}px`
+            },
+            ...props
+        }),
+
+        h("g", {style: {display: entity.selected?"initial":"none"}}, 
+            h(Manipulator /* Rotate Manip */, {
+                referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
+                referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
+                onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
+                    rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
+                })
+            },
+                h("circle", {
+                    cx: entity.transform.translate.x+Math.cos(entity.transform.rotate)*(entity.shape.width/2.0+10), 
+                    cy: entity.transform.translate.y+Math.sin(entity.transform.rotate)*(entity.shape.width/2.0+10), 
+                    r:10,
+                    className: "gizmo"
+                })
+            ),
+
+            h(Manipulator /*  manip width and height*/, {
+                className:"manip",
+                onDrag: e=>{
+                    const [localX, localY] = rotatePoint(e.sceneX, e.sceneY, -entity.transform.rotate, entity.transform.translate.x, entity.transform.translate.y);
+                    
+                    const newWidth = Math.max(1, (localX-entity.transform.translate.x)*2);
+                    const newHeight = Math.max(1, (localY-entity.transform.translate.y)*2);
+
+                    entityStore.updateComponent(entityKey, "shape", {
+                        width: newWidth,
+                        height: newHeight     
+                    });
+                }
+            },
+                h('circle', {
+                    className: "gizmo",
+                    cx:entity.transform.translate.x+Math.cos(entity.transform.rotate)*entity.shape.width/2+Math.cos(entity.transform.rotate+Math.PI/2)*entity.shape.height/2, 
+                    cy:entity.transform.translate.y+Math.sin(entity.transform.rotate)*entity.shape.width/2+Math.sin(entity.transform.rotate+Math.PI/2)*entity.shape.height/2,
+                    r: 5,
+                    vectorEffect: "non-scaling-stroke",
+                    style: {cursor: "nwse-resize"}
+                }),
+            )
+        )
+    )
+}
+
+function Circle({
+    entityKey, entity, ...props
+})
+{
+    return h(Manipulator /* Move Manip */, {
+        referenceX: entity.transform.translate.x,
+        referenceY: entity.transform.translate.y,
+        onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
+            translate: {
+                x: e.sceneX+e.referenceOffsetX, 
+                y: e.sceneY+e.referenceOffsetY
+            }
+        }),
+    }, 
+        h("circle" /* draw shape */, {
+            className: entity.selected ? "shape selected" : "shape",
+            cx: entity.transform.translate.x, 
+            cy: entity.transform.translate.y, 
+            r: entity.shape.radius,
+            ...props
+        }),
+
+        h(Manipulator /*  manip radius*/, {
+            className:"manip",
+            onDrag: e=>{
+                const newRadius = Math.hypot(e.sceneX-entity.transform.translate.x, e.sceneY-entity.transform.translate.y)
+
+                entityStore.updateComponent(entityKey, "shape", {
+                    radius: newRadius  
+                });
+            }
+        },
+            h('circle', {
+                className: "gizmo",
+                cx: entity.transform.translate.x, 
+                cy: entity.transform.translate.y, 
+                r: entity.shape.radius,
+                vectorEffect: "non-scaling-stroke",
+                style: {
+                    fill: "none",
+                    stroke: "transparent",
+                    strokeWidth: 5,
+                    cursor: "nwse-resize"
+                }
+            }),
+        )
+    )
+}
+
+function PointLight({entityKey, entity})
+{
+    return h(Manipulator, {
+        referenceX: entity.transform.translate.x,
+        referenceY: entity.transform.translate.y,
+        onDrag: e=>entityStore.updateComponent(key, "transform", {
+            translate: {
+                x: e.sceneX+e.referenceOffsetX, 
+                y: e.sceneY+e.referenceOffsetY
+            }
+        }),
+    }, 
+        h("circle", {
+            cx: entity.transform.translate.x, 
+            cy: entity.transform.translate.y, 
+            r:10, 
+            className: "gizmo",
+            onClick: e=>entityStore.setSelection([key])
+        }),
+
+        h(Manipulator, {
+            referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
+            referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
+            onDrag: e=>entityStore.updateComponent(key, "transform", {
+                rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
+            })
+        }, 
+            h("circle", {
+                cx: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50, 
+                cy: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50, 
+                r:10,
+                className: "gizmo"
+            })
+        )
+    )
+}
+
+function LaserLight({entityKey, entity})
+{
+    return h(Manipulator, {
+        referenceX: entity.transform.translate.x,
+        referenceY: entity.transform.translate.y,
+        onDrag: e=>entityStore.updateComponent(key, "transform", {
+            translate: {
+                x: e.sceneX+e.referenceOffsetX, 
+                y: e.sceneY+e.referenceOffsetY
+            }
+        }),
+    }, 
+        h("circle", {
+            cx: entity.transform.translate.x, 
+            cy: entity.transform.translate.y, 
+            r:10, 
+            className: "gizmo",
+            onClick: e=>entityStore.setSelection([key])
+        }),
+
+        h("g", {style: {display: entity.selected?"initial":"none"}}, 
+            h(Manipulator, {
+                referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
+                referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
+                onDrag: e=>entityStore.updateComponent(key, "transform", {
+                    rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
+                })
+            }, 
+                h("circle", {
+                    cx: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50, 
+                    cy: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50, 
+                    r:10,
+                    className: "gizmo"
+                }),
+            )
+        )
+    )
+}
+
+function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+    var angleInRadians = (angleInDegrees-90) * Math.PI / 180.0;
+  
+    return {
+      x: centerX + (radius * Math.cos(angleInRadians)),
+      y: centerY + (radius * Math.sin(angleInRadians))
+    };
+  }
+  
+  function describeArc(x, y, radius, startAngle, endAngle){
+  
+      var start = polarToCartesian(x, y, radius, endAngle);
+      var end = polarToCartesian(x, y, radius, startAngle);
+  
+      var largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+  
+      var d = [
+          "M", start.x, start.y, 
+          "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y
+      ].join(" ");
+  
+      return d;       
+  }
+
+function DirectionalLight({entityKey, entity})
+{
+    return h(Manipulator /* rotate manip */, {
+        referenceX: entity.transform.translate.x,
+        referenceY: entity.transform.translate.y,
+        onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
+            translate: {
+                x: e.sceneX+e.referenceOffsetX, 
+                y: e.sceneY+e.referenceOffsetY
+            }
+        }),
+    }, 
+        h("circle", {
+            cx: entity.transform.translate.x, 
+            cy: entity.transform.translate.y, 
+            r:10, 
+            className: "shape",
+            onClick: e=>entityStore.setSelection([entityKey])
+        }),
+
+        h("g", {style: {display: entity.selected?"initial":"none"}}, 
+            h(Manipulator /* rotate manip */, {
+                referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
+                referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
+                onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
+                    rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
+                })
+            }, 
+                h("circle", {
+                    cx: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50, 
+                    cy: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50, 
+                    r:5,
+                    className: "gizmo"
+                }),
+
+                h("path",{
+                    stroke: "white",
+                    strokeWidth: 1,
+                    fill: "none",
+                    d: describeArc(0,0, 50, 70, 110),
+                    markerEnd:"url(#arrow)",
+                    markerStart:"url(#arrow)",
+                    style: {
+                        transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`
+                    }
+                })
+            ),
+
+            h(Manipulator /* width manip */, {
+                referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
+                referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
+                onDrag: e=>entityStore.setValue(`${entityKey}.light.width`, Math.hypot(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)*2)
+            }, 
+                h("circle", {
+                    cx: entity.transform.translate.x+Math.cos(entity.transform.rotate+Math.PI/2)*entity.light.width/2, 
+                    cy: entity.transform.translate.y+Math.sin(entity.transform.rotate+Math.PI/2)*entity.light.width/2, 
+                    r:10,
+                    className: "gizmo"
+                }),
+
+
+            )
+        )
+    )
+}
 
 function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...props})
 {
@@ -144,6 +550,12 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
 
         onViewBoxChange(newViewBox)
     }
+
+
+    function handleClick(e){
+
+    }
+
     return h("svg", {
         width, 
         height, 
@@ -151,8 +563,31 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
         viewBox: viewboxString(viewBox),
         ...props,
         onMouseDown: (e)=>panViewport(e),
-        onWheel: (e) => zoomViewportWithmouseWheel(e)   
+        onWheel: (e) => zoomViewportWithmouseWheel(e),
+        onClick: (e)=>{
+            if(e.target.tagName=='svg') // TODO test against itself
+            {
+                entityStore.setSelection([])
+            }
+        }
     }, 
+
+    h("defs", null,
+        h("marker", {
+            id:"arrow",
+            viewBox:"0 0 10 10",
+            refX:"5",
+            refY:"5",
+            markerWidth:"6",
+            markerHeight:"6",
+            orient:"auto-start-reverse"
+        },
+            h("path", {
+                d: "M 0 0 L 10 5 L 0 10 z", // This path represents an arrow
+                fill: "white"
+            })
+        )
+    ),
 
         // SHAPES
         Object.entries(scene)
@@ -162,104 +597,23 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
             .map( ([key, entity])=>{
                 switch (entity.shape.type) {
                     case "circle":
-                        return h(Manipulator, {
-                            referenceX: entity.transform.translate.x,
-                            referenceY: entity.transform.translate.y,
-                            onDrag: e=>entityStore.updateComponent(key, "transform", {
-                                translate: {
-                                    x: e.sceneX+e.referenceOffsetX, 
-                                    y: e.sceneY+e.referenceOffsetY
-                                }
-                            }),
-                        }, 
-                            h("circle", {
-                                className: "shape",
-                                cx: entity.transform.translate.x, 
-                                cy: entity.transform.translate.y, 
-                                r:entity.shape.radius
-                            })
-                        )
+                        return h(Circle, {
+                            entityKey: key, 
+                            entity: entity,
+                            onClick: e=>entityStore.setSelection([key])
+                        })
                     case "rectangle":
-                        return h(Manipulator, {
-                            referenceX: entity.transform.translate.x,
-                            referenceY: entity.transform.translate.y,
-                            onDrag: e=>entityStore.updateComponent(key, "transform", {
-                                translate: {
-                                    x: e.sceneX+e.referenceOffsetX, 
-                                    y: e.sceneY+e.referenceOffsetY
-                                }
-                            }),
-                        }, 
-                            h("rect", {
-                                className: "shape",
-                                x: entity.transform.translate.x-entity.shape.width/2, 
-                                y: entity.transform.translate.y-entity.shape.height/2, 
-                                width: entity.shape.width,
-                                height: entity.shape.height,
-                                style: {
-                                    transform: `rotate(${entity.transform.rotate}rad)`,
-                                    transformOrigin: `${entity.transform.translate.x}px ${entity.transform.translate.y}px`
-                                }
-                            })
-                        )
+                        return h(Rectangle, {
+                            entityKey: key, 
+                            entity: entity,
+                            onClick: e=>entityStore.setSelection([key])
+                        })
                     case "sphericalLens":
-                        return h(Manipulator, {
-                            referenceX: entity.transform.translate.x,
-                            referenceY: entity.transform.translate.y,
-                            onDrag: e=>entityStore.updateComponent(key, "transform", {
-                                translate: {
-                                    x: e.sceneX+e.referenceOffsetX, 
-                                    y: e.sceneY+e.referenceOffsetY
-                                }
-                            }),
-                        }, 
-                            h("path", {
-                                className: "shape",
-                                d: makePathFromLens({
-                                    cx: entity.transform.translate.x, 
-                                    cy: entity.transform.translate.y, 
-                                    diameter: entity.shape.diameter, 
-                                    edgeThickness: entity.shape.edgeThickness, 
-                                    centerThickness: entity.shape.centerThickness,
-                                    style: {
-                                        transform: `rotate(${entity.transform.rotate}rad)`,
-                                        transformOrigin: `${entity.transform.translate.x}px ${entity.transform.translate.y}px`
-                                    }
-                                }),
-                                className: "shape",
-                            }),
-                            h(Manipulator, {
-                                onDrag: e=>entityStore.updateComponent(key, "shape", {
-                                   centerThickness:  Math.max(0, Math.min((e.sceneX-entity.transform.translate.x)*2, entity.shape.diameter))
-                                }),
-                                className:"gizmo"
-                            }, h('circle', {
-                                className: "handle",
-                                cx:entity.transform.translate.x+entity.shape.centerThickness/2, 
-                                cy:entity.transform.translate.y,
-                                r: 5,
-                                vectorEffect: "non-scaling-stroke",
-                                style: {cursor: "ew-resize"}
-                            })),
-                            h(Manipulator, {
-                                className:"manip",
-                                onDrag: e=>{
-                                    const newEdgeThickness = Math.max(1, (e.sceneX-entity.transform.translate.x)*2);
-                                    entityStore.updateComponent(key, "shape", {
-                                        edgeThickness: newEdgeThickness,
-                                        centerThickness: Math.max(1, newEdgeThickness-entity.shape.edgeThickness + entity.shape.centerThickness),
-                                        diameter: Math.max(1, (e.sceneY-entity.transform.translate.y)*2)       
-                                    });
-                                }
-                            }, h('circle', {
-                                className: "gizmo",
-                                cx:entity.transform.translate.x+entity.shape.edgeThickness/2, 
-                                cy:entity.transform.translate.y+entity.shape.diameter/2,
-                                r: 5,
-                                vectorEffect: "non-scaling-stroke",
-                                style: {cursor: "nwse-resize"}
-                            })),
-                        )
+                        return h(SphericalLens, {
+                            entityKey: key, 
+                            entity: entity,
+                            onClick: e=>entityStore.setSelection([key])
+                        })
                     default:
                         break;
                 }
@@ -270,36 +624,18 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
         Object.entries(scene)
             .filter(([key, entity])=>entity.hasOwnProperty("transform") && entity.hasOwnProperty("light"))
             .map( ([key, entity])=>{
-                return h(Manipulator, {
-                    referenceX: entity.transform.translate.x,
-                    referenceY: entity.transform.translate.y,
-                    onDrag: e=>entityStore.updateComponent(key, "transform", {
-                        translate: {
-                            x: e.sceneX+e.referenceOffsetX, 
-                            y: e.sceneY+e.referenceOffsetY
-                        }
-                    }),
-                }, 
-                    h("circle", {
-                        cx: entity.transform.translate.x, 
-                        cy: entity.transform.translate.y, 
-                        r:10, 
-                        className: "gizmo"
-                    }),
+                switch (entity.light.type) {
+                    case "point":
+                        return h(PointLight, {entityKey: key, entity: entity})
+                    case "laser":
+                        return h(LaserLight, {entityKey: key, entity: entity})
+                    case "directional":
+                        return h(DirectionalLight, {entityKey: key, entity: entity})
+                
+                    default:
+                        break;
+                }
 
-                    h(Manipulator, {
-                        referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
-                        referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
-                        onDrag: e=>entityStore.updateComponent(key, "transform", {
-                            rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
-                        })
-                    }, h("circle", {
-                        cx: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50, 
-                        cy: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50, 
-                        r:10,
-                        className: "gizmo"
-                    }),)
-                )
             })
     );
 }

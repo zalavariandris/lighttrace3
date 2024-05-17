@@ -27,10 +27,11 @@ class ManipEvent{
     }
 }
 
-function cursorPoint(svg, {x, y}){
+function cursorPoint(svg, {x, y},){
     let pt = svg.createSVGPoint();
     pt.x =x; pt.y = y;
-    const scenePoint = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const ctm = svg.getScreenCTM().inverse();
+    return pt.matrixTransform(ctm);
     return {x:scenePoint.x, y:scenePoint.y};
 }
 
@@ -43,6 +44,8 @@ function Manipulator({
     onClick=(e)=>{},
     showGuide=true,
     showReference=false,
+    style,
+    children,
     ...props
 }={})
 {
@@ -66,7 +69,7 @@ function Manipulator({
 
 
         const svg = e.target.closest("SVG");
-        let startLoc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+        let startLoc = cursorPoint(svg, {x: e.clientX, y:e.clientY}, svg);
 
         setSceneMouse({x: startLoc.x, y: startLoc.y})
         setSceneStart({x: startLoc.x, y: startLoc.y})
@@ -83,23 +86,23 @@ function Manipulator({
         }));
 
         const handleMouseMove = (e)=>{
-            let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+            let sceneLoc = cursorPoint(svg, {x: e.clientX, y:e.clientY}, svg);
 
             onDrag(new ManipEvent({
-                sceneX: loc.x, 
-                sceneY: loc.y,
+                sceneX: sceneLoc.x, 
+                sceneY: sceneLoc.y,
                 sceneStartX: startLoc.x,
                 sceneStartY: startLoc.y, 
                 referenceX: referenceX,
                 referenceY: referenceY,
                 nativeEvent: e
             }))
-            setSceneMouse({x: loc.x, y: loc.y})
+            setSceneMouse({x: sceneLoc.x, y: sceneLoc.y})
         }
 
         const handleMouseUp = (e)=>{
             var svg  = e.target.closest("SVG");
-            let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+            let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY}, svg);
             window.removeEventListener("mousemove", handleMouseMove);
             onDragEnd(new ManipEvent({
                 sceneX: loc.x, 
@@ -130,7 +133,10 @@ function Manipulator({
 
     return h("g", {
         ref:ref,
-        style: {cursor: active?"grabbing":"grab"},
+        style: {
+            ...style, 
+            cursor: active?"grabbing":"grab"
+        },
         ...props,
         onMouseDown: (e)=>handleMouseDown(e),
         onClick:onClick
@@ -150,7 +156,7 @@ function Manipulator({
             r:5,
             vectorEffect: "non-scaling-stroke",
         }):null,
-        props.children
+        children
     )
 }
 

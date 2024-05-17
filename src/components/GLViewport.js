@@ -9,6 +9,7 @@ function GLViewport({width, height, className, viewBox, displaySettings, ...prop
     const scene = React.useSyncExternalStore(entityStore.subscribe, entityStore.getSnapshot);
     const canvasRef = React.useRef(null);
     const renderer = React.useRef(null);
+    const renderInfo = React.useRef([scene, viewBox]);
 
     React.useEffect(()=>{
         renderer.current = new GLRaytracer(canvasRef.current);
@@ -18,7 +19,6 @@ function GLViewport({width, height, className, viewBox, displaySettings, ...prop
         function onResize(e)
         {
             renderer.current.resizeGL();
-            renderer.current.renderGL(scene);
         }
         window.addEventListener("resize", onResize);
         return ()=>{
@@ -26,16 +26,28 @@ function GLViewport({width, height, className, viewBox, displaySettings, ...prop
         }
     }, []);
 
-    React.useEffect(()=>{
-        renderer.current.renderGL(scene);
-    }, [scene])
+    const requestId = React.useRef();
+    React.useEffect(() => {
+        const animate = (timestamp) => {
+            // Animation code goes here
+            renderer.current.renderGL(renderInfo.current[0], renderInfo.current[1])
+            requestId.current = requestAnimationFrame(animate);
+        };
+        requestId.current = requestAnimationFrame(animate);
+        return () => {
+            cancelAnimationFrame(requestId.current);
+        };
+    }, []);
 
     React.useEffect(()=>{
-        renderer.current.setViewBox(viewBox);
-        renderer.current.renderGL(scene);
-    }, [viewBox]);
+        renderInfo.current = [scene, viewBox];
+    }, [scene, viewBox])
 
-    return h("canvas", {className, ref: canvasRef, ...props});
+
+    return h("canvas", {
+        className, 
+        ref: canvasRef, 
+        ...props});
 }
 
 export default GLViewport;

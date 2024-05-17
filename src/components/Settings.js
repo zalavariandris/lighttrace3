@@ -7,6 +7,7 @@ function Settings(props){
     const settings = React.useSyncExternalStore(settingsStore.subscribe, settingsStore.getSnapshot);
 
     return h("div", props, 
+        h("header", null, "Settings"),
         h("section", null, 
             h("header", null, "svgDisplay"),
             h("label", null, h("input", {

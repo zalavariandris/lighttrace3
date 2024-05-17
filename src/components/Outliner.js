@@ -8,7 +8,11 @@ function Outliner(props)
     return h("ul", props, 
         Object.entries(scene)
             .map( ([key, entity])=>{
-            return h("li", null, 
+            return h("li", {
+                style: {
+                    fontStyle: entity.selected ? "italic" : "normal"
+                }
+            }, 
                 `${key}: (${entity.transform.translate.x},${entity.transform.translate.y})`
             )
         })

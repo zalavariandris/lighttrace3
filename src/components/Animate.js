@@ -1,0 +1,32 @@
+import entityStore from "../stores/entity-store.js"
+import React from "react";
+const h = React.createElement;
+
+
+function Animate(props)
+{
+    const scene = React.useSyncExternalStore(entityStore.subscribe, entityStore.getSnapshot);
+
+    const requestId = React.useRef();
+    React.useEffect(() => {
+        const animate = (timestamp) => {
+            // Animation code goes here
+            // console.log("animate")
+            // entityStore.updateComponent("pointer", "transform", {
+            //     rotate: entityStore.getSnapshot()["pointer"].transform.rotate+0.05
+            // });
+            requestId.current = requestAnimationFrame(animate);
+        };
+        requestId.current = requestAnimationFrame(animate);
+        return () => {
+            console.log("canvel animation frame")
+            cancelAnimationFrame(requestId.current);
+        };
+    }, []);
+
+    return h("div", props,
+        h("header", null, "Animate"),
+        h("textarea")
+    );
+}
+export default Animate;

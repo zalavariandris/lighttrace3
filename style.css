@@ -7,16 +7,24 @@
     height: 100vh;
 }
 
-#outliner{
+#leftSidebar{
     position: fixed;
     left: 0;
     top:0;
 }
 
-#inspector{
+#rightSidebar{
     position: fixed;
     right: 0;
     top:0;
+}
+
+#bottombar{
+    position: fixed;
+    left:0;
+    right: 0;
+    width: auto;
+    bottom:0;
 }
 
 /*RESET*/
@@ -36,7 +44,7 @@ body{
 
 .panel
 {
-    padding: 1em;
+    
     background-color: hsla(0, 0%, 50%, 0.4);
 }
 
@@ -48,4 +56,30 @@ body{
 
 .gizmo{
     fill: hsla(0, 0%, 50%, 0.4);
+}
+
+.selected{
+    stroke: white;
+    stroke-width: 3;
+}
+
+
+/* panel layout */
+.panel{
+    padding: 1em;
+}
+
+.panel section{
+    margin-top: 1rem;
+}
+
+form>label{
+    display: block;
+    
+}
+form>label>input,
+form>label>select
+{
+    display: inline-block;
+    /* width: 3rem; */
 }

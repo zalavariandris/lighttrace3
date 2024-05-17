@@ -11,7 +11,7 @@ uniform vec2 rayDataResolution;
 
 uniform vec3 transformData[MAX_SHAPES];
 uniform vec4 shapeData[MAX_SHAPES];
-uniform int materialData[MAX_SHAPES];
+uniform vec2 materialData[MAX_SHAPES];
 uniform float shapesCount;
 
 struct Ray{
@@ -175,6 +175,9 @@ HitInfo intersect(Ray incidentRay, Rectangle rectangle)
 }
 
 HitInfo intersect(Ray incidentRay, SphericalLens lens){
+
+    Ray ray = Ray(rotate(incidentRay.origin, -lens.angle, lens.center), rotate(incidentRay.direction, -lens.angle));
+    HitInfo hit = HitInfo(9999.0, vec2(0.0, 0.0), vec2(0.0, 0.0), -1);
     // make left cirlce
     vec2 topLeft =    vec2(lens.center.x -   lens.edgeThickness/2.0, lens.center.y+lens.diameter/2.0);
     vec2 middleLeft = vec2(lens.center.x - lens.centerThickness/2.0, lens.center.y+0.0         );
@@ -187,8 +190,8 @@ HitInfo intersect(Ray incidentRay, SphericalLens lens){
     vec2 bottomRight = vec2(lens.center.x +   lens.edgeThickness/2.0, lens.center.y-lens.diameter/2.0);
     Circle rightCircle = makeCircleFromThreePoints(topRight, middleRight, bottomRight);
 
-    HitInfo leftHit = intersect(incidentRay, leftCircle);
-    HitInfo rightHit = intersect(incidentRay, rightCircle);
+    HitInfo leftHit = intersect(ray, leftCircle);
+    HitInfo rightHit = intersect(ray, rightCircle);
 
     bool IsConvex = lens.centerThickness>lens.edgeThickness;
 
@@ -203,15 +206,15 @@ HitInfo intersect(Ray incidentRay, SphericalLens lens){
         if (contains(leftCircle,  rightHit.position) && contains(rightCircle, leftHit.position))
         {
             // Return closest hitpoint that is inside the circles intersection
-            if (leftHit.t < rightHit.t) {return leftHit;} else {return rightHit;}
+            if (leftHit.t < rightHit.t) {hit = leftHit;} else {hit = rightHit;}
         }
         else if (contains(leftCircle,  rightHit.position))
         {
-            return rightHit;
+            hit = HitInfo(rightHit.t, rightHit.position, rightHit.normal, rightHit.matID);
         }
         else if (contains(rightCircle,  leftHit.position))
         {
-            return leftHit;
+            hit = leftHit;
         }
     }
     else
@@ -219,17 +222,16 @@ HitInfo intersect(Ray incidentRay, SphericalLens lens){
         Rectangle bbox = Rectangle(lens.center, 0.0, max(lens.edgeThickness, lens.centerThickness), lens.diameter);
         if(contains(bbox, leftHit.position) && contains(bbox, rightHit.position))
         {
-            if(leftHit.t < rightHit.t) {return leftHit;} else {return rightHit;};
+            if(leftHit.t < rightHit.t) {hit = leftHit;} else {hit = rightHit;};
         }
         else if(contains(bbox, leftHit.position))
         {
-            return leftHit;
+            hit = leftHit;
         }
 
     }
 
-    // Return a default HitInfo if the intersections are not inside both circles
-    return HitInfo(9999.0, vec2(0.0, 0.0), vec2(0.0, 0.0), -1);
+    return HitInfo(hit.t, rotate(hit.position, lens.angle, lens.center), rotate(hit.normal, lens.angle), hit.matID);
 }
 
 HitInfo intersectScene(Ray ray)
@@ -250,7 +252,7 @@ HitInfo intersectScene(Ray ray)
 
                 // intersect Circle
                 HitInfo currentHit = intersect(ray, Circle(center, radius));
-                // currentHit.matID = int(materialData[i]);
+                currentHit.matID = int(materialData[i].x);
                 // Update ROUND
                 if(currentHit.t<hitInfo.t) hitInfo = currentHit;
             }
@@ -264,7 +266,7 @@ HitInfo intersectScene(Ray ray)
 
                 // intersect Rectangle
                 HitInfo currentHit = intersect(ray, rect);
-                // currentHit.matID = int(materialData[i]);
+                currentHit.matID = int(materialData[i].x);
                 // Update ROUND
                 if(currentHit.t<hitInfo.t) hitInfo = currentHit;
             }
@@ -278,7 +280,7 @@ HitInfo intersectScene(Ray ray)
                                                    shapeData[i].z);
                 // intersect Lens
                 HitInfo currentHit = intersect(ray, lens);
-                // currentHit.matID = int(materialData[i]);
+                currentHit.matID = int(materialData[i].x);
                 // Update ROUND
                 if(currentHit.t<hitInfo.t) hitInfo = currentHit;
             }

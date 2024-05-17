@@ -21,7 +21,7 @@ function samplePointLight(entity, lightSamples)
             y:entity.transform.translate.y, 
             dx:Math.cos(angle), 
             dy:Math.sin(angle),
-            intensity: 1.0/lightSamples,
+            intensity: entity.light.intensity/lightSamples,
             wavelength: sampleBlackbody(entity.light.temperature)
         };
     });
@@ -36,7 +36,7 @@ function sampleLaserLight(entity, lightSamples)
             y:entity.transform.translate.y, 
             dx:Math.cos(angle), 
             dy:Math.sin(angle),
-            intensity: 1.0/lightSamples,
+            intensity: entity.light.intensity/lightSamples,
             wavelength: sampleBlackbody(entity.light.temperature)
         };
     });

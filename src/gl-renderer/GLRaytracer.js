@@ -55,7 +55,6 @@ class GLRaytracer{
         this.canvas = canvas;
         this.LightSamples = Math.pow(4,5);//128*128; //Math.pow(4,4);
         this.MAX_BOUNCE = 5;
-        this.viewBox = {x: 0, y: 0, w: 512, h: 512};
         this.outputResolution = [512, 512];
     }
 
@@ -65,6 +64,7 @@ class GLRaytracer{
         this.initRegl();
         this.initTextures();
         this.initFramebuffers();
+        console.log("initGL")
     }
 
     initRegl(){
@@ -78,7 +78,7 @@ class GLRaytracer{
                 stencil: false,
                 antialias: false,
                 premultipliedAlpha: false,
-                preserveDrawingBuffer: true,
+                preserveDrawingBuffer: false,
                 preferLowPowerToHighPerformance: false,
                 failIfMajorPerformanceCaveat: false,
                 blend: {
@@ -231,11 +231,7 @@ class GLRaytracer{
         // console.log("resizeGL", this.outputResolution);
     }
 
-    setViewBox(viewBox){
-        this.viewBox = viewBox;
-    }
-
-    renderGL(scene)
+    renderGL(scene, viewBox)
     {
         // console.log("renderGL", this.outputResolution)
         const regl = this.regl;
@@ -320,18 +316,15 @@ class GLRaytracer{
         .map(entity=>{
             switch (entity.material.type) {
                 case "mirror":
-                    return 0;
+                    return [0, entity.material.roughness || 0.0];
                 case "glass":
-                    return 1;
+                    return [1, entity.material.roughness || 0.0];
                 case "diffuse":
-                    return 2;
+                    return [2, entity.material.roughness || 0.0];
                 default:
-                    return -1;
+                    break;
             }
         });
-
-        console.log(transformData)
-        console.log(materialData)
 
         /* CLEAR THE CANVAS */
         regl.clear({color: [backgroundLightness,backgroundLightness,backgroundLightness,1.0]});
@@ -350,7 +343,7 @@ class GLRaytracer{
                     rayDataResolution: [this.rayDataTexture.width, this.rayDataTexture.height],
                     transformData: transformData.flat(),
                     shapeData: shapeData.flat(),
-                    materialData: materialData,
+                    materialData: materialData.flat(),
                     shapesCount: shapeData.length
                 },
                 frag: intersectRaysWithCSGShader
@@ -365,7 +358,9 @@ class GLRaytracer{
                     rayDataResolution: [this.rayDataTexture.width, this.rayDataTexture.height],
                     incidentLightsTexture: this.lightDataTexture,
                     hitDataTexture: this.hitDataTexture,
-                    hitDataResolution: [this.hitDataTexture.width, this.hitDataTexture.height]
+                    hitMaterialTexture: this.hitMaterialTexture,
+                    hitDataResolution: [this.hitDataTexture.width, this.hitDataTexture.height],
+                    SEED: Math.random()
                 },
                 frag:bounceRaysShader
             })()
@@ -374,10 +369,10 @@ class GLRaytracer{
             drawRays(regl, {
                 raysCount: rays.length,
                 raysTexture: this.hitDataTexture,
-                raysLength: 20.0,
-                raysColor: [0,1,0,1],
+                raysLength: 5.0,
+                raysColor: [1,1,1,.01],
                 outputResolution: this.outputResolution,
-                viewport: {x: this.viewBox.x, y: this.viewBox.y, width: this.viewBox.w, height: this.viewBox.h}
+                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h}
             });
 
             /* draw rays */
@@ -387,7 +382,7 @@ class GLRaytracer{
                 endpoints: this.hitDataTexture,
                 colors: this.rayColorsDataTexture,
                 outputResolution: this.outputResolution,
-                viewport: {x: this.viewBox.x, y: this.viewBox.y, width: this.viewBox.w, height: this.viewBox.h},
+                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
             });
 
             /* Swap Buffers */

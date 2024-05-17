@@ -68,7 +68,7 @@ function Viewport(props)
                 width: "100%", 
                 height:"100%",
                 pointerEvents: "none",
-                transform: "scale(1, -1)"
+                transform: "scale(1, -1) translateZ(0)"   
             }
         }),
         h(SVGViewport, {
@@ -78,7 +78,8 @@ function Viewport(props)
             style: {
                 position: "absolute", 
                 width: "100%", 
-                height:"100%"
+                height:"100%",
+                transform: "translateZ(0)"   
             }
         })
     )

@@ -1,8 +1,7 @@
 import {produce} from "immer";
+import _ from "lodash"
 
-
-
-let scene = {
+const defaultScene = {
     // "light": {
     //     transform:{
     //         translate: {x: 200, y: 10},
@@ -15,59 +14,59 @@ let scene = {
     //     },
     //     selected: false
     // },
-    "pointer": {
+    // "pointer": {
+    //     transform:{
+    //         translate: {x: 50, y: 120},
+    //         rotate: 3.0*Math.PI/180.0
+    //     },
+    //     light: {
+    //         type: "laser",
+    //         temperature: 6500,
+    //         intensity:3,
+    //     },
+    //     selected: false
+    // },
+    "sun": {
         transform:{
-            translate: {x: 50, y: 120},
-            rotate: 3.0*Math.PI/180.0
+            translate: {x: 195, y: 10},
+            rotate: 90.0*Math.PI/180.0
         },
         light: {
-            type: "laser",
-            temperature: 6500,
+            type: "directional",
+            width: 100,
             intensity:1.0,
+            temperature: 6500
         },
         selected: false
     },
-    // "sun": {
-    //     transform:{
-    //         translate: {x: 195, y: 10},
-    //         rotate: 90.0*Math.PI/180.0
-    //     },
-    //     light: {
-    //         type: "directional",
-    //         width: 100,
-    //         intensity:1.0,
-    //         temperature: 6500
-    //     },
-    //     selected: false
-    // },
-    // "ball": {
-    //     transform:{
-    //         translate: {x: 200, y: 180},
-    //         rotate: 0.0
-    //     },
-    //     shape: {
-    //         type: "circle", 
-    //         radius: 50
-    //     },
-    //     material: {
-    //         type: "mirror"
-    //     },
-    //     selected: false
-    // },
-    // "ball2": {
-    //     transform:{
-    //         translate: {x: 200, y: 310},
-    //         rotate: 0.0
-    //     },
-    //     shape: {
-    //         type: "circle", 
-    //         radius: 70
-    //     },
-    //     material: {
-    //         type: "mirror"
-    //     },
-    //     selected: false
-    // },
+    "ball": {
+        transform:{
+            translate: {x: 200, y: 180},
+            rotate: 0.0
+        },
+        shape: {
+            type: "circle", 
+            radius: 50
+        },
+        material: {
+            type: "glass"
+        },
+        selected: false
+    },
+    "ball2": {
+        transform:{
+            translate: {x: 200, y: 310},
+            rotate: 0.0
+        },
+        shape: {
+            type: "circle", 
+            radius: 70
+        },
+        material: {
+            type: "mirror"
+        },
+        selected: false
+    },
     // "ball3": {
     //     transform:{
     //         translate: {x: 200, y: 480},
@@ -87,32 +86,44 @@ let scene = {
             translate: {x: 370, y: 130},
             rotate: 0.1
         },
-        material: {
-            type: "mirror"
-        },
         shape: {
             type: "rectangle",
             width: 200,
             height: 200
-        }
+        },
+        material: {
+            type: "diffuse"
+        },
+        selected: true
     },
     "lens": {
         transform: {
             translate: {x: 180, y: 120},
             rotate: 0
         },
-        material: {
-            type: "glass"
-        },
         shape: {
             type: "sphericalLens",
             diameter: 140,
             edgeThickness: 5,
             centerThickness: 80
-        }
+        },
+        material: {
+            type: "glass"
+        },
+        selected: false
     }
 
 };
+
+
+
+// window.localStorage.setItem("scene", scene)
+let scene = JSON.parse(localStorage.getItem("scene"));
+if(!localStorage.getItem("scene"))
+{
+    scene = defaultScene;
+}
+
 
 let listeners = [];
 
@@ -120,11 +131,45 @@ function emitChange() {
     for (let listener of listeners) {
         listener();
     }
+    localStorage.setItem("scene", JSON.stringify(scene));
 };
 
 export default {
+    loadDefault()
+    {
+        scene = defaultScene;
+        emitChange();
+    },
+
+    setSelection(newSelectionKeys){
+        const updatedScene = produce(scene, draft=>{
+            for(let entityKey in scene){
+                draft[entityKey].selected = newSelectionKeys.indexOf(entityKey)>=0;
+            }
+        });
+
+        if(scene!=updatedScene){
+            scene=updatedScene;
+            emitChange();
+        }
+    },
+
+    setValue(path, value){
+        const updatedScene = produce(scene, draft=>{
+            _.set(draft, path, value);
+        });
+
+        if(scene!=updatedScene){
+            scene=updatedScene;
+            emitChange();
+        }
+    },
+
     updateComponent(entityKey, component, newAttributes)
     {
+        if(!scene.hasOwnProperty(entityKey)){
+            throw new Error(`Entity ${entityKey} does not exist in scene!`)
+        }
         const updatedScene = produce(scene, draft=>{
             // draft[key][component] = _.update(draft[key][component], newAttributes)
             Object.assign(draft[entityKey][component], newAttributes);

@@ -29,7 +29,7 @@ function App({})
 
         h("div", {id:"rightSidebar", className: "panel"},
             h(Inspector),
-            h(Animate)
+            h(Animate),
         ),
 
         h("div", {id: "bottombar", className: "panel"},

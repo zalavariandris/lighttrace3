@@ -13,7 +13,8 @@ function Toolbar({children, ...props}){
         h("button", {}, "directional"),
         h("button", {
             onClick: (e)=>entityStore.loadDefault()
-        }, "load default scene")
+        }, "load default scene"),
+        h("i", {className: "fa-solid fa-arrow-pointer"})
     )
 }
 

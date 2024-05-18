@@ -357,6 +357,8 @@ function PointLight({entityKey, entity})
             onClick: e=>entityStore.setSelection([key])
         }),
 
+
+
         h(Manipulator /* rotate manip*/, {
             referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
             referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
@@ -449,6 +451,37 @@ function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
       return d;       
   }
 
+  function FA({
+    x, y, icon, style
+  }){
+    const icons = {
+        group: '\uf0c0',
+        link: '\uf0c1',
+        cloud: '\uf0c2',
+        beaker: '\uf0c3',
+        cut: '\uf0c4',
+        copy: '\uf0c5',
+        paperClip: '\uf0c6',
+        save: '\uf0c7',
+        signBlank: '\uf0c8',
+        reorder: '\uf0c9',
+        listUl: '\uf0ca',
+        listOl: '\uf0cb',
+        strikethrough: '\uf0cc',
+        underline: '\uf0cd',
+        table: '\uf0ce',
+        rotate: '\uf2f1'
+    }
+    return h("text", {
+        style:{
+            fontFamily: 'FontAwesome',
+            ...style
+        },
+        x:x, 
+        y:y,
+    }, icons[icon])
+  }
+
 function DirectionalLight({entityKey, entity})
 {
     return h(Manipulator /* rotate manip */, {
@@ -469,6 +502,9 @@ function DirectionalLight({entityKey, entity})
             onClick: e=>entityStore.setSelection([entityKey])
         }),
 
+
+
+
         h("g", {style: {display: entity.selected?"initial":"none"}}, 
             h(Manipulator /* rotate manip */, {
                 referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
@@ -477,17 +513,49 @@ function DirectionalLight({entityKey, entity})
                     rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
                 })
             }, 
-                h("path" /* rotate arrow */,{
-                    stroke: "white",
-                    strokeWidth: 2,
-                    fill: "none",
-                    d: describeArc(0,0, 50, 80, 100),
-                    markerEnd:"url(#arrow)",
-                    markerStart:"url(#arrow)",
+                // h("path" /* rotate arrow */,{
+                //     stroke: "white",
+                //     strokeWidth: 2,
+                //     fill: "none",
+                //     d: describeArc(0,0, 50, 80, 100),
+                //     markerEnd:"url(#arrow)",
+                //     markerStart:"url(#arrow)",
+                //     style: {
+                //         opacity: 0.3,
+                //         transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`
+                //     }
+                // })
+               
+                FA({
+                    x:entity.transform.translate.x+Math.cos(entity.transform.rotate)*50, 
+                    y:entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
+                    icon:"rotate",
                     style: {
-                        opacity: 0.3,
-                        transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`
+                        fill: "white", 
+                        stroke: "none",
+                        transform: `rotate(${entity.transform.rotate}rad)`,
+                        transformOrigin: `${entity.transform.translate.x+Math.cos(entity.transform.rotate)*70}px ${entity.transform.translate.y+Math.sin(entity.transform.rotate)*70}px`
                     }
+                })
+            ),
+
+            h("foreignObject", {
+                x:entity.transform.translate.x-50, 
+                y:entity.transform.translate.y+10, 
+                width:"100", 
+                height:"20"}, 
+                h("input", {
+                    type: "range",
+                    min:0.0,
+                    max: 10.0,
+                    step: 0.1,
+                    value: entity.light.intensity,
+                    style: {width: 95},
+                    onMouseDown: e=>{
+                        console.log("mousedown")
+                        e.stopPropagation();
+                    },
+                    onChange: e=>entityStore.setValue(`${entityKey}.light.intensity`, e.target.value)
                 })
             ),
 
@@ -512,7 +580,6 @@ function DirectionalLight({entityKey, entity})
 function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...props})
 {
     const scene = React.useSyncExternalStore(entityStore.subscribe, entityStore.getSnapshot);
-    const settings = React.useSyncExternalStore(settingsStore.subscribe, settingsStore.getSnapshot);
 
     const panViewport = (e)=>{ 
         if(e.defaultPrevented){

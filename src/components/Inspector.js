@@ -4,6 +4,7 @@ const h = React.createElement;
 import Settings from "./Settings.js";
 import Animate from "./Animate.js";
 
+
 function TransformInspector({entityKey, component, values}){
     return h("section", null, 
         h("header", null, "Transform"),
@@ -167,7 +168,8 @@ function Inspector(props)
 
 
     return h("div", props,
-        h("header", null, "INSPECTOR"),
+        h("header", null, "INSPECTOR"), 
+        h("span", {className: "fa-regular fa-arrow-pointer"}),
         Object.keys(selection).length?
             Object.entries(selection).map(([key, entity])=>{
                 return h(EntityInspector, {entityKey: key, entity})

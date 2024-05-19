@@ -157,8 +157,6 @@ function EntityInspector({entityKey, entity, ...props})
     )
 }
 
-
-
 function Inspector(props)
 {
     const scene = React.useSyncExternalStore(entityStore.subscribe, entityStore.getSnapshot);
@@ -169,6 +167,10 @@ function Inspector(props)
 
     return h("div", props,
         h("header", null, "INSPECTOR"), 
+        h("i", {
+
+            className:"fa-solid fa-rotate"
+        }),
         h("span", {className: "fa-regular fa-arrow-pointer"}),
         Object.keys(selection).length?
             Object.entries(selection).map(([key, entity])=>{

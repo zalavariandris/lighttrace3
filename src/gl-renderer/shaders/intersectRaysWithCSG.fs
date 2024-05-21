@@ -46,6 +46,11 @@ struct SphericalLens{
     float edgeThickness;
 };
 
+struct Segment{
+    vec2 P1;
+    vec2 P2;
+};
+
 vec2 rotate(vec2 point, float radAngle, vec2 pivot)
 {
     float x = point.x;
@@ -104,6 +109,74 @@ HitInfo intersect(Ray ray, Circle circle)//vec2 center, float radius)
     {
         return HitInfo(9999.0, vec2(0.0), vec2(0.0), -1);
     }
+}
+
+
+
+HitInfo intersect(Ray ray, Segment segment)
+{
+    HitInfo hit = HitInfo(9999.0, vec2(0.0, 0.0), vec2(0.0, 0.0), -1);
+
+    vec2 lineTangent = segment.P2-segment.P1;
+    // Calculate the determinant
+    float determinant = ray.direction.x * lineTangent.y - ray.direction.y * lineTangent.x;
+
+    if (abs(determinant) < EPSILON){
+        return hit;
+    }
+
+    // Calculate the intersection along the ray
+    float t1 = ((segment.P1.x - ray.origin.x) * lineTangent.y - (segment.P1.y - ray.origin.y) * lineTangent.x) / determinant;
+
+    // calculate intersection along the line
+    float t2 = ((segment.P1.x - ray.origin.x) * ray.direction.y - (segment.P1.y - ray.origin.y) * ray.direction.x) / determinant;
+    
+    bool IntersectionWithinRay = t1>EPSILON;
+    bool IntersectinWithinLinesegment = t2>EPSILON && t2<(1.0+EPSILON);
+
+    if(IntersectionWithinRay && IntersectinWithinLinesegment)
+    {
+        vec2 I = ray.origin+ray.direction*t1;
+        vec2 N = -normalize(vec2(-lineTangent.y, lineTangent.x));
+        return HitInfo(t1, I, N, -1);
+    }
+
+    return hit;
+}
+
+struct Triangle{
+    vec2 center;
+    float angle;
+    float size;
+};
+
+HitInfo intersect(Ray ray, Triangle triangle)
+{
+    // make vertices from triangle size and transform
+    vec2 vertices[3];
+    for(int i=0;i<3;i++)
+    {
+        float angle = float(i)/3.0*PI*2.0-PI/2.0;
+        angle+=triangle.angle;
+        vertices[i] = vec2(cos(angle)*triangle.size, sin(angle)*triangle.size);
+        vertices[i]+=triangle.center;
+    }
+
+    // create triangle sides
+    Segment a = Segment(vertices[0], vertices[1]);
+    Segment b = Segment(vertices[1], vertices[2]);
+    Segment c = Segment(vertices[2], vertices[0]);
+
+    // intersect each sides
+    HitInfo hitA = intersect(ray, a);
+    HitInfo hitB = intersect(ray, b);
+    HitInfo hitC = intersect(ray, c);
+
+    // find closest
+    HitInfo hit = hitA;
+    if(hitB.t<hit.t) hit = hitB;
+    if(hitC.t<hit.t) hit = hitC;
+    return hit;
 }
 
 Circle makeCircleFromThreePoints(vec2 S, vec2 M, vec2 E)
@@ -243,6 +316,7 @@ HitInfo intersectScene(Ray ray)
     {
         if(i<int(shapesCount))
         {
+            HitInfo currentHit;
             if(shapeData[i].x==0.0) // CIRCLE
             {
                 // upack circle
@@ -251,10 +325,7 @@ HitInfo intersectScene(Ray ray)
                 float radius = shapeData[i].y;
 
                 // intersect Circle
-                HitInfo currentHit = intersect(ray, Circle(center, radius));
-                currentHit.matID = int(materialData[i].x);
-                // Update ROUND
-                if(currentHit.t<hitInfo.t) hitInfo = currentHit;
+                currentHit = intersect(ray, Circle(center, radius));
             }
             else if(shapeData[i].x==1.0) // RECTANGLE
             {
@@ -263,12 +334,8 @@ HitInfo intersectScene(Ray ray)
                                            transformData[i].z, 
                                            shapeData[i].y, 
                                            shapeData[i].z);
-
                 // intersect Rectangle
-                HitInfo currentHit = intersect(ray, rect);
-                currentHit.matID = int(materialData[i].x);
-                // Update ROUND
-                if(currentHit.t<hitInfo.t) hitInfo = currentHit;
+                currentHit = intersect(ray, rect);
             }
             else if(shapeData[i].x==2.0) // SphericalLens
             {
@@ -279,10 +346,41 @@ HitInfo intersectScene(Ray ray)
                                                    shapeData[i].w,
                                                    shapeData[i].z);
                 // intersect Lens
-                HitInfo currentHit = intersect(ray, lens);
-                currentHit.matID = int(materialData[i].x);
-                // Update ROUND
-                if(currentHit.t<hitInfo.t) hitInfo = currentHit;
+                currentHit = intersect(ray, lens);
+
+            }
+            else if(shapeData[i].x==3.0) // Triangle
+            {
+                // Unpack Spherical Lens
+                Triangle triangle = Triangle(transformData[i].xy, 
+                                           transformData[i].z, 
+                                           shapeData[i].y);
+                // intersect Lens
+                currentHit = intersect(ray, triangle);
+            }
+            else if(shapeData[i].x==4.0) // LineSegment
+            {
+                // Unpack Spherical Lens
+                vec2 C = transformData[i].xy;
+                float angle = transformData[i].z;
+                float segmentLength = shapeData[i].y;
+                vec2 tangent = vec2(cos(angle), sin(angle));
+                vec2 P1 = C-tangent*segmentLength/2.0;
+                vec2 P2 = C+tangent*segmentLength/2.0;
+                Segment segment = Segment(P1, P2);
+                // intersect Lens
+                currentHit = intersect(ray, segment);
+            }
+            else
+            {
+                continue;
+            }
+
+            // Update ROUND
+            if(currentHit.t<hitInfo.t)
+            {
+                hitInfo = currentHit;
+                hitInfo.matID = int(materialData[i].x);
             }
         }
     }

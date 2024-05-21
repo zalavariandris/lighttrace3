@@ -1,4 +1,6 @@
 import entityStore from "../stores/entity-store.js"
+import settingsStore from "../stores/settings-store.js";
+import statsStore from "../stores/stats-store.js";
 import React from "react";
 const h = React.createElement;
 
@@ -7,6 +9,9 @@ import GLRaytracer from "../gl-renderer/GLRaytracer.js"
 function GLViewport({width, height, className, viewBox, displaySettings, ...props})
 {
     const scene = React.useSyncExternalStore(entityStore.subscribe, entityStore.getSnapshot);
+    const settings = React.useSyncExternalStore(settingsStore.subscribe, settingsStore.getSnapshot);
+    const stats = React.useSyncExternalStore(statsStore.subscribe, statsStore.getSnapshot);
+
     const canvasRef = React.useRef(null);
     const renderer = React.useRef(null);
     const renderInfo = React.useRef([scene, viewBox]);
@@ -14,6 +19,9 @@ function GLViewport({width, height, className, viewBox, displaySettings, ...prop
     React.useEffect(()=>{
         renderer.current = new GLRaytracer(canvasRef.current);
         renderer.current.initGL();
+        renderer.current.onPassRendered((raysCount)=>{
+            statsStore.setValue("samplesCount", stats.samplesCount + raysCount)
+        })
         renderer.current.resizeGL();
 
         function onResize(e)
@@ -26,22 +34,28 @@ function GLViewport({width, height, className, viewBox, displaySettings, ...prop
         }
     }, []);
 
-    const requestId = React.useRef();
-    React.useEffect(() => {
-        const animate = (timestamp) => {
-            // Animation code goes here
-            renderer.current.renderGL(renderInfo.current[0], renderInfo.current[1])
-            requestId.current = requestAnimationFrame(animate);
-        };
-        requestId.current = requestAnimationFrame(animate);
-        return () => {
-            cancelAnimationFrame(requestId.current);
-        };
-    }, []);
+    // const requestId = React.useRef();
+    // React.useEffect(() => {
+    //     const animate = (timestamp) => {
+    //         // Animation code goes here
+    //         renderer.current.renderGL(renderInfo.current[0], renderInfo.current[1])
+    //         requestId.current = requestAnimationFrame(animate);
+    //     };
+    //     requestId.current = requestAnimationFrame(animate);
+    //     return () => {
+    //         cancelAnimationFrame(requestId.current);
+    //     };
+    // }, []);
 
     React.useEffect(()=>{
         renderInfo.current = [scene, viewBox];
-    }, [scene, viewBox])
+        renderer.current.renderGL(renderInfo.current[0], renderInfo.current[1])
+    }, [scene, viewBox]);
+
+    React.useEffect(()=>{
+        Object.assign(renderer.current.settings, settings.raytrace);
+        renderer.current.renderGL(renderInfo.current[0], renderInfo.current[1])
+    }, [settings]);
 
 
     return h("canvas", {

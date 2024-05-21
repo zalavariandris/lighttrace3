@@ -66,7 +66,7 @@ vec2 sampleTransparent(vec2 V, vec2 N, float ior)
 {
     // version 1
     float cosI = -dot(V, N); // Corrected to ensure cosI is always positive
-    bool IsEntering = cosI > 0.0;
+    bool IsEntering = cosI < 0.0;
     float refractiveIndexRatio = IsEntering ? 1.0 / ior : ior ; // Adjust ratio based on entering or exiting
 
     // Corrected to flip the normal vector when exiting
@@ -153,7 +153,7 @@ void main()
     {
         vec3 b = vec3(1.6215, 0.2563, 1.6445);
         vec3 c = vec3(0.0122, 0.0596, 147.4688);
-        float dispersiveIor =  sellmeierIor(b, c, wavelength)/1.44;
+        float dispersiveIor =  sellmeierIor(b, c, wavelength*9.0);
         woLocal = sampleDielectric(wiLocal, dispersiveIor);
         // vec2 secondaryDir = sampleTransparent(rayDir, hitNormal, dispersiveIor);
         // gl_FragData[0] = vec4(hitPos, secondaryDir);

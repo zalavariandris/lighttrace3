@@ -17,12 +17,15 @@
 - [x] light inspector
 - [x] manip for directional light width
 
-- [ ] implement raytracing on the CPU for svg viewport
-- [ ] physically accurate BSDFs. eg dielectric relfection.
-- [ ] physically accurate wavelength to color wavelength->XYZ->linearRGB->sRGB
 - [ ] add reinhardt tonemapping and exposure (handle linear RGB to sRGB covnersion here)
 - [ ] progressive rendering
-- [ ] add linesegment shape
+- [ ] implement raytracing on the CPU for svg viewport
+- [x] physically accurate BSDFs. eg dielectric relfection.
+- [ ] physically accurate wavelength to color wavelength->XYZ->linearRGB->sRGB
+
+
+- [x] add linesegment shape
+- [x] add prism shape
 
 ### UI/UX
 - [ ] mousetools to create and delete objects

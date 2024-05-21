@@ -18,12 +18,14 @@ function drawLines(regl, {
     endpoints,
     colors,
     outputResolution,
-    viewport
+    viewport,
+    framebuffer=null
 }={})
 {
     const projection = mat4.create();
     mat4.ortho(projection, viewport.x, viewport.x+viewport.width,viewport.y,viewport.y+viewport.height,-1.0, 1.0);
     regl({
+        framebuffer,
         viewport: {
             x: 0,
             y: 0,

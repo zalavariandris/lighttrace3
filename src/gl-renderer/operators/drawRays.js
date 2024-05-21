@@ -13,7 +13,8 @@ function drawRays(regl, {
     raysLength,
     outputResolution,
     viewport,
-    raysColor=[0.9,0.5,0.0,0.3]
+    raysColor=[0.9,0.5,0.0,0.3],
+    framebuffer=null
 }={})
 {
     const projection = mat4.create();

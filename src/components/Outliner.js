@@ -5,16 +5,18 @@ const h = React.createElement;
 function Outliner(props)
 {
     const scene = React.useSyncExternalStore(entityStore.subscribe, entityStore.getSnapshot);
+
+    
     return h("ul", props, 
         Object.entries(scene)
             .map( ([key, entity])=>{
-            return h("li", {
-                style: {
-                    fontStyle: entity.selected ? "italic" : "normal"
-                }
-            }, 
-                `${key}: (${entity.transform.translate.x},${entity.transform.translate.y})`
-            )
+                return h("li", {
+                    style: {
+                        fontStyle: entity.selected ? "italic" : "normal"
+                    }
+                }, 
+                    `${key}`
+                )
         })
     );
 }

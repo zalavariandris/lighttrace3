@@ -1,15 +1,28 @@
 import {produce} from "immer";
-import _ from "lodash";
+import _ from "lodash"
 
-let settings = {
+const defaultSettings = {
     "svgDisplay": {
         shapes: true,
         rays: false,
     },
     "glDisplay": {
         normals: true
+    },
+    "raytrace": {
+        lightSamples: Math.pow(4,5),//128*128; //Math.pow(4,4);
+        maxBounce: 7,
+        targetSamples: 1_000_000,
+        downres: 1/2
     }
 };
+
+let settings = JSON.parse(localStorage.getItem("settings"));
+
+if(!localStorage.getItem("settings"))
+{
+    settings = defaultSettings;
+}
 
 let listeners = [];
 
@@ -17,10 +30,11 @@ function emitChange() {
     for (let listener of listeners) {
         listener();
     }
+    localStorage.setItem("settings", JSON.stringify(settings));
 };
 
 export default {
-    update(keyPath, value)
+    setValue(keyPath, value)
     {
         const updatedSettings = produce(settings, draft=>{
             _.set(draft, keyPath, value);

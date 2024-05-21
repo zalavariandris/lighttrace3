@@ -14,110 +14,95 @@ const defaultScene = {
     //     },
     //     selected: false
     // },
-    // "pointer": {
-    //     transform:{
-    //         translate: {x: 50, y: 120},
-    //         rotate: 3.0*Math.PI/180.0
-    //     },
-    //     light: {
-    //         type: "laser",
-    //         temperature: 6500,
-    //         intensity:3,
-    //     },
-    //     selected: false
-    // },
-    "sun": {
+    "pointer": {
         transform:{
-            translate: {x: 195, y: 10},
-            rotate: 90.0*Math.PI/180.0
+            translate: {x: 50, y: 180},
+            rotate: -3.0*Math.PI/180.0
         },
         light: {
-            type: "directional",
-            width: 100,
-            intensity:1.0,
-            temperature: 6500
+            type: "laser",
+            temperature: 6500,
+            intensity:3,
         },
         selected: false
     },
-    "ball": {
-        transform:{
-            translate: {x: 200, y: 180},
+
+    "prism":{
+        transform: {
+            translate: {x: 250, y:200},
             rotate: 0.0
         },
-        shape: {
-            type: "circle", 
-            radius: 50
+        shape:{
+            type: "triangle",
+            size: 70
         },
-        material: {
+        material:{
             type: "glass"
         },
         selected: false
     },
-    "ball2": {
+    "ball3": {
         transform:{
-            translate: {x: 200, y: 310},
+            translate: {x: 400, y: 201},
             rotate: 0.0
         },
         shape: {
             type: "circle", 
-            radius: 70
+            radius: 30
         },
         material: {
             type: "mirror"
         },
         selected: false
     },
-    // "ball3": {
-    //     transform:{
-    //         translate: {x: 200, y: 480},
-    //         rotate: 0.0
-    //     },
-    //     shape: {
-    //         type: "circle", 
-    //         radius: 30
-    //     },
-    //     material: {
-    //         type: "mirror"
-    //     },
-    //     selected: false
-    // },
-    "box": {
-        transform: {
-            translate: {x: 370, y: 130},
-            rotate: 0.1
+    "ground": {
+        transform:{
+            translate: {x: 256, y: 450},
+            rotate: 0.0
         },
         shape: {
-            type: "rectangle",
-            width: 200,
-            height: 200
+            type: "line", 
+            length: 400.0
         },
         material: {
             type: "diffuse"
         },
-        selected: true
-    },
-    "lens": {
-        transform: {
-            translate: {x: 180, y: 120},
-            rotate: 0
-        },
-        shape: {
-            type: "sphericalLens",
-            diameter: 140,
-            edgeThickness: 5,
-            centerThickness: 80
-        },
-        material: {
-            type: "glass"
-        },
         selected: false
-    }
+    },
+    // "box": {
+    //     transform: {
+    //         translate: {x: 370, y: 130},
+    //         rotate: 0.1
+    //     },
+    //     shape: {
+    //         type: "rectangle",
+    //         width: 200,
+    //         height: 200
+    //     },
+    //     material: {
+    //         type: "diffuse"
+    //     },
+    //     selected: true
+    // },
+    // "lens": {
+    //     transform: {
+    //         translate: {x: 180, y: 120},
+    //         rotate: 0
+    //     },
+    //     shape: {
+    //         type: "sphericalLens",
+    //         diameter: 140,
+    //         edgeThickness: 5,
+    //         centerThickness: 80
+    //     },
+    //     material: {
+    //         type: "glass"
+    //     },
+    //     selected: false
+    // }
 
 };
 
-
-
-// window.localStorage.setItem("scene", scene)
 let scene = JSON.parse(localStorage.getItem("scene"));
 if(!localStorage.getItem("scene"))
 {

@@ -13,6 +13,7 @@ function drawTexture(regl, {
 {
     regl({...QUAD,
         framebuffer: framebuffer,
+        viewport: {x:0, y:0, width:outputResolution[0], height: outputResolution[1]},
         vert: PASS_THROUGH_VERTEX_SHADER,
         depth: { enable: false },
         uniforms:{

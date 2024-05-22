@@ -1,11 +1,8 @@
-import createREGL from "regl"
-
-
-
-
 /*
  * GL Renderer
  */
+import createREGL from "regl"
+
 import { drawTexture } from "./operators/drawTexture.js";
 import { drawCSGToSDF } from "./operators/drawCSGToSDF.js";
 import { intersectRaysWithSDF } from "./operators/intersectRaysWithSDF.js";
@@ -14,12 +11,25 @@ import { drawRays} from "./operators/drawRays.js"
 
 import QUAD from "./QUAD.js"
 import { loadShader } from "./shaders/load-shader.js"
-const PASS_THROUGH_VERTEX_SHADER = await loadShader("./src/gl-renderer/shaders/PASS_THROUGH_VERTEX_SHADER.fs");
-const intersectRaysWithCSGShader = await loadShader("./src/gl-renderer/shaders/intersectRaysWithCSG.fs");
-const bounceRaysShader = await loadShader("./src/gl-renderer/shaders/bounceRays.fs")
-const wavelengthToColorShader = await loadShader("./src/gl-renderer/shaders/wavelengthToColor.fs");
+const PASS_THROUGH_VERTEX_SHADER = await loadShader("./src/raytracers/gl-raytracer/shaders/PASS_THROUGH_VERTEX_SHADER.fs");
+const intersectRaysWithCSGShader = await loadShader("./src/raytracers//gl-raytracer/shaders/intersectRaysWithCSG.fs");
+const bounceRaysShader = await loadShader("./src/raytracers//gl-raytracer/shaders/bounceRays.fs")
+const wavelengthToColorShader = await loadShader("./src/raytracers//gl-raytracer/shaders/wavelengthToColor.fs");
 
-import { sampleLight } from "./sampleLight.js";
+import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../sampleLights.js";
+
+function sampleLight(entity, lightSamples)
+{
+    switch (entity.light.type) {
+        case "point":
+            return samplePointLight(entity, lightSamples);
+        case "laser":
+            return sampleLaserLight(entity, lightSamples);
+        case "directional":
+            return sampleDirectionalLight(entity, lightSamples);
+    }
+}
+
 function loadImageData(imagePath){
     return new Promise(resolve => {
         const im = new Image();
@@ -346,7 +356,23 @@ class GLRaytracer{
         const rays = Object.entries(scene)
             .filter( ([key, entity])=>entity.hasOwnProperty("light") && entity.hasOwnProperty("transform") )
             .map( ([key, entity])=>{
-                return sampleLight(entity, this.settings.lightSamples);
+                switch (entity.light.type) {
+                    case "point":
+                        return samplePointLight(entity, this.settings.lightSamples);
+                    case "laser":
+                        return sampleLaserLight(entity, this.settings.lightSamples);
+                    case "directional":
+                        return sampleDirectionalLight(entity, this.settings.lightSamples);
+                    default:
+                        return {
+                            x:0, 
+                            y:0, 
+                            dx:0, 
+                            dy:0,
+                            intensity: 0,
+                            wavelength: 0
+                        }
+                }
             }).flat(1);
 
         // calc output texture resolution to hold rays data
@@ -387,7 +413,7 @@ class GLRaytracer{
             frag: wavelengthToColorShader
         })()
 
-        /* maps scene data to circles */
+        /* prepare scene data for GPU */
         const transformData = Object.values(scene)
         .filter(entity=>entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform") && entity.hasOwnProperty("material"))
         .map(entity=>[

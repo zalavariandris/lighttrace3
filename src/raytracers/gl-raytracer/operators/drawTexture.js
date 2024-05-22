@@ -1,7 +1,7 @@
 
 import QUAD from "../QUAD.js"
 import { loadShader } from "../shaders/load-shader.js"
-const PASS_THROUGH_VERTEX_SHADER = await loadShader("./src/gl-renderer/shaders/PASS_THROUGH_VERTEX_SHADER.fs")
+const PASS_THROUGH_VERTEX_SHADER = await loadShader("./src/raytracers//gl-raytracer/shaders/PASS_THROUGH_VERTEX_SHADER.fs")
 
 // draw Texture to screen
 function drawTexture(regl, {

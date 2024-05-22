@@ -1,16 +1,5 @@
 import {sampleBlackbody} from "./blackbody.js"
 
-function sampleLight(entity, lightSamples)
-{
-    switch (entity.light.type) {
-        case "point":
-            return samplePointLight(entity, lightSamples);
-        case "laser":
-            return sampleLaserLight(entity, lightSamples);
-        case "directional":
-            return sampleDirectionalLight(entity, lightSamples);
-    }
-}
 
 function samplePointLight(entity, lightSamples)
 {
@@ -62,4 +51,4 @@ function sampleDirectionalLight(entity, lightSamples)
     });
 }
 
-export {sampleLight}
+export {samplePointLight, sampleLaserLight, sampleDirectionalLight}

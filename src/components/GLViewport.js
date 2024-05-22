@@ -2,9 +2,11 @@ import entityStore from "../stores/entity-store.js"
 import settingsStore from "../stores/settings-store.js";
 import statsStore from "../stores/stats-store.js";
 import React from "react";
-const h = React.createElement;
 
-import GLRaytracer from "../gl-renderer/GLRaytracer.js"
+
+import GLRaytracer from "../raytracers/gl-raytracer/GLRaytracer.js";
+
+const h = React.createElement;
 
 function GLViewport({width, height, className, viewBox, displaySettings, ...props})
 {

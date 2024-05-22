@@ -17,12 +17,14 @@ const defaultSettings = {
     }
 };
 
-let settings = JSON.parse(localStorage.getItem("settings"));
+let settings;
+// settings = JSON.parse(localStorage.getItem("settings"));
 
-if(!localStorage.getItem("settings"))
+if(!settings)
 {
     settings = defaultSettings;
 }
+
 
 let listeners = [];
 

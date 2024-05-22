@@ -1,8 +1,12 @@
-import entityStore from "../stores/entity-store.js"
-import settingsStore from "../stores/settings-store.js";
+import entityStore from "../stores/entity-store.js";
 import React from "react";
 import Manipulator from "../widgets/Manipulator.js";
 const h = React.createElement;
+import SVGRaytracer from "../raytracers/svg-raytracer/SVGRaytracer.js";
+
+import _ from "lodash"
+
+
 
 
 // UTILS
@@ -498,7 +502,6 @@ function Line({
     )
 }
 
-
 function PointLight({entityKey, entity})
 {
     return h(Manipulator, {
@@ -589,31 +592,31 @@ function LaserLight({entityKey, entity})
 
 function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
     var angleInRadians = (angleInDegrees-90) * Math.PI / 180.0;
-  
-    return {
-      x: centerX + (radius * Math.cos(angleInRadians)),
-      y: centerY + (radius * Math.sin(angleInRadians))
-    };
-  }
-  
-  function describeArc(x, y, radius, startAngle, endAngle){
-  
-      var start = polarToCartesian(x, y, radius, endAngle);
-      var end = polarToCartesian(x, y, radius, startAngle);
-  
-      var largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-  
-      var d = [
-          "M", start.x, start.y, 
-          "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y
-      ].join(" ");
-  
-      return d;       
-  }
 
-  function FA({
-    x, y, icon, style
-  }){
+    return {
+        x: centerX + (radius * Math.cos(angleInRadians)),
+        y: centerY + (radius * Math.sin(angleInRadians))
+    };
+}
+  
+function describeArc(x, y, radius, startAngle, endAngle){
+
+    var start = polarToCartesian(x, y, radius, endAngle);
+    var end = polarToCartesian(x, y, radius, startAngle);
+
+    var largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+
+    var d = [
+        "M", start.x, start.y, 
+        "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y
+    ].join(" ");
+
+    return d;       
+}
+
+function FA({
+        x, y, icon, style
+    }){
     const icons = {
         group: '\uf0c0',
         link: '\uf0c1',
@@ -640,7 +643,7 @@ function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
         x:x, 
         y:y,
     }, icons[icon])
-  }
+}
 
 function DirectionalLight({entityKey, entity})
 {
@@ -726,6 +729,7 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
 {
     const scene = React.useSyncExternalStore(entityStore.subscribe, entityStore.getSnapshot);
 
+    // pan and zoom
     const panViewport = (e)=>{ 
         if(e.defaultPrevented){
             return;
@@ -759,7 +763,7 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
         window.addEventListener('mouseup', ()=>window.removeEventListener("mousemove", handleDrag), {once: true});
     }
 
-    // event handling
+    
     const zoomViewportWithmouseWheel = (e)=>{
         const svg = e.target.closest("SVG");
         const clientSize = {w: svg.clientWidth, h: svg.clientHeight}
@@ -781,11 +785,11 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
         onViewBoxChange(newViewBox)
     }
 
-
     function handleClick(e){
 
     }
 
+    
     return h("svg", {
         width, 
         height, 
@@ -821,64 +825,67 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
 
         // SHAPES
         Object.entries(scene)
-            .filter(([key, entity])=>{
-                return entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform");
-            })
-            .map( ([key, entity])=>{
-                switch (entity.shape.type) {
-                    case "circle":
-                        return h(Circle, {
-                            entityKey: key, 
-                            entity: entity,
-                            onClick: e=>entityStore.setSelection([key])
-                        })
-                    case "rectangle":
-                        return h(Rectangle, {
-                            entityKey: key, 
-                            entity: entity,
-                            onClick: e=>entityStore.setSelection([key])
-                        })
-                    case "sphericalLens":
-                        return h(SphericalLens, {
-                            entityKey: key, 
-                            entity: entity,
-                            onClick: e=>entityStore.setSelection([key])
-                        })
-                    case "triangle":
-                        return h(Triangle, {
-                            entityKey: key, 
-                            entity: entity,
-                            onClick: e=>entityStore.setSelection([key])
-                        })
-                    case "line":
-                        return h(Line, {
-                            entityKey: key, 
-                            entity: entity,
-                            onClick: e=>entityStore.setSelection([key])
-                        })
-                    default:
-                        break;
-                }
+        .filter(([key, entity])=>{
+            return entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform");
+        })
+        .map( ([key, entity])=>{
+            switch (entity.shape.type) {
+                case "circle":
+                    return h(Circle, {
+                        entityKey: key, 
+                        entity: entity,
+                        onClick: e=>entityStore.setSelection([key])
+                    })
+                case "rectangle":
+                    return h(Rectangle, {
+                        entityKey: key, 
+                        entity: entity,
+                        onClick: e=>entityStore.setSelection([key])
+                    })
+                case "sphericalLens":
+                    return h(SphericalLens, {
+                        entityKey: key, 
+                        entity: entity,
+                        onClick: e=>entityStore.setSelection([key])
+                    })
+                case "triangle":
+                    return h(Triangle, {
+                        entityKey: key, 
+                        entity: entity,
+                        onClick: e=>entityStore.setSelection([key])
+                    })
+                case "line":
+                    return h(Line, {
+                        entityKey: key, 
+                        entity: entity,
+                        onClick: e=>entityStore.setSelection([key])
+                    })
+                default:
+                    break;
+            }
 
-            }),
+        }),
 
         // LIGHTS
         Object.entries(scene)
-            .filter(([key, entity])=>entity.hasOwnProperty("transform") && entity.hasOwnProperty("light"))
-            .map( ([key, entity])=>{
-                switch (entity.light.type) {
-                    case "point":
-                        return h(PointLight, {entityKey: key, entity: entity})
-                    case "laser":
-                        return h(LaserLight, {entityKey: key, entity: entity})
-                    case "directional":
-                        return h(DirectionalLight, {entityKey: key, entity: entity})
-                
-                    default:
-                        break;
-                }
+        .filter(([key, entity])=>entity.hasOwnProperty("transform") && entity.hasOwnProperty("light"))
+        .map( ([key, entity])=>{
+            switch (entity.light.type) {
+                case "point":
+                    return h(PointLight, {entityKey: key, entity: entity})
+                case "laser":
+                    return h(LaserLight, {entityKey: key, entity: entity})
+                case "directional":
+                    return h(DirectionalLight, {entityKey: key, entity: entity})
+            
+                default:
+                    break;
+            }
 
-            })
+        }),
+
+        // RAYS
+        h(SVGRaytracer)
     );
 }
 

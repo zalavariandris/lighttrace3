@@ -84,22 +84,22 @@ const defaultScene = {
     //     },
     //     selected: true
     // },
-    // "lens": {
-    //     transform: {
-    //         translate: {x: 180, y: 120},
-    //         rotate: 0
-    //     },
-    //     shape: {
-    //         type: "sphericalLens",
-    //         diameter: 140,
-    //         edgeThickness: 5,
-    //         centerThickness: 80
-    //     },
-    //     material: {
-    //         type: "glass"
-    //     },
-    //     selected: false
-    // }
+    "lens": {
+        transform: {
+            translate: {x: 180, y: 120},
+            rotate: 0
+        },
+        shape: {
+            type: "sphericalLens",
+            diameter: 140,
+            edgeThickness: 5,
+            centerThickness: 80
+        },
+        material: {
+            type: "glass"
+        },
+        selected: false
+    }
 
 };
 

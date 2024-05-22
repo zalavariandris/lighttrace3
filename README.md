@@ -16,27 +16,31 @@
 - [x] select lights
 - [x] light inspector
 - [x] manip for directional light width
-
-- [ ] add reinhardt tonemapping and exposure (handle linear RGB to sRGB covnersion here)
-- [ ] progressive rendering
-- [ ] implement raytracing on the CPU for svg viewport
+- [x] add reinhardt tonemapping and exposure (handle linear RGB to sRGB covnersion here)
+- [x] progressive rendering
+- [x] implement raytracing on the CPU for svg viewport
 - [x] physically accurate BSDFs. eg dielectric relfection.
-- [ ] physically accurate wavelength to color wavelength->XYZ->linearRGB->sRGB
-
-
 - [x] add linesegment shape
 - [x] add prism shape
 
+- [ ] support dispersion in svg-raytracer
+- [ ] physically accurate wavelength to color wavelength->XYZ->linearRGB->sRGB
+- [ ] review tonemapping. support multiple colorspaces
+
 ### UI/UX
 - [ ] mousetools to create and delete objects
-- [ ] persistent scene
-- [ ] implement settings
-- [ ] persistent settings
+- [x] persistent scene
+- [x] persistent settings
+- [ ] persistent viewbox
+- [ ] reset persistent stores
+- [ ] handle errors in components. eg raytracing errors in SVGRaytracer component
+- [x] implement settings
+
 - [ ] fix ugly sidebars
 - [ ] fix ugly manipulators
 - [ ] direction light width manip is a bit strange. should act on the axis only not by distance
 
-
 ## fix bugs
-- [ ] lens intersect ouside iof diemeter, when edge thickness is greater then zero
+- [ ] lens intersect outside iof diemeter, when edge thickness is greater then zero
 - [ ] fix GLRaytracer memory leak?
+- [ ] when sampling lights handle nonexistent type in svg- and g-raytracer  

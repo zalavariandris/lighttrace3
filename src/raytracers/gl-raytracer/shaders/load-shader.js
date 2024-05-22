@@ -10,7 +10,7 @@ async function loadShader(shader_path) {
     try {
         const response = await fetch(shader_path);
         if(!response.ok){
-            throw new Error(`${response.url} ${response.status} ${response.statusText}`);
+            throw new Error(`Cant load shader: ${response.url} ${response.status} ${response.statusText}`);
         }
         const shaderText = await response.text();
 

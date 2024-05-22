@@ -11,7 +11,7 @@ uniform float SEED;
 #define PI 3.14159
 float PHI = 1.61803398874989484820459;  // Φ = Golden Ratio
 float gold_noise(vec2 xy, float seed){
-       return fract(tan(distance(xy*PHI, xy)*seed)*xy.x);
+       return fract(tan(distance(xy*PHI, xy)*seed));
 }
 
 vec2 rotate(vec2 vector, float radAngle)
@@ -23,28 +23,11 @@ vec2 rotate(vec2 vector, float radAngle)
 }
 
 /* MATERIAL */
-vec2 sampleDiffuse(vec2 V, vec2 N)
-{
-    bool IsEntering = -dot(V, N) > 0.0;
-    float radAngle = gold_noise(gl_FragCoord.xy+vec2(SEED), 1.0)*PI-PI/2.0;
-    return rotate(N, IsEntering ? radAngle : radAngle+PI);
-}
-
-vec2 sampleMirror(vec2 V, vec2 N)
-{
-    return reflect(V, N);
-}
-
-vec2 sampleMirror2(vec2 V, vec2 N)
-{
-    float surfaceAngle = atan(N.y, N.x);
-    vec2 w0 = rotate(V, -surfaceAngle);
-
-    // in surface normal space
-    vec2 w1 = vec2(w0.x, -w0.y);
-
-    // back to worldspace
-    return -rotate(w1, surfaceAngle);
+/* sample mirror material
+ * @param wi[vec2]: incident ray direction in tangent space. x: perpendicular to surface tangent. y:parallel to surface tangent
+ */
+vec2 sampleMirror(vec2 wi){
+    return vec2(-wi.x, wi.y); 
 }
 
 float sellmeierIor(vec3 b, vec3 c, float lambda)
@@ -60,38 +43,6 @@ float sellmeierIor(vec3 b, vec3 c, float lambda)
 
     // Add 1.0 to the sum to get the refractive index squared
     return 1.0 + sum;
-}
-
-vec2 sampleTransparent(vec2 V, vec2 N, float ior)
-{
-    // version 1
-    float cosI = -dot(V, N); // Corrected to ensure cosI is always positive
-    bool IsEntering = cosI < 0.0;
-    float refractiveIndexRatio = IsEntering ? 1.0 / ior : ior ; // Adjust ratio based on entering or exiting
-
-    // Corrected to flip the normal vector when exiting
-    vec2 normal = IsEntering ? N : -N;
-    cosI = abs(cosI); // cosI should be positive after adjustment
-
-    float sinT2 = refractiveIndexRatio * refractiveIndexRatio * (1.0 - cosI * cosI);
-    if (sinT2 > 1.0) {
-        // angle is greater the the critical angle.
-        // Total internal reflection
-        vec2 exitVector = reflect(V, normal);
-        return exitVector;
-    } else {
-        float cosT = sqrt(1.0 - sinT2);
-        // Corrected formula for exit vector
-        vec2 exitVector = V*refractiveIndexRatio + normal*(refractiveIndexRatio * cosI - cosT);
-        return exitVector;
-    }
-}
-
-/* sample mirror material
- * @param wi[vec2]: incident ray direction in tangent space. x: perpendicular to surface tangent. y:parallel to surface tangent
- */
-vec2 sampleMirror(vec2 wi){
-    return vec2(-wi.x, wi.y); 
 }
 
 vec2 sampleDiffuse(vec2 wi)
@@ -145,6 +96,7 @@ void main()
     vec2 tangent = vec2(-hitNormal.y, hitNormal.x);
     vec2 wiLocal = -vec2(dot(tangent, rayDir), dot(hitNormal, rayDir));  // tangent space exiting r\y directiuon
     vec2 woLocal; // tangent space exit ray direction
+
     if(hitMaterial < 0.5)
     {
         woLocal = sampleMirror(wiLocal);

@@ -31,6 +31,12 @@ struct Circle{
     float radius;
 };
 
+struct Triangle{
+    vec2 center;
+    float angle;
+    float size;
+};
+
 struct Rectangle{
     vec2 center;
     float angle;
@@ -111,8 +117,6 @@ HitInfo intersect(Ray ray, Circle circle)//vec2 center, float radius)
     }
 }
 
-
-
 HitInfo intersect(Ray ray, Segment segment)
 {
     HitInfo hit = HitInfo(9999.0, vec2(0.0, 0.0), vec2(0.0, 0.0), -1);
@@ -144,11 +148,7 @@ HitInfo intersect(Ray ray, Segment segment)
     return hit;
 }
 
-struct Triangle{
-    vec2 center;
-    float angle;
-    float size;
-};
+
 
 HitInfo intersect(Ray ray, Triangle triangle)
 {
@@ -167,7 +167,7 @@ HitInfo intersect(Ray ray, Triangle triangle)
     Segment b = Segment(vertices[1], vertices[2]);
     Segment c = Segment(vertices[2], vertices[0]);
 
-    // intersect each sides
+    // intersect each side
     HitInfo hitA = intersect(ray, a);
     HitInfo hitB = intersect(ray, b);
     HitInfo hitC = intersect(ray, c);

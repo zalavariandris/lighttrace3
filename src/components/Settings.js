@@ -29,14 +29,14 @@ function Settings(props){
                     value: settings.raytrace.lightSamples, 
                     min: 2*2, 
                     max:128**2,
-                    onChange: e=>settingsStore.setValue("raytrace.lightSamples", e.target.value)
+                    onChange: e=>settingsStore.setValue("raytrace.lightSamples", parseInt(e.target.value))
                 }), `${settings.raytrace.lightSamples}`),
                 h("label", null, "maxBounce", h("input", {type: 
                     "range", 
                     value: settings.raytrace.maxBounce, 
                     min: 1, 
                     max:16,
-                    onChange: e=>settingsStore.setValue("raytrace.maxBounce", e.target.value)
+                    onChange: e=>settingsStore.setValue("raytrace.maxBounce", parseInt(e.target.value))
                 }), `${settings.raytrace.maxBounce}`),
                 h("label", null, `samples`, h("progress", {
                     value: stats.samplesCount/settings.raytrace.finishSamplesCount
@@ -46,7 +46,7 @@ function Settings(props){
                     value: settings.raytrace.downres, 
                     min:1, 
                     max:8,
-                    onChange: e=>settingsStore.setValue("raytrace.downres", e.target.value)
+                    onChange: e=>settingsStore.setValue("raytrace.downres", parseInt(e.target.value))
                 })),
             )
         ),

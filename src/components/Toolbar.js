@@ -2,14 +2,16 @@ import React from "react";
 
 import entityStore from "../stores/entity-store.js"
 import uiStore from "../stores/ui-store.js";
+import {CButton, CButtonGroup} from "@coreui/react" 
+
+import CIcon from '@coreui/icons-react';
+import { cilList, cilShieldAlt } from '@coreui/icons';
 
 const h = React.createElement;
 
 function Toolbar({children, ...props}){
     const uiState = React.useSyncExternalStore(uiStore.subscribe, uiStore.getSnapshot);
     const scene = React.useSyncExternalStore(entityStore.subscribe, entityStore.getSnapshot);
-
-    
 
     return h("div", {
         style:{
@@ -18,60 +20,84 @@ function Toolbar({children, ...props}){
             alignItems: "center"
         }
     },
-        h("button", {
-            className: uiState.activeMouseTool? "" : "active",
-            onClick: (e)=>uiStore.setValue("activeMouseTool", null)
-        }, 
-            h("i", {className: "fa-solid fa-arrow-pointer"})
+
+        h(CButtonGroup, {role:"group", ariaLabel:"Basic example"},
+            h(CButton, { 
+                color: 'primary',
+                active: uiState.activeMouseTool?false:true,
+                onClick: (e)=>uiStore.setValue("activeMouseTool", null)
+            }, 
+                h("i", {className: "cil-cursor"}),
+            ),
+            h(CButton, { 
+                color: 'primary',
+                active: uiState.activeMouseTool=="circle",
+                'v-c-tooltip':"create circle",
+                onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "circle")
+            }, 
+                h("i", {className: "cil-circle"}),
+            ),
+            h(CButton, { 
+                color: 'primary',
+                active: uiState.activeMouseTool=="rectangle",
+                onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "rectangle")
+            },
+                h("i", {className: "cil-square"}),
+            ),
+            h(CButton, { 
+                color: 'primary',
+                active: uiState.activeMouseTool=="lens",
+                onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "lens")
+            },
+                h("i", {className: "cil-scrubber"}),
+            ),
+            h(CButton, { 
+                color: 'primary',
+                active: uiState.activeMouseTool=="triangle",
+                onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "triangle")
+            },
+                h("i", {className: "cil-triangle"}),
+            ),
         ),
 
-        h("button", {
-            className: uiState.activeMouseTool == "circle" ? "active" : "",
-            onClick: (e)=>uiStore.setValue("activeMouseTool", "circle")
-        }, "circle"),
+        h(CButtonGroup, {role:"group", ariaLabel:"Basic example"},
+            h(CButton, { 
+                color: 'primary',
+                active: uiState.activeMouseTool=="pointLight",
+                onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "pointLight")
+            },
+                h("i", {className: "cil-lightbulb"}),
+            ),
+            h(CButton, { 
+                color: 'primary',
+                active: uiState.activeMouseTool=="laser",
+                onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "laser")
+            },
+                h("i", {className: "cil-pencil"}),
+            ),
+            h(CButton, { 
+                color: 'primary',
+                active: uiState.activeMouseTool=="directional",
+                onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "directional")
+            },
+                h("i", {className: "cil-sun"}),
+            ),
+        ),  
 
-        h("button", {
-            className: uiState.activeMouseTool == "rectangle" ? "active" : "",
-            onClick: (e)=>uiStore.setValue("activeMouseTool", "rectangle")
-        }, "rectangle"),
-
-        h("button", {
-            className: uiState.activeMouseTool == "line" ? "active" : "",
-            onClick: (e)=>uiStore.setValue("activeMouseTool", "line")
-        }, "line"),
-
-        h("button", {
-            className: uiState.activeMouseTool == "lens" ? "active" : "",
-            onClick: (e)=>uiStore.setValue("activeMouseTool", "lens")
-        }, "lens"),
-
-        h("hr", {className: "vertical"}),
-
-        h("button", {
-            className: uiState.activeMouseTool == "pointLight" ? "active" : "",
-            onClick: (e)=>uiStore.setValue("activeMouseTool", "pointLight")
-        }, "pointLight"),
-
-        h("button", {
-            className: uiState.activeMouseTool == "laser" ? "active" : "",
-            onClick: (e)=>uiStore.setValue("activeMouseTool", "laser")
-        }, "laser"),
-
-        h("button", {
-            className: uiState.activeMouseTool == "directional" ? "active" : "",
-            onClick: (e)=>uiStore.setValue("activeMouseTool", "directional")
-        }, "directional"),
-
-        h("hr", {className: "vertical"}),
-
-        h("button", {
-            style: {color: "red"},
-            onClick: e=>entityStore.removeEntities(Object.entries(entityStore.getSelection()).map( ([key, _])=>key))
-        }, "delete"),
-        h("button", {
-            onClick: (e)=>entityStore.loadDefault()
-        }, "load default scene"),
-        
+        h(CButtonGroup, {role:"group", ariaLabel:"Basic example"},
+            h(CButton, { 
+                color: 'danger',
+                onClick: e=>entityStore.removeEntities(Object.entries(entityStore.getSelection()).map( ([key, _])=>key))
+            }, 
+                h("i", {className: "cil-trash"}),
+            ),
+            h(CButton, { 
+                color: 'primary',
+                onClick: e=>entityStore.removeEntities(Object.entries(entityStore.getSelection()).map( ([key, _])=>key))
+            },
+                h("i", {className: "cil-reload"}),
+            ),
+        ),
     )
 }
 

@@ -5,6 +5,7 @@ import Settings from "./Settings.js";
 import Animate from "./Animate.js";
 
 
+
 function TransformInspector({entityKey, component, values}){
     return h("section", null, 
         h("header", null, "Transform"),

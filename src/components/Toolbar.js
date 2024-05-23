@@ -3,8 +3,14 @@ import React from "react";
 const h = React.createElement;
 
 function Toolbar({children, ...props}){
-    return h("div", {},
-        h("button", {}, "select"),
+    return h("div", {
+        style:{
+            textAlign: "center"
+        }
+    },
+        h("button", {}, 
+            h("i", {className: "fa-solid fa-arrow-pointer"})
+        ),
         h("button", {}, "circle"),
         h("button", {}, "rectangle"),
         h("button", {}, "lens"),
@@ -14,7 +20,7 @@ function Toolbar({children, ...props}){
         h("button", {
             onClick: (e)=>entityStore.loadDefault()
         }, "load default scene"),
-        h("i", {className: "fa-solid fa-arrow-pointer"})
+        
     )
 }
 

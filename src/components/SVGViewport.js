@@ -5,8 +5,7 @@ const h = React.createElement;
 import SVGRaytracer from "../raytracers/svg-raytracer/SVGRaytracer.js";
 
 import _ from "lodash"
-
-
+import Icon from "./icons/icon.js"
 
 
 // UTILS
@@ -382,7 +381,7 @@ function Triangle({
                 })
             }, 
                
-                FA({
+                Icon({
                     x:entity.transform.translate.x+Math.cos(entity.transform.rotate)*50, 
                     y:entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
                     icon:"rotate",
@@ -614,36 +613,7 @@ function describeArc(x, y, radius, startAngle, endAngle){
     return d;       
 }
 
-function FA({
-        x, y, icon, style
-    }){
-    const icons = {
-        group: '\uf0c0',
-        link: '\uf0c1',
-        cloud: '\uf0c2',
-        beaker: '\uf0c3',
-        cut: '\uf0c4',
-        copy: '\uf0c5',
-        paperClip: '\uf0c6',
-        save: '\uf0c7',
-        signBlank: '\uf0c8',
-        reorder: '\uf0c9',
-        listUl: '\uf0ca',
-        listOl: '\uf0cb',
-        strikethrough: '\uf0cc',
-        underline: '\uf0cd',
-        table: '\uf0ce',
-        rotate: '\uf2f1'
-    }
-    return h("text", {
-        style:{
-            fontFamily: 'FontAwesome',
-            ...style
-        },
-        x:x, 
-        y:y,
-    }, icons[icon])
-}
+
 
 function DirectionalLight({entityKey, entity})
 {
@@ -674,7 +644,7 @@ function DirectionalLight({entityKey, entity})
                 })
             }, 
                
-                FA({
+                Icon({
                     x:entity.transform.translate.x+Math.cos(entity.transform.rotate)*50, 
                     y:entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
                     icon:"rotate",

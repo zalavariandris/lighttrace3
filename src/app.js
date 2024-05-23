@@ -32,7 +32,7 @@ function App({})
             h(Animate),
         ),
 
-        h("div", {id: "bottombar", className: "panel"},
+        h("div", {id: "bottombar", className: "panel", style: {background: "transparent"}},
             h(Toolbar)
         )
     );

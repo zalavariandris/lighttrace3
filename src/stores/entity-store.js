@@ -119,11 +119,50 @@ function emitChange() {
     localStorage.setItem("scene", JSON.stringify(scene));
 };
 
+const generateId = ()=>{
+    return Math.random().toString(32).substring(2, 9);
+};
+
 export default {
     loadDefault()
     {
         scene = defaultScene;
         emitChange();
+    },
+
+    setValue(path, value){
+        const updatedScene = produce(scene, draft=>{
+            _.set(draft, path, value);
+        });
+
+        if(scene!=updatedScene){
+            scene=updatedScene;
+            emitChange();
+        }
+    },
+
+    addEntity(key, entity)
+    {
+        if(scene.hasOwnProperty(key)){
+            throw new Error(`Cannot create entity with existing keys! Scene already conains an entity with the '${key}' ID.`)
+        }
+        const updatedScene = produce(scene, draft=>{
+            draft[key] = entity;
+        });
+
+        if(scene!=updatedScene){
+            scene=updatedScene;
+            emitChange();
+        }
+    },
+
+    removeEntities(keys)
+    {
+        const updatedScene = Object.fromEntries(Object.entries(scene).filter(([key, entity])=>keys.indexOf(key)<0));
+        if(scene!=updatedScene){
+            scene=updatedScene;
+            emitChange();
+        }
     },
 
     setSelection(newSelectionKeys){
@@ -139,31 +178,9 @@ export default {
         }
     },
 
-    setValue(path, value){
-        const updatedScene = produce(scene, draft=>{
-            _.set(draft, path, value);
-        });
-
-        if(scene!=updatedScene){
-            scene=updatedScene;
-            emitChange();
-        }
-    },
-
-    updateComponent(entityKey, component, newAttributes)
+    getSelection()
     {
-        if(!scene.hasOwnProperty(entityKey)){
-            throw new Error(`Entity ${entityKey} does not exist in scene!`)
-        }
-        const updatedScene = produce(scene, draft=>{
-            // draft[key][component] = _.update(draft[key][component], newAttributes)
-            Object.assign(draft[entityKey][component], newAttributes);
-        });
-
-        if(scene!=updatedScene){
-            scene=updatedScene;
-            emitChange();
-        }
+       return Object.fromEntries(Object.entries(scene).filter( ([key, entity])=>entity.selected));
     },
 
     subscribe(listener) 

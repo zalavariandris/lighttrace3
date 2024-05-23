@@ -21,10 +21,10 @@
 
 #bottombar{
     position: fixed;
-    left:0;
-    right: 0;
-    width: auto;
-    bottom:0;
+    width: content-fit;
+    bottom: 0;
+    left: 50%;
+    transform: translate(-50%, 0);
 }
 
 /*RESET*/
@@ -44,7 +44,6 @@ body{
 
 .panel
 {
-    
     background-color: hsla(0, 0%, 50%, 0.4);
 }
 
@@ -62,6 +61,17 @@ body{
 .selected{
     stroke: white;
     stroke-width: 3;
+}
+
+/* UI widgets*/
+button{
+    border: none;
+    border-radius: 100px;
+    margin: 2px;
+}
+
+button.active{
+    background-color: cyan;
 }
 
 
@@ -83,4 +93,14 @@ form>label>select
 {
     display: inline-block;
     /* width: 3rem; */
+}
+
+hr.vertical{
+    display: inline-block;
+    border: none;
+    margin: 2px;
+    height: 1rem;
+    width: 1px;
+    background-color: white;
+    padding: 0;
 }

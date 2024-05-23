@@ -1,12 +1,12 @@
 import entityStore from "../stores/entity-store.js";
+import uiStore from "../stores/ui-store.js";
 import React from "react";
 import Manipulator from "../widgets/Manipulator.js";
 const h = React.createElement;
 import SVGRaytracer from "../raytracers/svg-raytracer/SVGRaytracer.js";
-
-import _ from "lodash"
-import Icon from "./icons/icon.js"
-
+import {selectAndMoveTool, circleTool, rectangleTool, lineTool, lensTool, pointlightTool, directionalLightTool, laserTool} from "./MouseTools.js"
+import _ from "lodash";
+import Icon from "./icons/icon.js";
 
 // UTILS
 function rotatePoint(x, y, radAngle, pivotX, pivotY)
@@ -105,12 +105,10 @@ function SphericalLens({
     return h(Manipulator /* Move Manip */, {
         referenceX: entity.transform.translate.x,
         referenceY: entity.transform.translate.y,
-        onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
-            translate: {
+        onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
                 x: e.sceneX+e.referenceOffsetX, 
                 y: e.sceneY+e.referenceOffsetY
-            }
-        }),
+        })
     }, 
         h("path" /* draw shape */, {
             className: entity.selected ? "shape selected" : "shape",
@@ -132,9 +130,9 @@ function SphericalLens({
             h(Manipulator /* Rotate Manip */, {
                 referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
                 referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
-                onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
-                    rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
-                })
+                onDrag: e=>entityStore.setValue(`${entityKey}.transform.rotate`, 
+                    Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
+                )
             },
                 h("path" /* rotate arrow */,{
                     stroke: "white",
@@ -153,28 +151,9 @@ function SphericalLens({
             h(Manipulator /* manip centerThickness*/, {
                 onDrag: e=>{
                     const distance = Math.hypot(e.sceneX-entity.transform.translate.x, e.sceneY-entity.transform.translate.y)
-                    entityStore.updateComponent(entityKey, "shape", {
-                        centerThickness:  Math.max(0, Math.min(distance*2, entity.shape.diameter))
-                    })
-                },
-                className:"gizmo"
-            }, 
-                h('circle', {
-                    className: "handle",
-                    cx:entity.transform.translate.x+Math.cos(entity.transform.rotate)*entity.shape.centerThickness/2, 
-                    cy:entity.transform.translate.y+Math.sin(entity.transform.rotate)*entity.shape.centerThickness/2,
-                    r: 5,
-                    vectorEffect: "non-scaling-stroke",
-                    style: {cursor: "ew-resize"}
-                })
-            ),
-
-            h(Manipulator /* manip edgeTicvkness and diameter*/, {
-                onDrag: e=>{
-                    const distance = Math.hypot(e.sceneX-entity.transform.translate.x, e.sceneY-entity.transform.translate.y)
-                    entityStore.updateComponent(entityKey, "shape", {
-                        centerThickness:  Math.max(0, Math.min(distance*2, entity.shape.diameter+entity.shape.edgeThickness))
-                    })
+                    entityStore.setValue(`${entityKey}.shape.centerThickness`,
+                        Math.max(0, Math.min(distance*2, entity.shape.diameter))
+                    )
                 },
                 className:"gizmo"
             }, 
@@ -192,14 +171,14 @@ function SphericalLens({
                 className:"manip",
                 onDrag: e=>{
                     const [localX, localY] = rotatePoint(e.sceneX, e.sceneY, -entity.transform.rotate, entity.transform.translate.x, entity.transform.translate.y);
+                    
                     const newEdgeThickness = Math.max(1, (localX-entity.transform.translate.x)*2);
                     const newDiameter = Math.max(1, (localY-entity.transform.translate.y)*2);
+                    const newCenterThickness = Math.max(1, newEdgeThickness-entity.shape.edgeThickness + entity.shape.centerThickness);
 
-                    entityStore.updateComponent(entityKey, "shape", {
-                        edgeThickness: newEdgeThickness,
-                        centerThickness: Math.max(1, newEdgeThickness-entity.shape.edgeThickness + entity.shape.centerThickness),
-                        diameter: newDiameter       
-                    });
+                    entityStore.setValue(`${entityKey}.shape.edgeThickness`, newEdgeThickness);
+                    entityStore.setValue(`${entityKey}.shape.centerThickness`, newCenterThickness);
+                    entityStore.setValue(`${entityKey}.shape.diameter`, newDiameter);
                 }
             },
                 h('circle', {
@@ -222,12 +201,10 @@ function Rectangle({
     return h(Manipulator /* Move Manip */, {
         referenceX: entity.transform.translate.x,
         referenceY: entity.transform.translate.y,
-        onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
-            translate: {
-                x: e.sceneX+e.referenceOffsetX, 
-                y: e.sceneY+e.referenceOffsetY
-            }
-        }),
+        onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
+            x: e.sceneX+e.referenceOffsetX, 
+            y: e.sceneY+e.referenceOffsetY
+        })
     }, 
         h("rect"/* draw shape */, {
             className: entity.selected ? "shape selected" : "shape",
@@ -246,9 +223,9 @@ function Rectangle({
             h(Manipulator /* Rotate Manip */, {
                 referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
                 referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
-                onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
-                    rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
-                })
+                onDrag: e=>entityStore.setValue(`${entityKey}.transform.rotate`, 
+                    Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
+                )
             },
                 h("path" /* rotate arrow */,{
                     stroke: "white",
@@ -272,10 +249,8 @@ function Rectangle({
                     const newWidth = Math.max(1, (localX-entity.transform.translate.x)*2);
                     const newHeight = Math.max(1, (localY-entity.transform.translate.y)*2);
 
-                    entityStore.updateComponent(entityKey, "shape", {
-                        width: newWidth,
-                        height: newHeight     
-                    });
+                    entityStore.setValue(`${entityKey}.shape.width`, newWidth);
+                    entityStore.setValue(`${entityKey}.shape.height`, newHeight);
                 }
             },
                 h('circle', {
@@ -298,12 +273,10 @@ function Circle({
     return h(Manipulator /* Move Manip */, {
         referenceX: entity.transform.translate.x,
         referenceY: entity.transform.translate.y,
-        onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
-            translate: {
-                x: e.sceneX+e.referenceOffsetX, 
-                y: e.sceneY+e.referenceOffsetY
-            }
-        }),
+        onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
+            x: e.sceneX+e.referenceOffsetX, 
+            y: e.sceneY+e.referenceOffsetY
+        })
     }, 
         h("circle" /* draw shape */, {
             className: entity.selected ? "shape selected" : "shape",
@@ -317,10 +290,7 @@ function Circle({
             className:"manip",
             onDrag: e=>{
                 const newRadius = Math.hypot(e.sceneX-entity.transform.translate.x, e.sceneY-entity.transform.translate.y)
-
-                entityStore.updateComponent(entityKey, "shape", {
-                    radius: newRadius  
-                });
+                entityStore.setValue(`${entityKey}.shape.radius`, newRadius);
             }
         },
             h('circle', {
@@ -354,12 +324,10 @@ function Triangle({
     return h(Manipulator /* Move Manip */, {
         referenceX: entity.transform.translate.x,
         referenceY: entity.transform.translate.y,
-        onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
-            translate: {
-                x: e.sceneX+e.referenceOffsetX, 
-                y: e.sceneY+e.referenceOffsetY
-            }
-        }),
+        onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
+            x: e.sceneX+e.referenceOffsetX, 
+            y: e.sceneY+e.referenceOffsetY
+        })
     }, 
         h("polygon" /* draw shape */, {
             style:{
@@ -376,9 +344,9 @@ function Triangle({
             h(Manipulator /* rotate manip */, {
                 referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
                 referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
-                onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
-                    rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
-                })
+                onDrag: e=>entityStore.setValue(`${entityKey}.transform.rotate`, 
+                    Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
+                )
             }, 
                
                 Icon({
@@ -397,11 +365,8 @@ function Triangle({
             h(Manipulator /*  manip radius*/, {
                 className:"manip",
                 onDrag: e=>{
-                    const newRadius = Math.hypot(e.sceneX-entity.transform.translate.x, e.sceneY-entity.transform.translate.y)
-
-                    entityStore.updateComponent(entityKey, "shape", {
-                        size: newRadius  
-                    });
+                    const newSize = Math.hypot(e.sceneX-entity.transform.translate.x, e.sceneY-entity.transform.translate.y)
+                    entityStore.setValue(`{entityKey}.shape.size`, newSize);
                 }
             },
                 h('polygon', {
@@ -433,7 +398,7 @@ function Line({
 
     function setP1(x1,y1)
     {
-        entityStore.updateComponent(entityKey, "transform", {
+        entityStore.setValue(`${entityKey}.transform`, {
             translate: {
                 x: (x1+x2)/2, 
                 y: (y1+y2)/2
@@ -445,7 +410,7 @@ function Line({
 
     function setP2(x2,y2)
     {
-        entityStore.updateComponent(entityKey, "transform", {
+        entityStore.setValue(`${entityKey}.transform`, {
             translate: {
                 x: (x1+x2)/2, 
                 y: (y1+y2)/2
@@ -459,12 +424,10 @@ function Line({
     return h(Manipulator /* Move Manip */, {
         referenceX: entity.transform.translate.x,
         referenceY: entity.transform.translate.y,
-        onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
-            translate: {
-                x: e.sceneX+e.referenceOffsetX, 
-                y: e.sceneY+e.referenceOffsetY
-            }
-        }),
+        onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
+            x: e.sceneX+e.referenceOffsetX, 
+            y: e.sceneY+e.referenceOffsetY
+        })
     }, 
         h("line" /* draw shape */, {
             x1: x1,
@@ -506,12 +469,10 @@ function PointLight({entityKey, entity})
     return h(Manipulator, {
         referenceX: entity.transform.translate.x,
         referenceY: entity.transform.translate.y,
-        onDrag: e=>entityStore.updateComponent(key, "transform", {
-            translate: {
-                x: e.sceneX+e.referenceOffsetX, 
-                y: e.sceneY+e.referenceOffsetY
-            }
-        }),
+        onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
+            x: e.sceneX+e.referenceOffsetX, 
+            y: e.sceneY+e.referenceOffsetY
+        })
     }, 
         h("circle", {
             cx: entity.transform.translate.x, 
@@ -524,9 +485,9 @@ function PointLight({entityKey, entity})
         h(Manipulator /* rotate manip*/, {
             referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
             referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
-            onDrag: e=>entityStore.updateComponent(key, "transform", {
-                rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
-            })
+            onDrag: e=>entityStore.setValue(`${entityKey}.transform.rotate`, 
+                Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
+            )
         }, 
             h("path" /* rotate arrow */,{
                 stroke: "white",
@@ -549,12 +510,10 @@ function LaserLight({entityKey, entity})
     return h(Manipulator /* tmove manip */, {
         referenceX: entity.transform.translate.x,
         referenceY: entity.transform.translate.y,
-        onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
-            translate: {
-                x: e.sceneX+e.referenceOffsetX, 
-                y: e.sceneY+e.referenceOffsetY
-            }
-        }),
+        onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
+            x: e.sceneX+e.referenceOffsetX, 
+            y: e.sceneY+e.referenceOffsetY
+        })
     }, 
         h("circle", {
             cx: entity.transform.translate.x, 
@@ -568,9 +527,9 @@ function LaserLight({entityKey, entity})
             h(Manipulator /* rotate manip */, {
                 referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
                 referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
-                onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
-                    rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
-                })
+                onDrag: e=>entityStore.setValue(`${entityKey}.transform.rotate`, 
+                    Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
+                )
             }, 
             h("path" /* rotate arrow */,{
                 stroke: "white",
@@ -614,17 +573,14 @@ function describeArc(x, y, radius, startAngle, endAngle){
 }
 
 
-
 function DirectionalLight({entityKey, entity})
 {
     return h(Manipulator /* rotate manip */, {
         referenceX: entity.transform.translate.x,
         referenceY: entity.transform.translate.y,
-        onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
-            translate: {
-                x: e.sceneX+e.referenceOffsetX, 
-                y: e.sceneY+e.referenceOffsetY
-            }
+        onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
+            x: e.sceneX+e.referenceOffsetX, 
+            y: e.sceneY+e.referenceOffsetY
         }),
     }, 
         h("circle", {
@@ -639,9 +595,9 @@ function DirectionalLight({entityKey, entity})
             h(Manipulator /* rotate manip */, {
                 referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
                 referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
-                onDrag: e=>entityStore.updateComponent(entityKey, "transform", {
-                    rotate: Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
-                })
+                onDrag: e=>entityStore.setValue(`${entityKey}.transform.rotate`, 
+                    Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
+                )
             }, 
                
                 Icon({
@@ -680,7 +636,9 @@ function DirectionalLight({entityKey, entity})
             h(Manipulator /* width manip */, {
                 referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
                 referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
-                onDrag: e=>entityStore.setValue(`${entityKey}.light.width`, Math.hypot(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)*2)
+                onDrag: e=>entityStore.setValue(`${entityKey}.light.width`, 
+                    Math.hypot(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)*2
+                )
             }, 
                 h("circle", {
                     cx: entity.transform.translate.x+Math.cos(entity.transform.rotate+Math.PI/2)*entity.light.width/2, 
@@ -698,6 +656,7 @@ function DirectionalLight({entityKey, entity})
 function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...props})
 {
     const scene = React.useSyncExternalStore(entityStore.subscribe, entityStore.getSnapshot);
+    const uiState = React.useSyncExternalStore(uiStore.subscribe, uiStore.getSnapshot);
 
     // pan and zoom
     const panViewport = (e)=>{ 
@@ -755,18 +714,45 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
         onViewBoxChange(newViewBox)
     }
 
-    function handleClick(e){
-
+    const handleMouseTools = e=>{
+        switch (uiState.activeMouseTool) {
+            case "circle":
+                circleTool(e);
+                break;
+            case "rectangle":
+                rectangleTool(e);
+                break;
+            case "line":
+                lineTool(e);
+                break;
+            case "lens":
+                lensTool(e);
+                break;
+            case "pointLight":
+                pointlightTool(e);
+                break;
+            case "laser":
+                laserTool(e);
+                break;
+            case "directional":
+                directionalLightTool(e);
+                break;
+                
+        
+            default:
+                panViewport(e)
+                break;
+        }
+        
     }
 
-    
     return h("svg", {
         width, 
         height, 
         className,
         viewBox: viewboxString(viewBox),
         ...props,
-        onMouseDown: (e)=>panViewport(e),
+        onMouseDown: (e)=>handleMouseTools(e),
         onWheel: (e) => zoomViewportWithmouseWheel(e),
         onClick: (e)=>{
             if(e.target.tagName=='svg') // TODO test against itself
@@ -776,22 +762,22 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
         }
     }, 
 
-    h("defs", null,
-        h("marker", {
-            id:"arrow",
-            viewBox:"0 0 10 10",
-            refX:"1",
-            refY:"5",
-            markerWidth:"3",
-            markerHeight:"3",
-            orient:"auto-start-reverse"
-        },
-            h("path", {
-                d: "M 0 0 L 5 5 L 0 10 z", // This path represents an arrow
-                fill: "white"
-            })
-        )
-    ),
+        h("defs", null,
+            h("marker", {
+                id:"arrow",
+                viewBox:"0 0 10 10",
+                refX:"1",
+                refY:"5",
+                markerWidth:"3",
+                markerHeight:"3",
+                orient:"auto-start-reverse"
+            },
+                h("path", {
+                    d: "M 0 0 L 5 5 L 0 10 z", // This path represents an arrow
+                    fill: "white"
+                })
+            )
+        ),
 
         // SHAPES
         Object.entries(scene)

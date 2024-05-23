@@ -137,14 +137,14 @@ function intersectTriangle(ray, cx, cy, angle, size){
  * @param {Ray} ray - The ray object with properties origin and direction.
  * @param {number} cx - center of rectangle
  * @param {number} cy - center of rectangle
- * @param {number} angle - rotation
+ * @param {number} angle - rotation (in radians)
  * @param {number} width - the width of the rectangle
  * @param {number} height - rectangle height
  * @returns {HitInfo} - 
  */
 function intersectRectangle(ray, cx, cy, angle, width, height)
 {
-    let result = HitInfo(9999, rayX+dirX*9999, rayY+dirY*9999, 0, 0, -1);
+    let result = new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1);
 
     const [rayX, rayY] = vec2.rotate(ray.x, ray.y, -angle, cx, cy);
     const [dirX, dirY] = vec2.rotate(ray.dx, ray.dy, -angle);
@@ -166,28 +166,28 @@ function intersectRectangle(ray, cx, cy, angle, width, height)
         return result;
     }
 
-    const Ix = rayX+dirX*t;
-    const Iy = rayY+dirY*t;
+    let Ix = rayX+dirX*t;
+    let Iy = rayY+dirY*t;
 
     let Nx = 0.0;
     let Ny = 0.0;
 
-    if (Ix+EPSILON >= cx - width / 2.0  && I.x-EPSILON <= cx + width / 2.0 &&
-        Iy+EPSILON >= cy - height / 2.0 && I.y-EPSILON <= cy + height / 2.0) {
-        if (abs(I.x - rectangle.center.x + rectangle.width / 2.0) < EPSILON) {
+    if (Ix+EPSILON >= cx - width / 2.0  && Ix-EPSILON <= cx + width / 2.0 &&
+        Iy+EPSILON >= cy - height / 2.0 && Iy-EPSILON <= cy + height / 2.0) {
+        if (Math.abs(Ix - cx + width / 2.0) < EPSILON) {
             [Nx, Ny] = [-1.0, 0.0];
-        } else if (abs(I.x - rectangle.center.x - rectangle.width / 2.0) < EPSILON) {
+        } else if (Math.abs(Ix - cx - width / 2.0) < EPSILON) {
             [Nx, Ny] = [1.0, 0.0];
-        } else if (abs(I.y - rectangle.center.y + rectangle.height / 2.0) < EPSILON) {
+        } else if (Math.abs(Iy - cy + height / 2.0) < EPSILON) {
             [Nx, Ny] = [0.0, -1.0];
-        } else if (abs(I.y - rectangle.center.y - rectangle.height / 2.0) < EPSILON) {
+        } else if (Math.abs(Iy - cy - height / 2.0) < EPSILON) {
             [Nx, Ny] = [0.0, 1.0];
         }
 
-        [Ix, Iy] = vec2.rotate(Ix, Iy, radAngle, cx, cy);
-        [Nx, Ny] = vec2.rotate(Nx, Ny, radAngle);
+        [Ix, Iy] = vec2.rotate(Ix, Iy, angle, cx, cy);
+        [Nx, Ny] = vec2.rotate(Nx, Ny, angle);
 
-        result = HitInfo(t, Ix, Iy, Nx, Ny, -1);
+        result = new HitInfo(t, Ix, Iy, Nx, Ny, -1);
     }
 
     return result;
@@ -320,15 +320,15 @@ function intersectSphericalLens(ray, cx, cy, angle, diameter, centerThickness, e
         rightHit.nx *= -1.0;
         rightHit.ny *= -1.0;
 
-        const bbox = {cx: cx, cy: cy, width: max(edgeThickness, centerThickness), height: diameter};
+        const bbox = {cx: cx, cy: cy, width: Math.max(edgeThickness, centerThickness), height: diameter};
         if(rectangleContainsPoint(bbox, leftHit.x, leftHit.y) && 
         rectangleContainsPoint(bbox, leftHit.x, leftHit.y))
         {
-            if(leftHit.t < rightHit.t) {hit = leftHit;} else {hit = rightHit;};
+            if(leftHit.t < rightHit.t) {result = leftHit;} else {result = rightHit;};
         }
         else if(rectangleContainsPoint(bbox, leftHit.x, leftHit.y))
         {
-            hit = leftHit;
+            result = leftHit;
         }
     }
 

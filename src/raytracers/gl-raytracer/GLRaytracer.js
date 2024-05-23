@@ -343,6 +343,13 @@ class GLRaytracer{
         if(!scene || !viewBox){
             return;
         }
+
+        const lights = Object.entries(scene)
+        .filter( ([key, entity])=>entity.hasOwnProperty("light") && entity.hasOwnProperty("transform"));
+        
+        if(lights.length<1){
+            return;
+        }
         this.totalPasses+=1;
         
 

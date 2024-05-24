@@ -28,6 +28,7 @@
 - [ ] review tonemapping. support multiple colorspaces
 
 ### UI/UX
+- [ ] align ui group attributes to each group. add grid to a parent element, and make groups a child of this form.
 - [x] mousetools to create and delete objects
 - [ ] show when lights are selected. selection shape is too small? hard to select
 - [x] persistent scene

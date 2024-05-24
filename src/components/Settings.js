@@ -3,7 +3,7 @@ import settingsStore from "../stores/settings-store.js"
 import statsStore from "../stores/stats-store.js"
 const h = React.createElement;
 
-import {Input, Slider, Group, Checkbox} from "../UI/widgets.js"
+import {Input, Slider, Spinner, InputGroup, Group, Checkbox} from "../UI/widgets.js"
 import { AttributeList, AttributeSection, AttributeRow } from "../UI/AttributeList.js";
 
 
@@ -14,7 +14,11 @@ function Progress()
 
 }
 
-
+function AttributeHeaderRow({...props}){
+    return ("tr", null, 
+        h("h2", null, props.children)
+    )
+}
 
 function Settings(props){
     const settings = React.useSyncExternalStore(settingsStore.subscribe, settingsStore.getSnapshot);
@@ -23,16 +27,15 @@ function Settings(props){
     return h("div", props, 
         h("h1", null, "Settings"),
 
-        h(AttributeList, {className: "attributesTable"}, 
+        h(AttributeList, {className: "attributeTable"}, 
             h(AttributeSection, null,
-                h("tr", null, 
-                    h("h2", null, "Raytrace")
+                h(AttributeHeaderRow, null,
+                    "Raytrace"
                 ),
                 h(AttributeRow, null,
                     h("label", {}, "lightSamples"), 
-                    h("div", {className: "input-group"},
-                        h("input", { 
-                            type: "number",
+                    h(InputGroup, null,
+                        h(Spinner, { 
                             style: {
                                 width: "4rem"
                             },
@@ -52,14 +55,16 @@ function Settings(props){
                 
                 h(AttributeRow, null,
                     h("label", null, "maxBounce"),
-                    h("input", {
-                        type: 
-                        "range", 
-                        value: settings.raytrace.maxBounce, 
-                        min: 1, 
-                        max:16,
-                        onChange: e=>settingsStore.setValue("raytrace.maxBounce", parseInt(e.target.value))
-                    })
+                    h(InputGroup, null, 
+                        h("input", {
+                            type: 
+                            "range", 
+                            value: settings.raytrace.maxBounce, 
+                            min: 1, 
+                            max:16,
+                            onChange: e=>settingsStore.setValue("raytrace.maxBounce", parseInt(e.target.value))
+                        })
+                    )
                 ),
 
                 h(AttributeRow, null,
@@ -83,8 +88,8 @@ function Settings(props){
 
             h(AttributeSection, null,
 
-                h(AttributeRow, null, 
-                    h("h2", null, "Display")
+                h(AttributeHeaderRow, null,
+                    "Display"
                 ),
 
                 h(AttributeRow, null, 

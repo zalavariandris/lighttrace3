@@ -5,12 +5,13 @@ import Settings from "./Settings.js";
 import Animate from "./Animate.js";
 
 import {Input, Slider, Group, Checkbox} from "../UI/widgets.js"
-import { AttributeList, AttributeSection, AttributeRow } from "../UI/AttributeList.js";
+import { AttributeList, AttributeSection, AttributeRow, AttributeHeaderRow } from "../UI/AttributeList.js";
 import Icon from "../UI/Icon.js"
 
 function TransformInspector({entityKey, component, values}){
     return h(AttributeList, {}, 
-        h("h2", null, "Transform"),
+
+        h(AttributeHeaderRow, null, "Transform"),
 
         h(AttributeRow, null,
             h("label", null, "translate"),
@@ -142,7 +143,6 @@ function RectangleInspector({entityKey, component, values})
         )
     )
 }
-
 
 function SphericalLensInspector({entityKey, component, values})
 {

@@ -22,17 +22,6 @@ function Group({title, ...props})
     )
 }
 
-function Slider({value, onChange, min, max})
-{
-    return h("input", {
-        type: "range", 
-        value, 
-        min, 
-        max,
-        onChange
-    });
-}
-
 function Checkbox({checked, onChange}={})
 {
 
@@ -103,9 +92,35 @@ function Progress({value})
 
 }
 
-function InputGroup({label, ...children})
+function Slider({value, onChange, min, max})
 {
-    return h("div", {className:"input-group"}, children);
+    return h("input", {
+        className: "slider",
+        type: "range", 
+        value, 
+        min, 
+        max,
+        onChange
+    });
 }
 
-export {Input, Slider, Checkbox, Group, Knob, Select, Option, Accordion, Tab, Collapsable, Progress}
+function Spinner({value, onChange, min, max})
+{
+    return h("input", {
+        className: "spinner",
+        type: "number", 
+        value, 
+        min, 
+        max,
+        onChange
+    });
+}
+
+function InputGroup({label, ...props})
+{
+    return h("div", {className:"my-input-group"}, 
+        props.children
+    );
+}
+
+export {Input, Slider, Spinner, InputGroup, Checkbox, Group, Knob, Select, Option, Accordion, Tab, Collapsable, Progress}

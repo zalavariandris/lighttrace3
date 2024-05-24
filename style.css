@@ -105,32 +105,50 @@ section.group>label:not(:has(input)){
     cursor: pointer;
 }
 
-/* attributes table */
-table.attributesTable{
-    border-collapse: collapse;
-    width: 100%;
-}
 
-.input-group{
+
+.my-input-group{
     display: flex;
     flex-direction: row;
+    flex-wrap: nowrap;
 }
 
-table.attributesTable tr>label,
-table.attributesTable tr>input,
-table.attributesTable tr>.input-group{
-    display: table-cell;
-    width: auto;
+/* attributes table */
+.attributeList{
+    border-collapse: collapse;
+    width: 100%;
+    display: table;
 }
-table.attributesTable tr>label:first-child{
+
+.attributeSection{
+    display: table-row-group;
+}
+
+.attributeRow{
+    display: table-row
+}
+.attributeHeaderRow{
+    display: table-row;
+    column-span: 2;
+}
+
+.attributeRow>*{
+    display: table-cell;
+}
+.attributeRow>*:first-child{
     text-align: right;
     width: 0%;
     white-space: nowrap;
     padding-right: 0.5rem;
 }
+.attributeRow>*:last-child{
+    text-align: left;
+    width: auto;
+    white-space: nowrap;
+}
 
-input[type=range],
+/* input[type=range],
 input[type=number]
 progress{
     width: 100% !important;
-}
+} */

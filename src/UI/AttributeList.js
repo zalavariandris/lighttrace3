@@ -5,8 +5,8 @@ const h = React.createElement;
 function AttributeList({
     ...props
 }){
-    return h("table", {
-        className: "attributesTable"
+    return h("div", {
+        className: "attributeList"
     },
         props.children
     )
@@ -15,22 +15,32 @@ function AttributeList({
 function AttributeSection({
     ...props
 }){
-    return h("tbody", {
-        className: "AttributeSection"
+    return h("div", {
+        className: "attributeSection"
     },
         props.children
     );
+}
+
+function AttributeHeaderRow({
+    ...props
+}){
+    return h("div", {
+        className: "attributeHeaderRow"
+    },
+        h("div", {}, h("h2", null, props.children))
+    )
 }
 
 function AttributeRow({
     ...props
 })
 {
-    return h("tr", {
+    return h("div", {
         className: "attributeRow"
     },
         props.children
     )
 }
 
-export {AttributeList, AttributeSection, AttributeRow};
+export {AttributeList, AttributeSection, AttributeRow, AttributeHeaderRow};

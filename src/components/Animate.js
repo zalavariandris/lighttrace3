@@ -1,7 +1,7 @@
 import entityStore from "../stores/entity-store.js"
 import React from "react";
 const h = React.createElement;
-
+import {AttributeList, AttributeRow} from "../UI/AttributeList.js"
 
 function Animate(props)
 {
@@ -26,8 +26,8 @@ function Animate(props)
 
     return h("div", props,
         h("h1", null, "Animate"),
-            h("table", {className: "attributesTable"}, 
-                h("tr", null,
+            h(AttributeList, null, 
+                h(AttributeRow, null,
                     h("label", {}, "animation"), 
                     h("textarea", {style: {width: "100%"}})
                 )

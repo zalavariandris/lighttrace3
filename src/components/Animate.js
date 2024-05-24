@@ -25,8 +25,13 @@ function Animate(props)
     }, []);
 
     return h("div", props,
-        h("header", null, "Animate"),
-        h("textarea")
+        h("h1", null, "Animate"),
+            h("table", {className: "attributesTable"}, 
+                h("tr", null,
+                    h("label", {}, "animation"), 
+                    h("textarea", {style: {width: "100%"}})
+                )
+            )
     );
 }
 export default Animate;

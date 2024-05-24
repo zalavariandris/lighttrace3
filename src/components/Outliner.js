@@ -1,7 +1,7 @@
 import entityStore from "../stores/entity-store.js"
 import React from "react";
-import Icon from "./Icon.js"
-
+import Icon from "../UI/Icon.js"
+import ListView, {ListItem} from "../UI/ListView.js"
 const h = React.createElement;
 
 function Outliner(props)
@@ -41,12 +41,14 @@ function Outliner(props)
         }
     }
 
-    return h("ul", {className: "list-group",...props}, 
+    /* could be a multiselect widget with auto height.
+    support for hiearchies */
+    return h(ListView, {...props}, 
         Object.entries(scene)
             .map( ([key, entity])=>{
-                return h("button", {
+                return h(ListItem, {
                     onMouseDown: e=>entityStore.setSelection([key]),
-                    className:  entity.selected ? "list-group-item list-group-item-action active" : "list-group-item list-group-item-action"
+                    active: entity.selected
                 }, 
                     h(Icon, {icon: getIcon(entity)}),
                     h("span", null, ` ${key}`)

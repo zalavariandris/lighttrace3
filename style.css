@@ -99,3 +99,26 @@ section.group>label:not(:has(input)){
     text-align: right;
     margin-right: 1rem;
 }
+
+/* additional core ui stuff*/
+.list-group-item-action{
+    cursor: pointer;
+}
+
+/* attributes table */
+table.attributesTable{
+    border-collapse: separate;
+    border-spacing: 0.5rem 0;
+    width: 100%;
+}
+
+table.attributesTable>tr>label,
+table.attributesTable>tr>input{
+    display: table-cell;
+    width: auto;
+}
+table.attributesTable>tr>label:first-child{
+    text-align: right;
+    width: 0%;
+    white-space: nowrap;
+}

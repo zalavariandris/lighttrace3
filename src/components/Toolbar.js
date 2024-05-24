@@ -3,7 +3,7 @@ import React from "react";
 import entityStore from "../stores/entity-store.js"
 import uiStore from "../stores/ui-store.js";
 import {CButton, CButtonGroup} from "@coreui/react" 
-import Icon from "./Icon.js"
+import Icon from "../UI/Icon.js"
 
 const h = React.createElement;
 

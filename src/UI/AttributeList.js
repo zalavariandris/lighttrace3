@@ -2,7 +2,7 @@ import React from "react"
 
 const h = React.createElement;
 
-function AttributesList({
+function AttributeList({
     ...props
 }){
     return h("table", {
@@ -12,11 +12,11 @@ function AttributesList({
     )
 }
 
-function AttributesSection({
+function AttributeSection({
     ...props
 }){
     return h("tbody", {
-        className: "attributesSection"
+        className: "AttributeSection"
     },
         props.children
     );
@@ -33,4 +33,4 @@ function AttributeRow({
     )
 }
 
-export {AttributesList, AttributesSection, AttributeRow};
+export {AttributeList, AttributeSection, AttributeRow};

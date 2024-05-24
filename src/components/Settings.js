@@ -4,7 +4,7 @@ import statsStore from "../stores/stats-store.js"
 const h = React.createElement;
 
 import {Input, Slider, Group, Checkbox} from "../UI/widgets.js"
-import { AttributesList, AttributesSection, AttributeRow } from "../UI/AttributesList.js";
+import { AttributeList, AttributeSection, AttributeRow } from "../UI/AttributeList.js";
 
 
 
@@ -23,8 +23,8 @@ function Settings(props){
     return h("div", props, 
         h("h1", null, "Settings"),
 
-        h(AttributesList, {className: "attributesTable"}, 
-            h(AttributesSection, null,
+        h(AttributeList, {className: "attributesTable"}, 
+            h(AttributeSection, null,
                 h("tr", null, 
                     h("h2", null, "Raytrace")
                 ),
@@ -81,7 +81,7 @@ function Settings(props){
                 )
             ),
 
-            h(AttributesSection, null,
+            h(AttributeSection, null,
 
                 h(AttributeRow, null, 
                     h("h2", null, "Display")

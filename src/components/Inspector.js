@@ -5,10 +5,11 @@ import Settings from "./Settings.js";
 import Animate from "./Animate.js";
 
 import {Input, Slider, Group, Checkbox} from "../UI/widgets.js"
-import { AttributesList, AttributesSection, AttributeRow } from "../UI/AttributesList.js";
+import { AttributeList, AttributeSection, AttributeRow } from "../UI/AttributeList.js";
+import Icon from "../UI/Icon.js"
 
 function TransformInspector({entityKey, component, values}){
-    return h(AttributesList, {}, 
+    return h(AttributeList, {}, 
         h("h2", null, "Transform"),
 
         h(AttributeRow, null,
@@ -29,13 +30,12 @@ function TransformInspector({entityKey, component, values}){
 
         h(AttributeRow, null,
             h("label", null, "rotate"),
-            // h("div", {className:"input-group"},
-                h("input", {
-                    type: "number",
-                    value: values.translate.x,
-                    onChange: (e)=>entityStore.setValue(`${entityKey}.transform.translate.x`, parseFloat(e.target.value))
-                })
-            // )
+
+            h("input", {
+                type: "number",
+                value: values.translate.x,
+                onChange: (e)=>entityStore.setValue(`${entityKey}.transform.translate.x`, parseFloat(e.target.value))
+            })
         )
     )
 }
@@ -44,7 +44,7 @@ function LightInspector({
     entityKey, component, values
 })
 {
-    return h(AttributesList, {}, 
+    return h(AttributeList, {}, 
         h("h2", null, "Light"),
         h(AttributeRow, null,
             h("label", null, "type"),
@@ -82,7 +82,7 @@ function LightInspector({
 }
 
 function MaterialInspector({entityKey, component, values}){
-    return h(AttributesList, {}, 
+    return h(AttributeList, {}, 
         h("h2", null, "Material"),
         h(AttributeRow, null,
             h("label", null,"type"),
@@ -95,10 +95,8 @@ function MaterialInspector({entityKey, component, values}){
     )
 }
 
-
-
 function ShapeInspector({entityKey, component, values}){
-    return h(AttributesList, {}, 
+    return h(AttributeList, {}, 
             h("h2", null, "Shape"),
             h(AttributeRow, null, 
                 h("label", null, "type"),
@@ -120,7 +118,7 @@ function ShapeInspector({entityKey, component, values}){
 
 function CircleInspector({entityKey, component, values})
 {
-    return h(AttributesSection, null, 
+    return h(AttributeSection, null, 
         h(AttributeRow, null,
             h("label", {}, "radius"),
             h("input", {
@@ -133,7 +131,7 @@ function CircleInspector({entityKey, component, values})
 
 function RectangleInspector({entityKey, component, values})
 {
-    return h(AttributesSection, null, 
+    return h(AttributeSection, null, 
         h(AttributeRow, null,
             h("label", null,"width"),
             h("input", {type: "number", value: values.width})
@@ -148,29 +146,26 @@ function RectangleInspector({entityKey, component, values})
 
 function SphericalLensInspector({entityKey, component, values})
 {
-    return h(AttributesSection, null, 
+    return h(AttributeSection, null, 
         h(AttributeRow, null, 
             h("label", null,"diameter"),
-            h("input", {className:"form-control", type: "number", value: values.diameter})
+            h("input", {className:"", type: "number", value: values.diameter})
         ),
         h(AttributeRow, null, 
             h("label", null, "centerThickness"),
-            h("input", {className:"form-control", type: "number", value: values.centerThickness})
+            h("input", {className:"", type: "number", value: values.centerThickness})
         ),
         h(AttributeRow, null, 
             h("label", null, "edgeThickness"),
-            h("input", {className:"form-control", type: "number", value: values.edgeThickness})
+            h("input", {className:"", type: "number", value: values.edgeThickness})
         )
     )
 }
 
-
-
-
-
 function EntityInspector({entityKey, entity, ...props})
 {
     return h("div", {}, 
+        h("h1", null, `Entity`),
         h("span", null, `name: '${entityKey}'`),
 
         Object.entries(entity).map(([component, values])=>{
@@ -201,11 +196,6 @@ function Inspector(props)
 
     return h("div", props,
         h("header", null, "INSPECTOR"), 
-        h("i", {
-
-            className:"fa-solid fa-rotate"
-        }),
-        h("span", {className: "fa-regular fa-arrow-pointer"}),
         Object.keys(selection).length?
             Object.entries(selection).map(([key, entity])=>{
                 return h(EntityInspector, {entityKey: key, entity})

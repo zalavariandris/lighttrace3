@@ -28,12 +28,24 @@ function Settings(props){
             h("table", {className: "attributesTable"}, 
                 h("tr", null,
                     h("label", {}, "lightSamples"), 
-                    h(Slider, { 
-                        value: settings.raytrace.lightSamples, 
-                        min: 2*2, 
-                        max:128**2,
-                        onChange: e=>settingsStore.setValue("raytrace.lightSamples", parseInt(e.target.value))
-                    }),
+                    h("div", {className: "input-group"},
+                        h("input", { 
+                            type: "number",
+                            style: {
+                                width: "4rem"
+                            },
+                            value: settings.raytrace.lightSamples, 
+                            min: 2*2, 
+                            max:128**2,
+                            onChange: e=>settingsStore.setValue("raytrace.lightSamples", parseInt(e.target.value))
+                        }),
+                        h(Slider, { 
+                            value: settings.raytrace.lightSamples, 
+                            min: 2*2, 
+                            max:128**2,
+                            onChange: e=>settingsStore.setValue("raytrace.lightSamples", parseInt(e.target.value))
+                        })
+                    )
                 ),
                 
                 h("tr", null,

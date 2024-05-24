@@ -112,8 +112,14 @@ table.attributesTable{
     width: 100%;
 }
 
+.input-group{
+    display: flex;
+    flex-direction: row;
+}
+
 table.attributesTable>tr>label,
-table.attributesTable>tr>input{
+table.attributesTable>tr>input,
+table.attributesTable>tr>.input-group{
     display: table-cell;
     width: auto;
 }
@@ -121,4 +127,9 @@ table.attributesTable>tr>label:first-child{
     text-align: right;
     width: 0%;
     white-space: nowrap;
+}
+
+input[type=range],
+progress{
+    /* width: 100% !important; */
 }

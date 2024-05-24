@@ -107,8 +107,7 @@ section.group>label:not(:has(input)){
 
 /* attributes table */
 table.attributesTable{
-    border-collapse: separate;
-    border-spacing: 0.5rem 0;
+    border-collapse: collapse;
     width: 100%;
 }
 
@@ -117,19 +116,21 @@ table.attributesTable{
     flex-direction: row;
 }
 
-table.attributesTable>tr>label,
-table.attributesTable>tr>input,
-table.attributesTable>tr>.input-group{
+table.attributesTable tr>label,
+table.attributesTable tr>input,
+table.attributesTable tr>.input-group{
     display: table-cell;
     width: auto;
 }
-table.attributesTable>tr>label:first-child{
+table.attributesTable tr>label:first-child{
     text-align: right;
     width: 0%;
     white-space: nowrap;
+    padding-right: 0.5rem;
 }
 
 input[type=range],
+input[type=number]
 progress{
-    /* width: 100% !important; */
+    width: 100% !important;
 }

@@ -4,7 +4,7 @@ import statsStore from "../stores/stats-store.js"
 const h = React.createElement;
 
 import {Input, Slider, Group, Checkbox} from "../UI/widgets.js"
-
+import { AttributesList, AttributesSection, AttributeRow } from "../UI/AttributesList.js";
 
 
 
@@ -21,12 +21,14 @@ function Settings(props){
     const stats = React.useSyncExternalStore(statsStore.subscribe, statsStore.getSnapshot);
 
     return h("div", props, 
-            h("h1", null, "Settings"),
-            h("section", null,
-            h("h2", null, "Raytrace"),
+        h("h1", null, "Settings"),
 
-            h("table", {className: "attributesTable"}, 
-                h("tr", null,
+        h(AttributesList, {className: "attributesTable"}, 
+            h(AttributesSection, null,
+                h("tr", null, 
+                    h("h2", null, "Raytrace")
+                ),
+                h(AttributeRow, null,
                     h("label", {}, "lightSamples"), 
                     h("div", {className: "input-group"},
                         h("input", { 
@@ -48,7 +50,7 @@ function Settings(props){
                     )
                 ),
                 
-                h("tr", null,
+                h(AttributeRow, null,
                     h("label", null, "maxBounce"),
                     h("input", {
                         type: 
@@ -60,14 +62,14 @@ function Settings(props){
                     })
                 ),
 
-                h("tr", null,
+                h(AttributeRow, null,
                     h("label", null, `samples`),
                     h("progress", {
                         value: stats.samplesCount/settings.raytrace.finishSamplesCount
                     })
                 ),
 
-                h("tr", null, 
+                h(AttributeRow, null, 
                     h("label", null, "downres"),
                     h("input", {
                         type: "number", 
@@ -77,17 +79,15 @@ function Settings(props){
                         onChange: e=>settingsStore.setValue("raytrace.downres", parseInt(e.target.value))
                     })
                 )
-            )
-        ),
+            ),
 
-        h("section", null,
-            h("h2", null, "Display"),
-            h("table", {className: "attributesTable"}, 
-                // h("tr", null,
-                //     h("th", null, "attribute"),
-                //     h("th", null, "value")
-                // ),
-                h("tr", null, 
+            h(AttributesSection, null,
+
+                h(AttributeRow, null, 
+                    h("h2", null, "Display")
+                ),
+
+                h(AttributeRow, null, 
                     h("label", null, "shapes"),
                     h(Checkbox, {
                         label: "shapes",
@@ -96,7 +96,7 @@ function Settings(props){
                     }),
                 ),
 
-                h("tr", null, 
+                h(AttributeRow, null, 
                     h("label", null, "rays"),
                     h(Checkbox, {
                         label: "rays",
@@ -105,7 +105,7 @@ function Settings(props){
                     })
                 ),
                 
-                h("tr", null, 
+                h(AttributeRow, null, 
                     h("label", null, "normals"),
                     h(Checkbox, {
                         label: "normals",
@@ -114,7 +114,7 @@ function Settings(props){
                     })
                 ),
                 
-                h("tr", null, 
+                h(AttributeRow, null, 
                     h("label", null, "debug gl"),
                     h(Checkbox, {
                         label: "debug gl",
@@ -122,7 +122,6 @@ function Settings(props){
                         onChange: (e)=>{settingsStore.update("svgDisplay.shapes", e.target.checked)}
                     })
                 ),
-                
             )
         )
     )

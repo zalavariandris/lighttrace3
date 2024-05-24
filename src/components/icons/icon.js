@@ -2,7 +2,7 @@ import React from "react"
 
 const h = React.createElement;
 
-function Icon({
+function FA({
     x, y, icon, style
 }){
     const icons = {
@@ -33,4 +33,4 @@ function Icon({
     }, icons[icon])
 }
 
-export default Icon
+export default FA

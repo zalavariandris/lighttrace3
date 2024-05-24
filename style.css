@@ -84,17 +84,6 @@ button.active{
     margin-top: 1rem;
 }
 
-form>label{
-    display: block;
-    
-}
-form>label>input,
-form>label>select
-{
-    display: inline-block;
-    /* width: 3rem; */
-}
-
 hr.vertical{
     display: inline-block;
     border: none;
@@ -103,4 +92,10 @@ hr.vertical{
     width: 1px;
     background-color: white;
     padding: 0;
+}
+
+/* Attribute editor */
+section.group>label:not(:has(input)){
+    text-align: right;
+    margin-right: 1rem;
 }

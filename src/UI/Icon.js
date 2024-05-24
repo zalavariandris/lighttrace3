@@ -41,7 +41,7 @@ function Icon({icon, ...props})
                 return "cil-vector";
         }
     }
-    return h("i", {className: getIconName()})
+    return h("i", {className: "icon "+getIconName()})
 }
 
 export default Icon;

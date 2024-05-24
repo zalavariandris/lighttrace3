@@ -118,6 +118,7 @@ section.group>label:not(:has(input)){
     border-collapse: collapse;
     width: 100%;
     display: table;
+    table-layout:auto;
 }
 
 .attributeSection{
@@ -133,6 +134,7 @@ section.group>label:not(:has(input)){
 }
 
 .attributeRow>*{
+    position: relative;
     display: table-cell;
 }
 .attributeRow>*:first-child{
@@ -143,7 +145,6 @@ section.group>label:not(:has(input)){
 }
 .attributeRow>*:last-child{
     text-align: left;
-    width: auto;
     white-space: nowrap;
 }
 
@@ -152,3 +153,22 @@ input[type=number]
 progress{
     width: 100% !important;
 } */
+
+button.button{
+    background-color: antiquewhite;
+    color: black;
+    border: none;
+    border-radius: 50px !important;
+    height: 3rem;
+    min-width: 3rem;
+    box-sizing: border-box;
+    margin: 0.5rem 0.5rem;
+    white-space: nowrap;
+    background: transparent;
+}
+
+i.icon{
+    font-weight: bold !important;
+    color:white;
+    text-shadow: 1px;
+}

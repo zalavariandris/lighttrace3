@@ -66,6 +66,7 @@ function Toolbar({children, ...props}){
                 label:"create line",
                 onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "line")
             }, 
+
                 h(Icon, {icon: "line"})
             )
         ),

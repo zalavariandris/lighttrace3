@@ -45,6 +45,9 @@ body{
 .panel
 {
     background-color: hsla(0, 0%, 50%, 0.4);
+    background-color: hsla(0, 0%, 0%, .99);
+    color: white;
+    backdrop-filter: blur(3px);
 }
 
 /* SVG Color style*/
@@ -165,10 +168,12 @@ button.button{
     margin: 0.5rem 0.5rem;
     white-space: nowrap;
     background: transparent;
+    color:white;
+    text-shadow: 2px 2px 1px black;
 }
 
 i.icon{
     font-weight: bold !important;
     color:white;
-    text-shadow: 1px;
+    text-shadow: 2px 2px 1px black;
 }

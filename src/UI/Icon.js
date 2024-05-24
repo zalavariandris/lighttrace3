@@ -41,7 +41,32 @@ function Icon({icon, ...props})
                 return "cil-vector";
         }
     }
-    return h("i", {className: "icon "+getIconName()})
+
+    switch (icon) {
+        case "line":
+            return h("svg", {
+                width:32,
+                height: 32,
+                viewBox: "0, 0, 32, 32",
+                style: {
+                    width: "1em",
+                    height: "1em"
+                }
+            },
+                h("line", {
+                    x1:"95%",  
+                    y1:"30%",
+                    x2:"5%",
+                    y2:"70%",
+                    stroke: "white",
+                    strokeWidth: 4
+                }),
+
+            );
+    
+        default:
+            return h("i", {className: "icon "+getIconName()})
+    }
 }
 
 export default Icon;

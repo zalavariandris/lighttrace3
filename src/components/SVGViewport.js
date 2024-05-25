@@ -126,7 +126,11 @@ function SphericalLens({
             ...props
         }),
 
-        h("g", {style: {display: entity.selected?"initial":"none"}}, 
+        h("g", {
+            style: {
+                display: entity.selected?"initial":"none"
+            }
+        }, 
             h(Manipulator /* Rotate Manip */, {
                 referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
                 referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
@@ -142,7 +146,6 @@ function SphericalLens({
                     markerEnd:"url(#arrow)",
                     markerStart:"url(#arrow)",
                     style: {
-                        opacity: 0.3,
                         transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`
                     }
                 })
@@ -235,7 +238,6 @@ function Rectangle({
                     markerEnd:"url(#arrow)",
                     markerStart:"url(#arrow)",
                     style: {
-                        opacity: 0.3,
                         transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`
                     }
                 })
@@ -430,6 +432,7 @@ function Line({
         })
     }, 
         h("line" /* draw shape */, {
+            className: entity.selected ? "shape selected" : "shape",
             x1: x1,
             y1: y1,
             y2: y2,
@@ -439,13 +442,28 @@ function Line({
                 // transformOrigin: `${entity.transform.translate.x}px ${entity.transform.translate.y}px`,
                 strokeWidth: 3
             },
-            className: entity.selected ? "shape selected" : "shape",
+            ...props
+        }),
+
+        h("line" /* selection shape */, {
+            // className: entity.selected ? "shape selected" : "shape",
+            x1: x1,
+            y1: y1,
+            y2: y2,
+            x2: x2,
+            style:{
+                // transform: `rotate(${entity.transform.rotate}rad) translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px)`,
+                // transformOrigin: `${entity.transform.translate.x}px ${entity.transform.translate.y}px`,
+                strokeWidth: 10,
+                stroke: "transparent"
+            },
             ...props
         }),
 
         /* Manipulators */
         h("g", {style: {display: entity.selected?"initial":"none"}}, 
             h(Manipulator /* Move P1 */, {
+                className: "gizmo",
                 referenceX: x1,
                 referenceY: y1,
                 onDrag: e=>setP1(e.sceneX, e.sceneY)
@@ -454,6 +472,7 @@ function Line({
             ),
 
             h(Manipulator /* Move P2 */, {
+                className: "gizmo",
                 referenceX: x2,
                 referenceY: y2,
                 onDrag: e=>setP2(e.sceneX, e.sceneY)
@@ -497,7 +516,6 @@ function PointLight({entityKey, entity})
                 markerEnd:"url(#arrow)",
                 markerStart:"url(#arrow)",
                 style: {
-                    opacity: 0.3,
                     transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`
                 }
             })
@@ -516,10 +534,11 @@ function LaserLight({entityKey, entity})
         })
     }, 
         h("circle", {
+            className: entity.selected ? "light selected" : "light",
             cx: entity.transform.translate.x, 
             cy: entity.transform.translate.y, 
             r:10, 
-            className: "gizmo",
+            
             onClick: e=>entityStore.setSelection([entityKey])
         }),
 
@@ -532,14 +551,10 @@ function LaserLight({entityKey, entity})
                 )
             }, 
             h("path" /* rotate arrow */,{
-                stroke: "white",
-                strokeWidth: 2,
-                fill: "none",
                 d: describeArc(0,0, 50, 80, 100),
                 markerEnd:"url(#arrow)",
                 markerStart:"url(#arrow)",
                 style: {
-                    opacity: 0.3,
                     transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`
                 }
             })
@@ -575,6 +590,12 @@ function describeArc(x, y, radius, startAngle, endAngle){
 
 function DirectionalLight({entityKey, entity})
 {
+    console.log(entity)
+    const x1 = entity.transform.translate.x - Math.cos(entity.transform.rotate+Math.PI/2)*entity.light.width/2;
+    const y1 = entity.transform.translate.y - Math.sin(entity.transform.rotate+Math.PI/2)*entity.light.width/2;
+    const x2 = entity.transform.translate.x + Math.cos(entity.transform.rotate+Math.PI/2)*entity.light.width/2;
+    const y2 = entity.transform.translate.y + Math.sin(entity.transform.rotate+Math.PI/2)*entity.light.width/2;
+
     return h(Manipulator /* rotate manip */, {
         referenceX: entity.transform.translate.x,
         referenceY: entity.transform.translate.y,
@@ -583,11 +604,17 @@ function DirectionalLight({entityKey, entity})
             y: e.sceneY+e.referenceOffsetY
         }),
     }, 
-        h("circle", {
-            cx: entity.transform.translate.x, 
-            cy: entity.transform.translate.y, 
-            r:10, 
-            className: "shape",
+        h("line", {
+            className: entity.selected ? "light selected" : "light",
+            x1, y1,x2,y2,
+            onClick: e=>entityStore.setSelection([entityKey])
+        }),
+        h("line", /*selectio shape*/{
+            x1, y1,x2,y2,
+            style: {
+                strokeWidth: "10px"
+            },
+            vectorEffect: "none",
             onClick: e=>entityStore.setSelection([entityKey])
         }),
 

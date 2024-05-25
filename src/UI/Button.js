@@ -6,12 +6,11 @@ const h = React.createElement;
 function Button({
     color,
     active,
-    onMouseDown,
     ...props
 }){
     return h("button",{
         className: "button",
-        onMouseDown,
+        ...props
     },
         props.children
     )

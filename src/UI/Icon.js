@@ -3,7 +3,6 @@ const h = React.createElement;
 
 function Icon({icon, ...props})
 {
-    console.log(icon)
     function getIconName(){
         switch (icon) {
             case "cursor":

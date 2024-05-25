@@ -62,7 +62,7 @@ function LightInspector({
                 type: "range", 
                 value: values.intensity, 
                 min: 0.01,
-                max: 3.0,
+                max: 10.0,
                 step: 0.1,
                 onChange: e=>entityStore.setValue(`${entityKey}.light.intensity`, parseFloat(e.target.value))
             })

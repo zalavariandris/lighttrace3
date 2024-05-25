@@ -100,7 +100,10 @@ function Toolbar({children, ...props}){
             ),
             h(Button, { 
                 color: 'danger',
-                onClick: e=>entityStore.removeEntities(Object.entries(entityStore.getSelection()).map( ([key, _])=>key))
+                onClick: e=>{
+                    console.log("trash")
+                    entityStore.removeEntities(Object.entries(entityStore.getSelection()).map( ([key, _])=>key));
+                }
             }, 
                 h(Icon, {icon: "trash"})
             )

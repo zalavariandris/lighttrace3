@@ -1,0 +1,43 @@
+.shape{
+    stroke-width: 1;
+    stroke-dasharray: 0 8 0 8;
+    stroke-linecap: round;
+    opacity: 0.3;
+    vector-effect: non-scaling-stroke;
+
+    stroke: white;
+    fill: transparent;
+}
+
+line.shape{
+    stroke-dasharray: 0;
+}
+
+.shape.selected{
+    opacity: 1.0;
+    stroke-dasharray: 0 8 0;
+    vector-effect: non-scaling-stroke;
+}
+
+.light{
+    stroke-width: 3;
+    stroke-dasharray: 0 8 0 8;
+    stroke-linecap: round;
+    /* opacity: 0.3; */
+    vector-effect: non-scaling-stroke;
+
+    stroke: orangered;
+    fill: transparent;
+}
+.light.selected{
+    opacity: 1.0;
+    stroke-dasharray: 0 8 0;
+}
+
+.gizmo{
+    fill: white;
+}
+.gizmo:hover{
+    stroke: white;
+    stroke-width: 5;
+}

@@ -8,7 +8,15 @@ import GLRaytracer from "../raytracers/gl-raytracer/GLRaytracer.js";
 
 const h = React.createElement;
 
-function GLViewport({width, height, className, viewBox, displaySettings, ...props})
+function GLViewport({
+    width, 
+    height, 
+    className, 
+    viewBox, 
+    displaySettings, 
+    style,
+    ...props
+})
 {
     const scene = React.useSyncExternalStore(entityStore.subscribe, entityStore.getSnapshot);
     const settings = React.useSyncExternalStore(settingsStore.subscribe, settingsStore.getSnapshot);
@@ -62,8 +70,13 @@ function GLViewport({width, height, className, viewBox, displaySettings, ...prop
 
     return h("canvas", {
         className, 
+        style: {
+            opacity: settings.display.render?1.0:0.0,
+            ...style
+        },
         ref: canvasRef, 
-        ...props});
+        ...props
+    });
 }
 
 export default GLViewport;

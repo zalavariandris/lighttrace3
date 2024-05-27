@@ -96,8 +96,17 @@ function Settings(props){
                     h("label", null, "shapes"),
                     h(Checkbox, {
                         label: "shapes",
-                        checked: settings.svgDisplay.shapes,
-                        onChange: (e)=>{settingsStore.update("svgDisplay.shapes", e.target.checked)}
+                        checked: settings.display.shapes,
+                        onChange: (e)=>{settingsStore.setValue("display.shapes", e.target.checked)}
+                    }),
+                ),
+
+                h(AttributeRow, null, 
+                    h("label", null, "lights"),
+                    h(Checkbox, {
+                        label: "lights",
+                        checked: settings.display.lights,
+                        onChange: (e)=>{settingsStore.setValue("display.lights", e.target.checked)}
                     }),
                 ),
 
@@ -105,8 +114,8 @@ function Settings(props){
                     h("label", null, "rays"),
                     h(Checkbox, {
                         label: "rays",
-                        checked: settings.svgDisplay.shapes,
-                        onChange: (e)=>{settingsStore.update("svgDisplay.shapes", e.target.checked)}
+                        checked: settings.display.rays,
+                        onChange: (e)=>{settingsStore.setValue("display.rays", e.target.checked)}
                     })
                 ),
                 
@@ -114,17 +123,26 @@ function Settings(props){
                     h("label", null, "normals"),
                     h(Checkbox, {
                         label: "normals",
-                        checked: settings.svgDisplay.shapes,
-                        onChange: (e)=>{settingsStore.update("svgDisplay.shapes", e.target.checked)}
+                        checked: settings.display.normals,
+                        onChange: (e)=>{settingsStore.setValue("display.normals", e.target.checked)}
                     })
                 ),
                 
                 h(AttributeRow, null, 
-                    h("label", null, "debug gl"),
+                    h("label", null, "debug"),
                     h(Checkbox, {
-                        label: "debug gl",
-                        checked: settings.svgDisplay.shapes,
-                        onChange: (e)=>{settingsStore.update("svgDisplay.shapes", e.target.checked)}
+                        label: "debug",
+                        checked: settings.display.debug,
+                        onChange: (e)=>{settingsStore.setValue("display.debug", e.target.checked)}
+                    })
+                ),
+
+                h(AttributeRow, null, 
+                    h("label", null, "render"),
+                    h(Checkbox, {
+                        label: "render",
+                        checked: settings.display.render,
+                        onChange: (e)=>{settingsStore.setValue("display.render", e.target.checked)}
                     })
                 ),
             )

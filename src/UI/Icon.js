@@ -44,6 +44,7 @@ function Icon({icon, ...props})
     switch (icon) {
         case "line":
             return h("svg", {
+                className: "icon",
                 width:32,
                 height: 32,
                 viewBox: "0, 0, 32, 32",

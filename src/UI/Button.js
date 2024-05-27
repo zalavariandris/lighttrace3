@@ -1,17 +1,19 @@
 import React from "react"
 import {CButton, CButtonGroup} from "@coreui/react" 
-
+import Icon from "./Icon.js"
 const h = React.createElement;
 
 function Button({
     color,
     active,
+    icon,
     ...props
 }){
     return h("button",{
-        className: "button",
+        className: active ? "button active" : "button",
         ...props
     },
+        icon?h(Icon, {icon}):null,
         props.children
     )
     return h(CButton, { 

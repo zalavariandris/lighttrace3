@@ -1,3 +1,7 @@
+body{
+    user-select: none;
+}
+
 /* Layout main panel compnents*/
 #viewport{
     position: fixed;
@@ -44,10 +48,10 @@ body{
 
 .panel
 {
-    background-color: hsla(0, 0%, 50%, 0.4);
-    background-color: hsla(0, 0%, 0%, .99);
+    background-color: transparent;
     color: white;
-    backdrop-filter: blur(3px);
+    text-shadow: 2px 2px 1px black;
+    /* backdrop-filter: blur(3px); */
 }
 
 /* SVG Color style*/
@@ -65,18 +69,6 @@ body{
     stroke: white;
     stroke-width: 3;
 }
-
-/* UI widgets*/
-button{
-    border: none;
-    border-radius: 100px;
-    margin: 2px;
-}
-
-button.active{
-    background-color: cyan;
-}
-
 
 /* panel layout */
 .panel{
@@ -158,22 +150,38 @@ progress{
 } */
 
 button.button{
-    background-color: antiquewhite;
-    color: black;
     border: none;
-    border-radius: 50px !important;
     height: 3rem;
     min-width: 3rem;
     box-sizing: border-box;
     margin: 0.5rem 0.5rem;
     white-space: nowrap;
+
     background: transparent;
     color:white;
     text-shadow: 2px 2px 1px black;
 }
+.button:hover{
+    color:aquamarine;
+    stroke:aquamarine;
+}
+.button.active{
+    background-color: transparent;
+    color:aquamarine;
+    stroke:aquamarine;
+}
 
 i.icon{
     font-weight: bold !important;
-    color:white;
+    color:inherit;
     text-shadow: 2px 2px 1px black;
+}
+
+#bottombar button{
+    text-align: center;
+    font-size: 14px;
+}
+#bottombar button>.icon{
+    display: block;
+    margin: auto;
 }

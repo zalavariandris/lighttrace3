@@ -34,78 +34,87 @@ function Toolbar({children, ...props}){
         h(CButtonGroup, {role:"group"},
             h(Button, {
                 active: uiState.activeMouseTool=="circle",
-                'v-c-tooltip':"create circle",
+                icon: "circle",
                 onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "circle")
             }, 
-                h(Icon, {icon: "circle"}),
+                h("span", null, "circle")
             ),
 
             h(Button, { 
                 active: uiState.activeMouseTool=="rectangle",
+                icon: "square",
                 onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "rectangle")
             },
-                h(Icon, {icon: "square"})
+                "square"
             ),
 
             h(Button, { 
                 active: uiState.activeMouseTool=="triangle",
+                icon: "triangle",
                 onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "triangle")
             },
-                h(Icon, {icon: "triangle"})
+                "triangle"
             ),
 
             h(Button, { 
                 active: uiState.activeMouseTool=="lens",
+                icon: "lens",
                 onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "lens")
             },
-                h(Icon, {icon: "lens"})
+                "lens"
             ),
 
             h(Button, { 
                 active: uiState.activeMouseTool=="line",
+                icon: "line",
                 label:"create line",
                 onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "line")
-            }, 
-
-                h(Icon, {icon: "line"})
+            },
+                "line"
             )
         ),
 
         h(CButtonGroup, {role:"group", ariaLabel:"Basic example"},
             h(Button, { 
                 active: uiState.activeMouseTool=="pointLight",
+                icon: "lightbulb",
                 onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "pointLight")
             },
-                h(Icon, {icon: "lightbulb"})
+                "pointlight"
             ),
             h(Button, { 
                 active: uiState.activeMouseTool=="laser",
+                icon: "laser",
                 onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "laser")
             },
-                h(Icon, {icon: "laser"})
+                "laser"
             ),
             h(Button, { 
                 active: uiState.activeMouseTool=="directional",
+                icon: "sun",
                 onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "directional")
             },
-                h(Icon, {icon: "sun"})
+                "sun"
             ),
         ),  
 
         h(CButtonGroup, {role:"group", ariaLabel:"Basic example"},
             h(Button, { 
+                icon: "restore",
                 onClick: e=>entityStore.removeEntities(Object.entries(entityStore.getSelection()).map( ([key, _])=>key))
+                
             },
-                h(Icon, {icon: "restore"})
+                "restore"
             ),
             h(Button, { 
                 color: 'danger',
+                icon: "trash",
                 onClick: e=>{
                     console.log("trash")
                     entityStore.removeEntities(Object.entries(entityStore.getSelection()).map( ([key, _])=>key));
                 }
             }, 
-                h(Icon, {icon: "trash"})
+                "trash"
             )
         ),
     )

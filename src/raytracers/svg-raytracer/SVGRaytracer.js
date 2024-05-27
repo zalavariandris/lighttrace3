@@ -181,9 +181,19 @@ function SVGRaytracer()
         rays = secondary;
     }
     
-    return h('g', { className: 'svg-raytracer'},
+    return h('g', {
+        className: 'svg-raytracer',
+        style: {
+            pointerEvents: "none"
+        }
+    },
         rayLines.map(path =>
-            h('g', { className: 'rays'},
+            h('g', {
+                className: 'rays',
+                style: {
+                    opacity: settings.display.rays?1.0:0.0
+                }
+            },
                 h('line', {
                     x1: path.x1,
                     y1: path.y1,
@@ -200,7 +210,12 @@ function SVGRaytracer()
             )
         ),
         hitLines.map(path =>
-            h('g', { className: 'intersections'},
+            h('g', {
+                className: 'intersections',
+                style: {
+                    opacity: settings.display.normals?1.0:0.0
+                }
+            },
                 h('line', {
                     x1: path.x1,
                     y1: path.y1,

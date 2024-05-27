@@ -1,12 +1,16 @@
+import React from "react";
+
 import entityStore from "../stores/entity-store.js";
 import uiStore from "../stores/ui-store.js";
-import React from "react";
+import settingsStore from "../stores/settings-store.js";
+
 import Manipulator from "../widgets/Manipulator.js";
 const h = React.createElement;
 import SVGRaytracer from "../raytracers/svg-raytracer/SVGRaytracer.js";
 import {selectAndMoveTool, circleTool, rectangleTool, lineTool, lensTool, pointlightTool, directionalLightTool, laserTool} from "./MouseTools.js"
 import _ from "lodash";
 import Icon from "./icons/icon.js";
+
 
 // UTILS
 function rotatePoint(x, y, radAngle, pivotX, pivotY)
@@ -485,63 +489,134 @@ function Line({
 
 function PointLight({entityKey, entity})
 {
-    return h(Manipulator, {
-        referenceX: entity.transform.translate.x,
-        referenceY: entity.transform.translate.y,
-        onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
-            x: e.sceneX+e.referenceOffsetX, 
-            y: e.sceneY+e.referenceOffsetY
-        })
-    }, 
-        h("circle", {
-            cx: entity.transform.translate.x, 
-            cy: entity.transform.translate.y, 
-            r:10, 
-            className: "gizmo",
-            onClick: e=>entityStore.setSelection([key])
-        }),
+    const cx = entity.transform.translate.x;
+    const cy = entity.transform.translate.y;
+    const angle = entity.transform.rotate;
 
-        h(Manipulator /* rotate manip*/, {
-            referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
-            referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
-            onDrag: e=>entityStore.setValue(`${entityKey}.transform.rotate`, 
-                Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
-            )
-        }, 
-            h("path" /* rotate arrow */,{
-                stroke: "white",
-                strokeWidth: 2,
-                fill: "none",
-                d: describeArc(0,0, 50, 80, 100),
-                markerEnd:"url(#arrow)",
-                markerStart:"url(#arrow)",
-                style: {
-                    transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`
-                }
+    return h("g", null, 
+        h(Manipulator, {
+            referenceX: entity.transform.translate.x,
+            referenceY: entity.transform.translate.y,
+            onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
+                x: e.sceneX+e.referenceOffsetX, 
+                y: e.sceneY+e.referenceOffsetY
+            }),
+        },
+            h("circle", {
+                cx: cx, 
+                cy: cy, 
+                r:15, 
+                style: {fill: "transparent"},
+                // className: "gizmo",
+                onClick: e=>entityStore.setSelection([key])
             })
-        )
+        ), 
+
+        /* draw light icon */
+        h("g", {style: {pointerEvents: "none"}}, 
+            h("circle", {
+                cx: cx, 
+                cy: cy, 
+                r:4,
+                style: {
+                    fill: "white",
+                    stroke: "white"
+                }
+            }),
+            Array.from({length: 9}).map((_, k)=>{
+                return h("line", {
+                    x1:cx+Math.cos(k/9*Math.PI*2 + angle)*7, 
+                    y1:cy+Math.sin(k/9*Math.PI*2 + angle)*7, 
+                    x2:cx+Math.cos(k/9*Math.PI*2 + angle)*10, 
+                    y2:cy+Math.sin(k/9*Math.PI*2 + angle)*10, 
+                    stroke: "white",
+                    strokeWidth: 3,
+                    strokeLinecap: "round"
+                })
+            })
+        ),
+
+        // h(Manipulator /* rotate manip*/, {
+        //     referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
+        //     referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
+        //     onDrag: e=>entityStore.setValue(`${entityKey}.transform.rotate`, 
+        //         Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
+        //     )
+        // }, 
+        //     h("path" /* rotate arrow */,{
+        //         stroke: "white",
+        //         strokeWidth: 2,
+        //         fill: "none",
+        //         d: describeArc(0,0, 50, 80, 100),
+        //         markerEnd:"url(#arrow)",
+        //         markerStart:"url(#arrow)",
+        //         style: {
+        //             transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`
+        //         }
+        //     })
+        // )
     )
 }
 
 function LaserLight({entityKey, entity})
 {
-    return h(Manipulator /* tmove manip */, {
-        referenceX: entity.transform.translate.x,
-        referenceY: entity.transform.translate.y,
-        onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
-            x: e.sceneX+e.referenceOffsetX, 
-            y: e.sceneY+e.referenceOffsetY
-        })
-    }, 
-        h("circle", {
-            className: entity.selected ? "light selected" : "light",
-            cx: entity.transform.translate.x, 
-            cy: entity.transform.translate.y, 
-            r:10, 
-            
-            onClick: e=>entityStore.setSelection([entityKey])
-        }),
+    const cx = entity.transform.translate.x;
+    const cy = entity.transform.translate.y;
+    const angle = entity.transform.rotate;
 
+    return h("g", null, 
+        h(Manipulator /* tmove manip */, {
+            referenceX: entity.transform.translate.x,
+            referenceY: entity.transform.translate.y,
+            onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
+                x: e.sceneX+e.referenceOffsetX, 
+                y: e.sceneY+e.referenceOffsetY
+            })
+        },
+            h("circle", {
+                cx: cx, 
+                cy: cy, 
+                r:15, 
+                style: {fill: "transparent"},
+                // className: "gizmo",
+                onClick: e=>entityStore.setSelection([key])
+            })
+        ), 
+
+        /* draw light icon */
+        h("g", {style: {pointerEvents: "none"}}, 
+            h("circle", {
+                cx: cx, 
+                cy: cy, 
+                r:1.5,
+                style: {
+                    fill: "white",
+                    stroke: "white"
+                }
+            }),
+            Array.from({length: 3}).map((_, k)=>{
+                return h("line", {
+                    x1:cx+Math.cos((k-1)/3*Math.PI*0.6 + angle)*4, 
+                    y1:cy+Math.sin((k-1)/3*Math.PI*0.6 + angle)*4, 
+                    x2:cx+Math.cos((k-1)/3*Math.PI*0.6 + angle)*5, 
+                    y2:cy+Math.sin((k-1)/3*Math.PI*0.6 + angle)*5, 
+                    stroke: "white",
+                    strokeWidth: 2,
+                    strokeLinecap: "round"
+                })
+            }),
+            h("line", {
+                x1:cx+Math.cos(angle)*4, 
+                y1:cy+Math.sin(angle)*4, 
+                x2:cx+Math.cos(angle)*16, 
+                y2:cy+Math.sin(angle)*16, 
+                stroke: "white",
+                strokeWidth: 2,
+                strokeLinecap: "round"
+            })
+        ),
+
+        
         h("g", {style: {display: entity.selected?"initial":"none"}}, 
             h(Manipulator /* rotate manip */, {
                 referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
@@ -683,6 +758,7 @@ function DirectionalLight({entityKey, entity})
 function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...props})
 {
     const scene = React.useSyncExternalStore(entityStore.subscribe, entityStore.getSnapshot);
+    const settings = React.useSyncExternalStore(settingsStore.subscribe, settingsStore.getSnapshot);
     const uiState = React.useSyncExternalStore(uiStore.subscribe, uiStore.getSnapshot);
 
     // pan and zoom
@@ -719,7 +795,6 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
         window.addEventListener('mouseup', ()=>window.removeEventListener("mousemove", handleDrag), {once: true});
     }
 
-    
     const zoomViewportWithmouseWheel = (e)=>{
         const svg = e.target.closest("SVG");
         const clientSize = {w: svg.clientWidth, h: svg.clientHeight}
@@ -807,65 +882,79 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
         ),
 
         // SHAPES
-        Object.entries(scene)
-        .filter(([key, entity])=>{
-            return entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform");
-        })
-        .map( ([key, entity])=>{
-            switch (entity.shape.type) {
-                case "circle":
-                    return h(Circle, {
-                        entityKey: key, 
-                        entity: entity,
-                        onClick: e=>entityStore.setSelection([key])
-                    })
-                case "rectangle":
-                    return h(Rectangle, {
-                        entityKey: key, 
-                        entity: entity,
-                        onClick: e=>entityStore.setSelection([key])
-                    })
-                case "sphericalLens":
-                    return h(SphericalLens, {
-                        entityKey: key, 
-                        entity: entity,
-                        onClick: e=>entityStore.setSelection([key])
-                    })
-                case "triangle":
-                    return h(Triangle, {
-                        entityKey: key, 
-                        entity: entity,
-                        onClick: e=>entityStore.setSelection([key])
-                    })
-                case "line":
-                    return h(Line, {
-                        entityKey: key, 
-                        entity: entity,
-                        onClick: e=>entityStore.setSelection([key])
-                    })
-                default:
-                    break;
+        h("g", {
+            className:"shapes", 
+            style:{
+                opacity: settings.display.shapes ? 1.0 : 0.0
             }
+        },
+            Object.entries(scene)
+            .filter(([key, entity])=>{
+                return entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform");
+            })
+            .map( ([key, entity])=>{
+                switch (entity.shape.type) {
+                    case "circle":
+                        return h(Circle, {
+                            entityKey: key, 
+                            entity: entity,
+                            onClick: e=>entityStore.setSelection([key])
+                        })
+                    case "rectangle":
+                        return h(Rectangle, {
+                            entityKey: key, 
+                            entity: entity,
+                            onClick: e=>entityStore.setSelection([key])
+                        })
+                    case "sphericalLens":
+                        return h(SphericalLens, {
+                            entityKey: key, 
+                            entity: entity,
+                            onClick: e=>entityStore.setSelection([key])
+                        })
+                    case "triangle":
+                        return h(Triangle, {
+                            entityKey: key, 
+                            entity: entity,
+                            onClick: e=>entityStore.setSelection([key])
+                        })
+                    case "line":
+                        return h(Line, {
+                            entityKey: key, 
+                            entity: entity,
+                            onClick: e=>entityStore.setSelection([key])
+                        })
+                    default:
+                        break;
+                }
 
-        }),
+            })
+        ),
 
         // LIGHTS
-        Object.entries(scene)
-        .filter(([key, entity])=>entity.hasOwnProperty("transform") && entity.hasOwnProperty("light"))
-        .map( ([key, entity])=>{
-            switch (entity.light.type) {
-                case "point":
-                    return h(PointLight, {entityKey: key, entity: entity})
-                case "laser":
-                    return h(LaserLight, {entityKey: key, entity: entity})
-                case "directional":
-                    return h(DirectionalLight, {entityKey: key, entity: entity})
-            
-                default:
-                    break;
+        h("g", {
+            className:"lights", 
+            style:{
+                opacity: settings.display.lights ? 1.0 : 0.0
             }
+        },
+            Object.entries(scene)
+            .filter(([key, entity])=>entity.hasOwnProperty("transform") && entity.hasOwnProperty("light"))
+            .map( ([key, entity])=>{
+                switch (entity.light.type) {
+                    case "point":
+                        return h(PointLight, {entityKey: key, entity: entity})
+                    case "laser":
+                        return h(LaserLight, {entityKey: key, entity: entity})
+                    case "directional":
+                        return h(DirectionalLight, {entityKey: key, entity: entity})
+                
+                    default:
+                        break;
+                }
 
-        }),
+            })
+        ),
 
         // RAYS
         h(SVGRaytracer)

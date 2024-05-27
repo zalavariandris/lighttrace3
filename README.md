@@ -26,9 +26,11 @@
 - [ ] support dispersion in svg-raytracer
 - [ ] physically accurate wavelength to color wavelength->XYZ->linearRGB->sRGB
 - [ ] review tonemapping. support multiple colorspaces
+- [ ]refacto svg and gl viewport. Use child elements, to map entities to their own elements.
 
 ### UI/UX
-- [ ] align ui group attributes to each group. add grid to a parent element, and make groups a child of this form.
+- [x] align ui group attributes to each group.
+- [ ] add label inside AttributeRow. and put all children in the second column.
 - [x] mousetools to create and delete objects
 - [ ] show when lights are selected. selection shape is too small? hard to select
 - [x] persistent scene

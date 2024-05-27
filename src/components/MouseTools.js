@@ -114,6 +114,48 @@ const rectangleTool = e => {
     }, {once: true});
 }
 
+const triangleTool = e => {
+    e.preventDefault();
+    var svg  = e.target.closest("SVG");
+    let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+    const [beginSceneX, beginSceneY] = [loc.x, loc.y];
+
+    const key = generateId();
+    entityStore.addEntity(key, {
+        transform:{
+            translate: {
+                x: beginSceneX,
+                y: beginSceneY
+            },
+            rotate: 0
+        },
+        shape: {
+            type: "triangle",
+            size: 5,
+        },
+        material: {
+            type: "diffuse"
+        },
+        selected: false
+    });
+
+    const handleDrag = e=>{
+        // var svg  = e.target.closest("SVG");
+        let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+        const [sceneX, sceneY] = [loc.x, loc.y]
+        const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
+
+        entityStore.setValue(`${key}.shape.size`, Math.hypot(dx, dy));
+
+    }
+
+    window.addEventListener("mousemove", handleDrag);
+    window.addEventListener("mouseup", e=>{
+        window.removeEventListener("mousemove", handleDrag);
+        uiStore.setValue("activeMouseTool", null);
+    }, {once: true});
+}
+
 const lineTool = e => {
     e.preventDefault();
     var svg  = e.target.closest("SVG");
@@ -318,4 +360,8 @@ const laserTool = e => {
 
 
 
-export {selectAndMoveTool, circleTool, rectangleTool, lineTool, lensTool, pointlightTool, directionalLightTool, laserTool};
+export {
+    selectAndMoveTool, 
+    circleTool, rectangleTool, triangleTool, lineTool, lensTool, 
+    pointlightTool, directionalLightTool, laserTool
+};

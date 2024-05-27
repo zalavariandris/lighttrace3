@@ -34,10 +34,17 @@ line.shape{
     stroke-dasharray: 0 8 0;
 }
 
+/* Manipulator */
 .gizmo{
     fill: white;
 }
 .gizmo:hover{
     stroke: white;
     stroke-width: 5;
+}
+.gizmo .guide{
+    stroke-width: 1px;
+    stroke-dasharray: 0 16 0;
+    opacity: 0.3;
+    vector-effect: non-scaling-stroke;
 }

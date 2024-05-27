@@ -11,7 +11,8 @@ class ManipEvent{
         sceneStartY, 
         nativeEvent,
         referenceX,
-        referenceY
+        referenceY,
+        value
     })
     {
         this.sceneX = sceneX;
@@ -23,6 +24,7 @@ class ManipEvent{
         this.referenceY = referenceY?referenceY:sceneStartY;
         this.referenceOffsetX = referenceX?referenceX-sceneStartX:0;
         this.referenceOffsetY = referenceY?referenceY-sceneStartY:0;
+        this.value = value
 
     }
 }
@@ -134,8 +136,8 @@ function Manipulator({
     return h("g", {
         ref:ref,
         style: {
-            ...style, 
-            cursor: active?"grabbing":"grab"
+            cursor: active?"grabbing":"grab",
+            ...style
         },
         ...props,
         onMouseDown: (e)=>handleMouseDown(e),
@@ -160,4 +162,82 @@ function Manipulator({
     )
 }
 
+function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+    var angleInRadians = (angleInDegrees-90) * Math.PI / 180.0;
+
+    return {
+        x: centerX + (radius * Math.cos(angleInRadians)),
+        y: centerY + (radius * Math.sin(angleInRadians))
+    };
+}
+  
+function describeArc(x, y, radius, startAngle, endAngle){
+
+    var start = polarToCartesian(x, y, radius, endAngle);
+    var end = polarToCartesian(x, y, radius, startAngle);
+
+    var largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+
+    var d = [
+        "M", start.x, start.y, 
+        "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y
+    ].join(" ");
+
+    return d;       
+}
+
+function RotateManip({
+    cx,
+    cy,
+    angle,
+    distance=100, 
+    onChange,
+    axis="X",
+    ...props
+}={}){
+    const adjustedAngle = axis=="Y"?angle-Math.PI/2:angle;
+
+    return h(Manipulator /* rotate manip */, {
+        referenceX: cx+Math.cos(adjustedAngle)*50,
+        referenceY: cy+Math.sin(adjustedAngle)*50,
+        onDrag: e=>{
+            let newAngle = Math.atan2(e.sceneY-cy, e.sceneX-cx)
+            if(axis=="Y"){
+                newAngle+=Math.PI/2;
+            }
+            e.value = newAngle
+            onChange(e)
+        },
+        style: {
+            cursor: "url('../cursors/clockwise-rotation.svg') 16 16, auto",
+        },
+        ...props
+    }, 
+        h("circle", {
+            cx:cx+Math.cos(adjustedAngle)*distance, 
+            cy:cy+Math.sin(adjustedAngle)*distance,
+            r: 8,
+            className: "gizmo rotate",
+            style: {
+                fill: "transparent",
+                stroke: "transparent"
+            }
+        }),
+
+        h("path" /* rotate arrow */,{
+            stroke: "white",
+            strokeWidth: 2,
+            fill: "none",
+            d: describeArc(0,0, distance, 80, 100),
+            markerEnd:"url(#arrow)",
+            markerStart:"url(#arrow)",
+            style: {
+                transform: `translate(${cx}px, ${cy}px) rotate(${adjustedAngle}rad)`,
+                pointerEvents: "none"
+            }
+        })
+    )
+}
+
+export {RotateManip}
 export default Manipulator;

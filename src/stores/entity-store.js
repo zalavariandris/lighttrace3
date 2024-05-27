@@ -103,8 +103,9 @@ const defaultScene = {
 
 };
 
-let scene = JSON.parse(localStorage.getItem("scene"));
-if(!localStorage.getItem("scene"))
+let scene;
+// let scene = JSON.parse(localStorage.getItem("scene"));
+if(!scene)
 {
     scene = defaultScene;
 }

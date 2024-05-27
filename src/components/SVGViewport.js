@@ -4,10 +4,10 @@ import entityStore from "../stores/entity-store.js";
 import uiStore from "../stores/ui-store.js";
 import settingsStore from "../stores/settings-store.js";
 
-import Manipulator from "../widgets/Manipulator.js";
+import Manipulator, {RotateManip} from "../widgets/Manipulator.js";
 const h = React.createElement;
 import SVGRaytracer from "../raytracers/svg-raytracer/SVGRaytracer.js";
-import {selectAndMoveTool, circleTool, rectangleTool, lineTool, lensTool, pointlightTool, directionalLightTool, laserTool} from "./MouseTools.js"
+import {selectAndMoveTool, circleTool, rectangleTool, triangleTool, lineTool, lensTool, pointlightTool, directionalLightTool, laserTool} from "./MouseTools.js"
 import _ from "lodash";
 import Icon from "./icons/icon.js";
 
@@ -106,9 +106,16 @@ function SphericalLens({
     entityKey, entity, ...props
 })
 {
+    const cx = entity.transform.translate.x;
+    const cy = entity.transform.translate.y;
+    const angle = entity.transform.rotate;
+
     return h(Manipulator /* Move Manip */, {
         referenceX: entity.transform.translate.x,
         referenceY: entity.transform.translate.y,
+        style:{
+            cursor: "move"
+        },
         onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
                 x: e.sceneX+e.referenceOffsetX, 
                 y: e.sceneY+e.referenceOffsetY
@@ -135,25 +142,11 @@ function SphericalLens({
                 display: entity.selected?"initial":"none"
             }
         }, 
-            h(Manipulator /* Rotate Manip */, {
-                referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
-                referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
-                onDrag: e=>entityStore.setValue(`${entityKey}.transform.rotate`, 
-                    Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
-                )
-            },
-                h("path" /* rotate arrow */,{
-                    stroke: "white",
-                    strokeWidth: 2,
-                    fill: "none",
-                    d: describeArc(0,0, Math.max(entity.shape.centerThickness, entity.shape.edgeThickness)/2+15, 80, 100),
-                    markerEnd:"url(#arrow)",
-                    markerStart:"url(#arrow)",
-                    style: {
-                        transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`
-                    }
-                })
-            ),
+            h(RotateManip,{
+                cx,cy,angle,
+                distance: Math.max(entity.shape.centerThickness/2+16, entity.shape.edgeThickness/2),
+                onChange: e=>entityStore.setValue(`${entityKey}.transform.rotate`, e.value)
+            }),
 
             h(Manipulator /* manip centerThickness*/, {
                 onDrag: e=>{
@@ -205,6 +198,12 @@ function Rectangle({
     entityKey, entity, ...props
 })
 {
+    const cx = entity.transform.translate.x;
+    const cy = entity.transform.translate.y;
+    const angle = entity.transform.rotate;
+    const width = entity.shape.width;
+    const height = entity.shape.height;
+
     return h(Manipulator /* Move Manip */, {
         referenceX: entity.transform.translate.x,
         referenceY: entity.transform.translate.y,
@@ -227,25 +226,12 @@ function Rectangle({
         }),
 
         h("g", {style: {display: entity.selected?"initial":"none"}}, 
-            h(Manipulator /* Rotate Manip */, {
-                referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
-                referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
-                onDrag: e=>entityStore.setValue(`${entityKey}.transform.rotate`, 
-                    Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
-                )
-            },
-                h("path" /* rotate arrow */,{
-                    stroke: "white",
-                    strokeWidth: 2,
-                    fill: "none",
-                    d: describeArc(0,0, entity.shape.width/2+20, 80, 100),
-                    markerEnd:"url(#arrow)",
-                    markerStart:"url(#arrow)",
-                    style: {
-                        transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`
-                    }
-                })
-            ),
+            h(RotateManip, {
+                cx,cy,angle,
+                distance: entity.shape.height/2+16,
+                axis: "Y",
+                onChange: e=>entityStore.setValue(`${entityKey}.transform.rotate`, e.value)
+            }),
 
             h(Manipulator /*  manip width and height*/, {
                 className:"manip",
@@ -259,14 +245,18 @@ function Rectangle({
                     entityStore.setValue(`${entityKey}.shape.height`, newHeight);
                 }
             },
-                h('circle', {
-                    className: "gizmo",
-                    cx:entity.transform.translate.x+Math.cos(entity.transform.rotate)*entity.shape.width/2+Math.cos(entity.transform.rotate+Math.PI/2)*entity.shape.height/2, 
-                    cy:entity.transform.translate.y+Math.sin(entity.transform.rotate)*entity.shape.width/2+Math.sin(entity.transform.rotate+Math.PI/2)*entity.shape.height/2,
-                    r: 5,
+                h("path", {
+                    d: "M0,-10 L0,0 L-10,00",
+                    stroke: "white",
+                    strokeWidth: "5px",
+                    fill: "transparent",
                     vectorEffect: "non-scaling-stroke",
-                    style: {cursor: "nwse-resize"}
-                }),
+                    style: {
+                        cursor: "nwse-resize",
+                        transform: ` rotate(${angle}rad) translate(${cx+width/2+4}px, ${cy+height/2+4}px)`,
+                        transformOrigin: `${cx}px ${cy}px`
+                    }
+                })
             )
         )
     )
@@ -320,12 +310,17 @@ function Triangle({
     entityKey, entity, ...props
 })
 {
+
+    const [cx, cy] = [entity.transform.translate.x, entity.transform.translate.y];
+    const angle = entity.transform.rotate;
+
     const vertices = Array.from({length: 3}).map((_, k)=>{
         const angle = k/3.0*Math.PI*2-Math.PI/2;
         return [Math.cos(angle)*entity.shape.size, Math.sin(angle)*entity.shape.size];
     });
 
     const svgPointsString = vertices.map(P=>P.join(", ")).join(" ");
+    let prevSize;
 
     return h(Manipulator /* Move Manip */, {
         referenceX: entity.transform.translate.x,
@@ -339,7 +334,6 @@ function Triangle({
             style:{
                 transform: `rotate(${entity.transform.rotate}rad) translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px)`,
                 transformOrigin: `${entity.transform.translate.x}px ${entity.transform.translate.y}px`
-            
             },
             className: entity.selected ? "shape selected" : "shape",
             points: svgPointsString,
@@ -347,32 +341,43 @@ function Triangle({
         }),
 
         h("g", {style: {display: entity.selected?"initial":"none"}}, 
-            h(Manipulator /* rotate manip */, {
-                referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
-                referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
-                onDrag: e=>entityStore.setValue(`${entityKey}.transform.rotate`, 
-                    Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
-                )
-            }, 
-               
-                Icon({
-                    x:entity.transform.translate.x+Math.cos(entity.transform.rotate)*50, 
-                    y:entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
-                    icon:"rotate",
-                    style: {
-                        fill: "white", 
-                        stroke: "none",
-                        transform: `rotate(${entity.transform.rotate}rad)`,
-                        transformOrigin: `${entity.transform.translate.x+Math.cos(entity.transform.rotate)*70}px ${entity.transform.translate.y+Math.sin(entity.transform.rotate)*70}px`
-                    }
-                })
-            ),
+            h(RotateManip, {
+                cx, cy, angle, 
+                distance: entity.shape.size+16,
+                axis: "Y",
+                onChange: e=>entityStore.setValue(`${entityKey}.transform.rotate`, e.value)
+            }),
 
-            h(Manipulator /*  manip radius*/, {
+            // h(RotateManip, {
+            //     cx, cy, angle, 
+            //     distance: entity.shape.size+16,
+            //     axis: "Y",
+            //     onChange: e=>entityStore.setValue(`${entityKey}.transform.rotate`, e.value)
+            // },
+            //     h('polygon', {
+            //         className: "gizmo",
+            //         points: svgPointsString,
+            //         vectorEffect: "non-scaling-stroke",
+            //         style: {
+            //             fill: "none",
+            //             stroke: "transparent",
+            //             strokeWidth: 5,
+            //             transform: `rotate(${entity.transform.rotate}rad) translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px)`,
+            //             transformOrigin: `${entity.transform.translate.x}px ${entity.transform.translate.y}px`
+            //         }
+            //     }),
+            // ),
+
+            h(Manipulator /*  manip size*/, {
                 className:"manip",
+                onDragStart: e=>{
+                    prevSize = entity.shape.size;
+                },
                 onDrag: e=>{
-                    const newSize = Math.hypot(e.sceneX-entity.transform.translate.x, e.sceneY-entity.transform.translate.y)
-                    entityStore.setValue(`{entityKey}.shape.size`, newSize);
+                    const d0 = Math.hypot(e.sceneStartX-cx, e.sceneStartY-cy);
+                    const d1 = Math.hypot(e.sceneX-cx, e.sceneY-cy);
+                    // console.log(newSize)
+                    entityStore.setValue(`${entityKey}.shape.size`, prevSize*d1/d0);
                 }
             },
                 h('polygon', {
@@ -384,8 +389,8 @@ function Triangle({
                         stroke: "transparent",
                         strokeWidth: 5,
                         cursor: "nwse-resize",
-                        transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`,
-                        transformOrigin: `${entity.transform.translate.x+Math.cos(entity.transform.rotate)*70}px ${entity.transform.translate.y+Math.sin(entity.transform.rotate)*70}px`
+                        transform: `rotate(${entity.transform.rotate}rad) translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px)`,
+                        transformOrigin: `${entity.transform.translate.x}px ${entity.transform.translate.y}px`
                     }
                 }),
             )
@@ -470,7 +475,10 @@ function Line({
                 className: "gizmo",
                 referenceX: x1,
                 referenceY: y1,
-                onDrag: e=>setP1(e.sceneX, e.sceneY)
+                onDrag: e=>setP1(e.sceneX, e.sceneY),
+                style: {
+                    cursor: "move"
+                }
             }, 
                 h("circle", {cx: x1, cy:y1, r:5})
             ),
@@ -479,7 +487,10 @@ function Line({
                 className: "gizmo",
                 referenceX: x2,
                 referenceY: y2,
-                onDrag: e=>setP2(e.sceneX, e.sceneY)
+                onDrag: e=>setP2(e.sceneX, e.sceneY),
+                style: {
+                    cursor: "move"
+                }
             }, 
                 h("circle", {cx: x2, cy:y2, r:5})
             )
@@ -557,6 +568,8 @@ function PointLight({entityKey, entity})
     )
 }
 
+
+
 function LaserLight({entityKey, entity})
 {
     const cx = entity.transform.translate.x;
@@ -584,54 +597,46 @@ function LaserLight({entityKey, entity})
         /* draw light icon */
         h("g", {style: {pointerEvents: "none"}}, 
             h("circle", {
-                cx: cx, 
-                cy: cy, 
-                r:entity.selected ? 3 : 2,
+                cx: cx+Math.cos(angle)*16, 
+                cy: cy+Math.sin(angle)*16, 
+                r:entity.selected ? 1 : 1,
                 style: {
                     fill: "white",
                     stroke: "white"
                 }
             }),
-            Array.from({length: 3}).map((_, k)=>{
+            Array.from({length: 7}).map((_, k)=>{
                 return h("line", {
-                    x1:cx+Math.cos((k-1)/3*Math.PI*0.6 + angle)*4, 
-                    y1:cy+Math.sin((k-1)/3*Math.PI*0.6 + angle)*4, 
-                    x2:cx+Math.cos((k-1)/3*Math.PI*0.6 + angle)*6, 
-                    y2:cy+Math.sin((k-1)/3*Math.PI*0.6 + angle)*6, 
+                    x1:cx+Math.cos(angle)*16+Math.cos((k-3)/7*Math.PI*1.7 + angle)*2.5, 
+                    y1:cy+Math.sin(angle)*16+Math.sin((k-3)/7*Math.PI*1.7 + angle)*2.5, 
+                    x2:cx+Math.cos(angle)*16+Math.cos((k-3)/7*Math.PI*1.7 + angle)*4.5, 
+                    y2:cy+Math.sin(angle)*16+Math.sin((k-3)/7*Math.PI*1.7 + angle)*4.5, 
                     stroke: "white",
-                    strokeWidth: entity.selected ? 3 : 1,
+                    strokeWidth: entity.selected ? 1 : 0.5,
                     strokeLinecap: "round"
                 })
             }),
             h("line", {
-                x1:cx+Math.cos(angle)*4, 
-                y1:cy+Math.sin(angle)*4, 
+                x1:cx+Math.cos(angle)*0, 
+                y1:cy+Math.sin(angle)*0, 
                 x2:cx+Math.cos(angle)*16, 
                 y2:cy+Math.sin(angle)*16, 
                 stroke: "white",
-                strokeWidth: entity.selected ? 3 : 1,
+                strokeWidth: entity.selected ? 4 : 3,
                 strokeLinecap: "round"
             })
         ),
 
         
         h("g", {style: {display: entity.selected?"initial":"none"}}, 
-            h(Manipulator /* rotate manip */, {
-                referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
-                referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
-                onDrag: e=>entityStore.setValue(`${entityKey}.transform.rotate`, 
-                    Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
-                )
-            }, 
-            h("path" /* rotate arrow */,{
-                d: describeArc(0,0, 50, 80, 100),
-                markerEnd:"url(#arrow)",
-                markerStart:"url(#arrow)",
-                style: {
-                    transform: `translate(${entity.transform.translate.x}px, ${entity.transform.translate.y}px) rotate(${entity.transform.rotate}rad)`
-                }
+            h(RotateManip, {
+                cx:cx, 
+                cy:cy, 
+                angle: angle,
+                distance: 100,
+                onChange: e=>entityStore.setValue(`${entityKey}.transform.rotate`, e.value)
             })
-            )
+            
         )
     )
 }
@@ -719,46 +724,11 @@ function DirectionalLight({entityKey, entity})
 
 
         h("g", {style: {display: entity.selected?"initial":"none"}}, 
-            h(Manipulator /* rotate manip */, {
-                referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
-                referenceY: entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
-                onDrag: e=>entityStore.setValue(`${entityKey}.transform.rotate`, 
-                    Math.atan2(e.sceneY-entity.transform.translate.y, e.sceneX-entity.transform.translate.x)
-                )
-            }, 
-               
-                Icon({
-                    x:entity.transform.translate.x+Math.cos(entity.transform.rotate)*50, 
-                    y:entity.transform.translate.y+Math.sin(entity.transform.rotate)*50,
-                    icon:"rotate",
-                    style: {
-                        fill: "white", 
-                        stroke: "none",
-                        transform: `rotate(${entity.transform.rotate}rad)`,
-                        transformOrigin: `${entity.transform.translate.x+Math.cos(entity.transform.rotate)*70}px ${entity.transform.translate.y+Math.sin(entity.transform.rotate)*70}px`
-                    }
-                })
-            ),
-
-            // h("foreignObject", {
-            //     x:entity.transform.translate.x-50, 
-            //     y:entity.transform.translate.y+10, 
-            //     width:"100", 
-            //     height:"20"}, 
-            //     h("input", {
-            //         type: "range",
-            //         min:0.0,
-            //         max: 10.0,
-            //         step: 0.1,
-            //         value: entity.light.intensity,
-            //         style: {width: 95},
-            //         onMouseDown: e=>{
-            //             console.log("mousedown")
-            //             e.stopPropagation();
-            //         },
-            //         onChange: e=>entityStore.setValue(`${entityKey}.light.intensity`, e.target.value)
-            //     })
-            // ),
+            h(RotateManip, {
+                cx,cy,angle,
+                distance: 100, 
+                onChange:e=>entityStore.setValue(`${entityKey}.transform.rotate`, e.value)
+            }),
 
             h(Manipulator /* width manip */, {
                 referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,
@@ -768,13 +738,14 @@ function DirectionalLight({entityKey, entity})
                 )
             }, 
                 h("circle", {
-                    cx: entity.transform.translate.x+Math.cos(entity.transform.rotate+Math.PI/2)*entity.light.width/2, 
-                    cy: entity.transform.translate.y+Math.sin(entity.transform.rotate+Math.PI/2)*entity.light.width/2, 
-                    r:10,
-                    className: "gizmo"
+                    cx: entity.transform.translate.x+Math.cos(entity.transform.rotate+Math.PI/2)*(entity.light.width/2+10), 
+                    cy: entity.transform.translate.y+Math.sin(entity.transform.rotate+Math.PI/2)*(entity.light.width/2+10), 
+                    r:5,
+                    className: "gizmo resize",
+                    style: {
+                        cursor: "ns-resize",
+                    }
                 }),
-
-
             )
         )
     )
@@ -848,6 +819,9 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                 break;
             case "rectangle":
                 rectangleTool(e);
+                break;
+            case "triangle":
+                triangleTool(e);
                 break;
             case "line":
                 lineTool(e);

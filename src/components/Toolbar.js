@@ -45,7 +45,7 @@ function Toolbar({children, ...props}){
                 icon: "square",
                 onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "rectangle")
             },
-                "square"
+                "rectangle"
             ),
 
             h(Button, { 
@@ -94,7 +94,7 @@ function Toolbar({children, ...props}){
                 icon: "sun",
                 onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "directional")
             },
-                "sun"
+                "directional"
             ),
         ),  
 

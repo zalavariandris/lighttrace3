@@ -516,7 +516,7 @@ function PointLight({entityKey, entity})
             h("circle", {
                 cx: cx, 
                 cy: cy, 
-                r:4,
+                r:entity.selected ? 4 : 2,
                 style: {
                     fill: "white",
                     stroke: "white"
@@ -529,7 +529,7 @@ function PointLight({entityKey, entity})
                     x2:cx+Math.cos(k/9*Math.PI*2 + angle)*10, 
                     y2:cy+Math.sin(k/9*Math.PI*2 + angle)*10, 
                     stroke: "white",
-                    strokeWidth: 3,
+                    strokeWidth: entity.selected ? 3 : 1,
                     strokeLinecap: "round"
                 })
             })
@@ -586,7 +586,7 @@ function LaserLight({entityKey, entity})
             h("circle", {
                 cx: cx, 
                 cy: cy, 
-                r:1.5,
+                r:entity.selected ? 3 : 2,
                 style: {
                     fill: "white",
                     stroke: "white"
@@ -596,10 +596,10 @@ function LaserLight({entityKey, entity})
                 return h("line", {
                     x1:cx+Math.cos((k-1)/3*Math.PI*0.6 + angle)*4, 
                     y1:cy+Math.sin((k-1)/3*Math.PI*0.6 + angle)*4, 
-                    x2:cx+Math.cos((k-1)/3*Math.PI*0.6 + angle)*5, 
-                    y2:cy+Math.sin((k-1)/3*Math.PI*0.6 + angle)*5, 
+                    x2:cx+Math.cos((k-1)/3*Math.PI*0.6 + angle)*6, 
+                    y2:cy+Math.sin((k-1)/3*Math.PI*0.6 + angle)*6, 
                     stroke: "white",
-                    strokeWidth: 2,
+                    strokeWidth: entity.selected ? 3 : 1,
                     strokeLinecap: "round"
                 })
             }),
@@ -609,7 +609,7 @@ function LaserLight({entityKey, entity})
                 x2:cx+Math.cos(angle)*16, 
                 y2:cy+Math.sin(angle)*16, 
                 stroke: "white",
-                strokeWidth: 2,
+                strokeWidth: entity.selected ? 3 : 1,
                 strokeLinecap: "round"
             })
         ),
@@ -697,7 +697,7 @@ function DirectionalLight({entityKey, entity})
             h("line", {
                 x1, y1,x2,y2,
                 stroke: "white",
-                strokeWidth: 3,
+                strokeWidth: entity.selected ? 3 : 1,
                 strokeLinecap: "round"
             }),
 
@@ -710,7 +710,7 @@ function DirectionalLight({entityKey, entity})
                     x2:cx+offsetX+Math.cos(angle)*16, 
                     y2:cy+offsetY+Math.sin(angle)*16, 
                     stroke: "white",
-                    strokeWidth: 2,
+                    strokeWidth: entity.selected ? 2 : 1,
                     strokeLinecap: "round"
                 })
             }),

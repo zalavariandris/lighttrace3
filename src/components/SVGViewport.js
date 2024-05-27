@@ -501,14 +501,13 @@ function PointLight({entityKey, entity})
                 x: e.sceneX+e.referenceOffsetX, 
                 y: e.sceneY+e.referenceOffsetY
             }),
+            onClick: e=>entityStore.setSelection([entityKey])
         },
             h("circle", {
                 cx: cx, 
                 cy: cy, 
                 r:15, 
-                style: {fill: "transparent"},
-                // className: "gizmo",
-                onClick: e=>entityStore.setSelection([key])
+                style: {fill: "transparent"}
             })
         ), 
 
@@ -571,15 +570,14 @@ function LaserLight({entityKey, entity})
             onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
                 x: e.sceneX+e.referenceOffsetX, 
                 y: e.sceneY+e.referenceOffsetY
-            })
+            }),
+            onClick: e=>entityStore.setSelection([entityKey])
         },
             h("circle", {
                 cx: cx, 
                 cy: cy, 
                 r:15, 
-                style: {fill: "transparent"},
-                // className: "gizmo",
-                onClick: e=>entityStore.setSelection([key])
+                style: {fill: "transparent"}
             })
         ), 
 
@@ -666,32 +664,59 @@ function describeArc(x, y, radius, startAngle, endAngle){
 function DirectionalLight({entityKey, entity})
 {
     console.log(entity)
-    const x1 = entity.transform.translate.x - Math.cos(entity.transform.rotate+Math.PI/2)*entity.light.width/2;
-    const y1 = entity.transform.translate.y - Math.sin(entity.transform.rotate+Math.PI/2)*entity.light.width/2;
-    const x2 = entity.transform.translate.x + Math.cos(entity.transform.rotate+Math.PI/2)*entity.light.width/2;
-    const y2 = entity.transform.translate.y + Math.sin(entity.transform.rotate+Math.PI/2)*entity.light.width/2;
+    const cx = entity.transform.translate.x;
+    const cy = entity.transform.translate.y
+    const angle = entity.transform.rotate;
+    const width = entity.light.width;
 
-    return h(Manipulator /* rotate manip */, {
-        referenceX: entity.transform.translate.x,
-        referenceY: entity.transform.translate.y,
-        onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
-            x: e.sceneX+e.referenceOffsetX, 
-            y: e.sceneY+e.referenceOffsetY
-        }),
-    }, 
-        h("line", {
-            className: entity.selected ? "light selected" : "light",
-            x1, y1,x2,y2,
+    const x1 = cx - Math.cos(angle+Math.PI/2)*width/2;
+    const y1 = cy - Math.sin(angle+Math.PI/2)*width/2;
+    const x2 = cx + Math.cos(angle+Math.PI/2)*width/2;
+    const y2 = cy + Math.sin(angle+Math.PI/2)*width/2;
+
+    return h("g", {className: "light directional", id: entityKey},
+    
+        h(Manipulator /* move manip */, {
+            referenceX: entity.transform.translate.x,
+            referenceY: entity.transform.translate.y,
+            onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
+                x: e.sceneX+e.referenceOffsetX, 
+                y: e.sceneY+e.referenceOffsetY
+            }),
             onClick: e=>entityStore.setSelection([entityKey])
-        }),
-        h("line", /*selectio shape*/{
-            x1, y1,x2,y2,
-            style: {
-                strokeWidth: "10px"
-            },
-            vectorEffect: "none",
-            onClick: e=>entityStore.setSelection([entityKey])
-        }),
+        },
+            h("line", {
+                x1, y1, x2, y2,
+                stroke: "transparent",
+                strokeWidth: 20
+            })
+        ),
+
+        /* draw light icon */
+        h("g", {style: {pointerEvents: "none"}},
+            h("line", {
+                x1, y1,x2,y2,
+                stroke: "white",
+                strokeWidth: 3,
+                strokeLinecap: "round"
+            }),
+
+            Array.from({length: 9}).map((_, k)=>{
+                const offsetX = Math.cos(angle+Math.PI/2)*width*(k-4)/9;
+                const offsetY = Math.sin(angle+Math.PI/2)*width*(k-4)/9;
+                return h("line", {
+                    x1:cx+offsetX+Math.cos(angle)*4, 
+                    y1:cy+offsetY+Math.sin(angle)*4, 
+                    x2:cx+offsetX+Math.cos(angle)*16, 
+                    y2:cy+offsetY+Math.sin(angle)*16, 
+                    stroke: "white",
+                    strokeWidth: 2,
+                    strokeLinecap: "round"
+                })
+            }),
+
+        ),
+
 
         h("g", {style: {display: entity.selected?"initial":"none"}}, 
             h(Manipulator /* rotate manip */, {
@@ -715,25 +740,25 @@ function DirectionalLight({entityKey, entity})
                 })
             ),
 
-            h("foreignObject", {
-                x:entity.transform.translate.x-50, 
-                y:entity.transform.translate.y+10, 
-                width:"100", 
-                height:"20"}, 
-                h("input", {
-                    type: "range",
-                    min:0.0,
-                    max: 10.0,
-                    step: 0.1,
-                    value: entity.light.intensity,
-                    style: {width: 95},
-                    onMouseDown: e=>{
-                        console.log("mousedown")
-                        e.stopPropagation();
-                    },
-                    onChange: e=>entityStore.setValue(`${entityKey}.light.intensity`, e.target.value)
-                })
-            ),
+            // h("foreignObject", {
+            //     x:entity.transform.translate.x-50, 
+            //     y:entity.transform.translate.y+10, 
+            //     width:"100", 
+            //     height:"20"}, 
+            //     h("input", {
+            //         type: "range",
+            //         min:0.0,
+            //         max: 10.0,
+            //         step: 0.1,
+            //         value: entity.light.intensity,
+            //         style: {width: 95},
+            //         onMouseDown: e=>{
+            //             console.log("mousedown")
+            //             e.stopPropagation();
+            //         },
+            //         onChange: e=>entityStore.setValue(`${entityKey}.light.intensity`, e.target.value)
+            //     })
+            // ),
 
             h(Manipulator /* width manip */, {
                 referenceX: entity.transform.translate.x+Math.cos(entity.transform.rotate)*50,

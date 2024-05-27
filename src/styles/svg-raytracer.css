@@ -20,14 +20,14 @@ line.shape{
 }
 
 .light{
-    stroke-width: 3;
-    stroke-dasharray: 0 8 0 8;
-    stroke-linecap: round;
+    /* stroke-width: 3; */
+    /* stroke-dasharray: 0 8 0 8; */
+    /* stroke-linecap: round; */
     /* opacity: 0.3; */
     vector-effect: non-scaling-stroke;
 
-    stroke: orangered;
-    fill: transparent;
+    /* stroke: orangered; */
+    /* fill: transparent; */
 }
 .light.selected{
     opacity: 1.0;

@@ -114,7 +114,7 @@ function SphericalLens({
         referenceX: entity.transform.translate.x,
         referenceY: entity.transform.translate.y,
         style:{
-            cursor: "move"
+            // cursor: "move"
         },
         onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
                 x: e.sceneX+e.referenceOffsetX, 

@@ -223,8 +223,38 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                         })
                     case "line":
                         return h(Line, {
+                            x1: entity.transform.translate.x - Math.cos(entity.transform.rotate)*entity.shape.length/2,
+                            y1: entity.transform.translate.y - Math.sin(entity.transform.rotate)*entity.shape.length/2,
+                            x2: entity.transform.translate.x + Math.cos(entity.transform.rotate)*entity.shape.length/2,
+                            y2: entity.transform.translate.y + Math.sin(entity.transform.rotate)*entity.shape.length/2,
                             entityKey: key, 
                             entity: entity,
+                            onChange: e=>{
+                                function setP1(x1,y1)
+                                {
+                                    entityStore.setValue(`${entityKey}.transform`, {
+                                        translate: {
+                                            x: (x1+x2)/2, 
+                                            y: (y1+y2)/2
+                                        },
+                                        rotate: Math.atan2(y2-y1, x2-x1)
+                                    });
+                                    entityStore.setValue(`${entityKey}.shape.length`, Math.hypot(x2-x1, y2-y1));
+                                }
+                            
+                                function setP2(x2,y2)
+                                {
+                                    entityStore.setValue(`${entityKey}.transform`, {
+                                        translate: {
+                                            x: (x1+x2)/2, 
+                                            y: (y1+y2)/2
+                                        },
+                                        rotate: Math.atan2(y2-y1, x2-x1)
+                                    });
+                            
+                                    entityStore.setValue(`${entityKey}.shape.length`, Math.hypot(x2-x1, y2-y1));
+                                }
+                            }
                             onClick: e=>entityStore.setSelection([key]),
                             id: key
                         })

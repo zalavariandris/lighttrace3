@@ -4,7 +4,10 @@ import entityStore from "../../stores/entity-store.js";
 import Manipulator, {RotateManip} from "../Manipulators.js";
 
 function Line({
-    entityKey, entity, ...props
+    x1,y1,x2,y2,
+    entityKey, 
+    entity, 
+    ...props
 })
 {
     const x1 = entity.transform.translate.x - Math.cos(entity.transform.rotate)*entity.shape.length/2;

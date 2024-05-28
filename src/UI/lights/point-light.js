@@ -3,7 +3,7 @@ const h = React.createElement;
 import entityStore from "../../stores/entity-store.js";
 import Manipulator, {RotateManip} from "../Manipulators.js";
 
-function PointLight({entityKey, entity})
+function PointLight({entityKey, entity, ...props})
 {
     
     const cx = entity.transform.translate.x;

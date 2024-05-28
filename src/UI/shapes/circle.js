@@ -1,43 +1,52 @@
 import React from "react";
-const h = React.createElement;
-import entityStore from "../../stores/entity-store.js"
 import Manipulator, {RotateManip} from "../Manipulators.js";
 
+
+const h = React.createElement;
 function Circle({
-    entityKey, entity, ...props
+    cx, cy, r,
+    onChange,
+    ...props
 })
 {
     return h("g", {
-        className: entity.selected ? "shape selected" : "shape",
         ...props
     }, 
         h(Manipulator /* Move Manip */, {
-            referenceX: entity.transform.translate.x,
-            referenceY: entity.transform.translate.y,
-            onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
-                x: e.sceneX+e.referenceOffsetX, 
-                y: e.sceneY+e.referenceOffsetY
-            })
+            referenceX: cx,
+            referenceY: cy,
+            onDrag: e=>{
+                e.value = {
+                    cx: e.sceneX+e.referenceOffsetX, 
+                    cy: e.sceneY+e.referenceOffsetY,
+                    r:r
+                };
+                onChange(e)
+            }
         }, 
             h("circle" /* draw shape */, {
-                cx: entity.transform.translate.x, 
-                cy: entity.transform.translate.y, 
-                r: entity.shape.radius,
-                ...props
+                cx: cx, 
+                cy: cy, 
+                r: r
             }),
 
             h(Manipulator /*  manip radius*/, {
                 className:"manip",
                 onDrag: e=>{
-                    const newRadius = Math.hypot(e.sceneX-entity.transform.translate.x, e.sceneY-entity.transform.translate.y)
-                    entityStore.setValue(`${entityKey}.shape.radius`, newRadius);
+                    const newRadius = Math.hypot(e.sceneX-cx, e.sceneY-cy)
+                    e.value = {
+                        cx,cy,
+                        r: newRadius
+                    }
+                    onChange(e)
+                    // entityStore.setValue(`${entityKey}.shape.radius`, newRadius);
                 }
             },
                 h('circle', {
                     className: "gizmo",
-                    cx: entity.transform.translate.x, 
-                    cy: entity.transform.translate.y, 
-                    r: entity.shape.radius,
+                    cx: cx, 
+                    cy: cy, 
+                    r: r,
                     vectorEffect: "non-scaling-stroke",
                     style: {
                         fill: "none",

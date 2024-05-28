@@ -186,17 +186,26 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                 switch (entity.shape.type) {
                     case "circle":
                         return h(Circle, {
-                            entityKey: key, 
-                            entity: entity,
+                            id: key,
+                            className: entity.selected ? "shape selected" : "shape",
+                            cx: entity.transform.translate.x,
+                            cy: entity.transform.translate.y,
+                            r: entity.shape.radius,
                             onClick: e=>entityStore.setSelection([key]),
-                            id: key
+                            onChange: e=>{
+                                entityStore.setValue(`${key}.transform.translate`, {
+                                    x: e.value.cx, 
+                                    y: e.value.cy
+                                });
+                                entityStore.setValue(`${key}.shape.radius`, e.value.r);
+                            }
                         })
                     case "rectangle":
                         return h(Rectangle, {
+                            id: key,
                             entityKey: key, 
                             entity: entity,
                             onClick: e=>entityStore.setSelection([key]),
-                            id: key
                         })
                     case "sphericalLens":
                         return h(Lens, {

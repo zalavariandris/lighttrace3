@@ -64,11 +64,12 @@ function Manipulator({
             // call native event
             props.onMouseDown(e)
         }
+        console.log("mousedown")
         // const svg = e.target.closest("SVG");
         // mouseScenePos.current = {x: scene_x, scene_y}
         e.stopPropagation();
         e.preventDefault();
-
+        
 
         const svg = e.target.closest("SVG");
         let startLoc = cursorPoint(svg, {x: e.clientX, y:e.clientY}, svg);
@@ -88,7 +89,7 @@ function Manipulator({
         }));
 
         const handleMouseMove = (e)=>{
-            let sceneLoc = cursorPoint(svg, {x: e.clientX, y:e.clientY}, svg);
+            const sceneLoc = cursorPoint(svg, {x: e.clientX, y:e.clientY}, svg);
 
             onDrag(new ManipEvent({
                 sceneX: sceneLoc.x, 
@@ -103,8 +104,7 @@ function Manipulator({
         }
 
         const handleMouseUp = (e)=>{
-            var svg  = e.target.closest("SVG");
-            let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY}, svg);
+            const loc = cursorPoint(svg, {x: e.clientX, y:e.clientY}, svg);
             window.removeEventListener("mousemove", handleMouseMove);
             onDragEnd(new ManipEvent({
                 sceneX: loc.x, 
@@ -119,8 +119,7 @@ function Manipulator({
         }
 
         const handleClick = (e)=>{
-            var svg  = e.target.closest("SVG");
-            let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
+            const loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
             const dx = startLoc.x-loc.x
             const dy = startLoc.y-loc.y
             if(dx**2+dy**2>1){
@@ -129,7 +128,7 @@ function Manipulator({
         }
 
         window.addEventListener("mousemove", handleMouseMove);
-        window.addEventListener("mouseup", (e)=>handleMouseUp(e), {once: true});
+        window.addEventListener("mouseup", (e)=>handleMouseUp(e), {once: true, capture: true});
         window.addEventListener("click", (e)=>handleClick(e), {once: true, capture:true});
     }
 
@@ -196,7 +195,7 @@ function RotateManip({
     ...props
 }={}){
     const adjustedAngle = axis=="Y"?angle-Math.PI/2:angle;
-
+    const arcAngle = Math.atan2(8, distance);
     return h(Manipulator /* rotate manip */, {
         referenceX: cx+Math.cos(adjustedAngle)*50,
         referenceY: cy+Math.sin(adjustedAngle)*50,
@@ -228,11 +227,11 @@ function RotateManip({
             stroke: "white",
             strokeWidth: 2,
             fill: "none",
-            d: describeArc(0,0, distance, 80, 100),
+            d: describeArc(0,0, 5, 90-120, 90+120),
             markerEnd:"url(#arrow)",
             markerStart:"url(#arrow)",
             style: {
-                transform: `translate(${cx}px, ${cy}px) rotate(${adjustedAngle}rad)`,
+                transform: `translate(${cx+Math.cos(adjustedAngle)*distance}px, ${cy+Math.sin(adjustedAngle)*distance}px) rotate(${adjustedAngle}rad)`,
                 pointerEvents: "none"
             }
         })

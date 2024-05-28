@@ -50,3 +50,4 @@
 - [ ] fix GLRaytracer memory leak?
 - [ ] when sampling lights handle nonexistent type in svg- and g-raytracer
 - [ ] fix SVGRaytracer interacting with a rectangle.
+- [ ] todo: Ispector handle unknown shape and light types

@@ -27,7 +27,10 @@ function App({})
             h(Outliner),
         ),
 
-        h("div", {id:"rightSidebar", className: "panel"},
+        h("div", {
+            id:"rightSidebar", 
+            className: "panel",
+        },
             h(Inspector),
             h(Animate),
         ),

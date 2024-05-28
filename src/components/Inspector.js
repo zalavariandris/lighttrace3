@@ -49,7 +49,7 @@ function LightInspector({
         h("h2", null, "Light"),
         h(AttributeRow, null,
             h("label", null, "type"),
-            h("select", {name: "shapes"}, 
+            h("select", {name: "type"}, 
                 h("option", {value: "point", selected: values.type=="point"}, "point"),
                 h("option", {value: "directional", selected: values.type=="directional"}, "directional"),
                 h("option", {value: "laser", selected: values.type=="laser"}, "laser")
@@ -101,7 +101,9 @@ function ShapeInspector({entityKey, component, values}){
             h("h2", null, "Shape"),
             h(AttributeRow, null, 
                 h("label", null, "type"),
-                h("select", {className: "", name: "shapes"}, 
+                h("select", {className: "", name: "type"}, 
+                    h("option", {}, "<unknown>"), /* todo: show only when unknown type is selected. dont allow to change type to this. */
+                    h("option", {value: "triangle", selected: values.type=="triangle"}, "triangle"),
                     h("option", {value: "circle", selected: values.type=="circle"}, "circle"),
                     h("option", {value: "sphericalLens", selected: values.type=="sphericalLens"}, "sphericalLens"),
                     h("option", {value: "rectangle", selected: values.type=="rectangle"}, "rectangle"),

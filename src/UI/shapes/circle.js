@@ -1,8 +1,7 @@
 import React from "react";
 import Manipulator, {RotateManip} from "../Manipulators.js";
-
-
 const h = React.createElement;
+
 function Circle({
     cx, cy, r,
     onChange,
@@ -12,7 +11,9 @@ function Circle({
     return h("g", {
         ...props
     }, 
-        h(Manipulator /* Move Manip */, {
+        /* Drag Manip */
+        h(Manipulator, {
+            className: "manipulator invisible",
             referenceX: cx,
             referenceY: cy,
             onDrag: e=>{
@@ -27,9 +28,30 @@ function Circle({
             h("circle" /* draw shape */, {
                 cx: cx, 
                 cy: cy, 
-                r: r
-            }),
+                r: r,
+                style: {
+                    fill: "transparent",
+                    stroke: "transparent"
+                }
+            })
+        ),
 
+        // /* Draw shape */
+        // h("circle" , {
+        //     className: "presenter",
+        //     cx: cx, 
+        //     cy: cy, 
+        //     r: r,
+        //     style: {
+        //         pointerEvents: "none"
+        //     }
+        // }),
+
+        /* other manipulators */
+        h("g", {
+            className: "manipulator"
+        },
+            
             h(Manipulator /*  manip radius*/, {
                 className:"manip",
                 onDrag: e=>{
@@ -57,6 +79,7 @@ function Circle({
                 }),
             )
         )
+        
     )
 }
 

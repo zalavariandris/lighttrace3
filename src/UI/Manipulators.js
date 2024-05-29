@@ -138,9 +138,9 @@ function Manipulator({
             cursor: active?"grabbing":"grab",
             ...style
         },
-        ...props,
         onMouseDown: (e)=>handleMouseDown(e),
-        onClick:onClick
+        onClick:onClick,
+        ...props,
     }, 
         (active&&showGuide)?h("line", {
             className: "guide",

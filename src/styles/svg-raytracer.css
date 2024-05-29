@@ -1,5 +1,8 @@
 /* SHAPES */
-g.shape{ /* root shape group*/
+
+
+g.shape .presenter{
+    pointer-events: none;
     stroke-width: 1;
     /* stroke-dasharray: 0 8 0 8; */
     stroke-linecap: round;
@@ -9,16 +12,16 @@ g.shape{ /* root shape group*/
     stroke: white;
     fill: transparent;
 }
-
-g.shape{
-    stroke-dasharray: 0;
-}
-
-g.shape.selected{
+g.shape.selected .presenter{
+    
     opacity: 1.0;
     stroke-dasharray: 0 8 0;
     vector-effect: non-scaling-stroke;
     fill: transparent;
+}
+
+g.shape .manipulator.autohide{
+
 }
 
 /* LIGHTS */

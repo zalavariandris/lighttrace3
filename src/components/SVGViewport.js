@@ -231,8 +231,6 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                             width:  entity.shape.width,
                             height: entity.shape.height,
                             angle: entity.transform.rotate,
-                            entityKey: key, 
-                            entity: entity,
                             onChange: e=>{
                                 const {cx,cy,width, height, angle} = e.value;
    
@@ -250,10 +248,30 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                         })
                     case "sphericalLens":
                         return h(Lens, {
-                            entityKey: key, 
-                            entity: entity,
+                            className: entity.selected ? "shape selected" : "shape",
+                            id: key,
+                            cx: entity.transform.translate.x,
+                            cy: entity.transform.translate.y,
+                            angle: entity.transform.rotate,
+                            diameter: entity.shape.diameter,
+                            edgeThickness: entity.shape.edgeThickness,
+                            centerThickness: entity.shape.centerThickness,
                             onClick: e=>entityStore.setSelection([key]),
-                            id: key
+                            onChange: e=>{
+                                const {cx,cy,angle, diameter, edgeThickness, centerThickness} = e.value;
+   
+                                entityStore.setValue(`${key}.transform`, {
+                                    translate: {
+                                        x: cx,
+                                        y: cy,
+                                    },
+                                    rotate: angle
+                                });
+                                entityStore.setValue(`${key}.shape.diameter`, diameter);
+                                entityStore.setValue(`${key}.shape.edgeThickness`, edgeThickness);
+                                entityStore.setValue(`${key}.shape.centerThickness`, centerThickness);
+                            },
+                            
                         })
                     case "line":
                         return h(Line, {

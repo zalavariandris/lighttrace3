@@ -13,7 +13,7 @@ function Circle({
     }, 
         /* Drag Manip */
         h(Manipulator, {
-            className: "manipulator invisible",
+            className: "manipulator hidden",
             referenceX: cx,
             referenceY: cy,
             onDrag: e=>{
@@ -26,26 +26,20 @@ function Circle({
             }
         }, 
             h("circle" /* draw shape */, {
+                className: "gizmo",
                 cx: cx, 
                 cy: cy, 
-                r: r,
-                style: {
-                    fill: "transparent",
-                    stroke: "transparent"
-                }
+                r: r
             })
         ),
 
-        // /* Draw shape */
-        // h("circle" , {
-        //     className: "presenter",
-        //     cx: cx, 
-        //     cy: cy, 
-        //     r: r,
-        //     style: {
-        //         pointerEvents: "none"
-        //     }
-        // }),
+        /* Draw shape */
+        h("circle" , {
+            className: "presenter",
+            cx: cx, 
+            cy: cy, 
+            r: r
+        }),
 
         /* other manipulators */
         h("g", {
@@ -53,7 +47,7 @@ function Circle({
         },
             
             h(Manipulator /*  manip radius*/, {
-                className:"manip",
+                className:"manipulator",
                 onDrag: e=>{
                     const newRadius = Math.hypot(e.sceneX-cx, e.sceneY-cy)
                     e.value = {
@@ -61,7 +55,6 @@ function Circle({
                         r: newRadius
                     }
                     onChange(e)
-                    // entityStore.setValue(`${entityKey}.shape.radius`, newRadius);
                 }
             },
                 h('circle', {
@@ -69,11 +62,8 @@ function Circle({
                     cx: cx, 
                     cy: cy, 
                     r: r,
-                    vectorEffect: "non-scaling-stroke",
                     style: {
                         fill: "none",
-                        stroke: "transparent",
-                        strokeWidth: 5,
                         cursor: "nwse-resize"
                     }
                 }),

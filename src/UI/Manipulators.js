@@ -216,7 +216,7 @@ function RotateManip({
             cx:cx+Math.cos(adjustedAngle)*distance, 
             cy:cy+Math.sin(adjustedAngle)*distance,
             r: 8,
-            className: "gizmo rotate",
+            className: "gizmo rotate hidden",
             style: {
                 fill: "transparent",
                 stroke: "transparent"
@@ -224,15 +224,16 @@ function RotateManip({
         }),
 
         h("path" /* rotate arrow */,{
-            stroke: "white",
-            strokeWidth: 2,
-            fill: "none",
+            className: "gizmo",            
             d: describeArc(0,0, 5, 90-120, 90+120),
             markerEnd:"url(#arrow)",
             markerStart:"url(#arrow)",
             style: {
                 transform: `translate(${cx+Math.cos(adjustedAngle)*distance}px, ${cy+Math.sin(adjustedAngle)*distance}px) rotate(${adjustedAngle}rad)`,
-                pointerEvents: "none"
+                pointerEvents: "none",
+                stroke: "white",
+                strokeWidth: 4,
+                fill: "none"
             }
         })
     )

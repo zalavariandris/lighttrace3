@@ -1,7 +1,6 @@
 import React from "react";
-const h = React.createElement;
-import entityStore from "../../stores/entity-store.js";
 import Manipulator, {RotateManip} from "../Manipulators.js";
+const h = React.createElement;
 
 function PointLight({
     cx,cy,angle,
@@ -35,9 +34,7 @@ function PointLight({
 
         /* draw light icon */
         h("g", {
-            style: {
-                pointerEvents: "none"
-            }
+            className: "presenter"
         }, 
             h("circle", {
                 cx: cx, 

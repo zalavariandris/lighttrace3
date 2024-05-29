@@ -5,98 +5,131 @@ import {rotatePoint, makePathFromLens} from "../../utils.js"
 const h = React.createElement;
 
 function Lens({
-    entityKey, 
-    entity, 
+    cx, cy,
+    angle,
+    diameter,
+    edgeThickness,
+    centerThickness,
+    onChange,
     ...props
 })
 {
-    const cx = entity.transform.translate.x;
-    const cy = entity.transform.translate.y;
-    const angle = entity.transform.rotate;
+
 
     return h("g", {
-        className: entity.selected ? "shape selected" : "shape",
         ...props
     }, 
         h(Manipulator /* Move Manip */, {
-            referenceX: entity.transform.translate.x,
-            referenceY: entity.transform.translate.y,
+            className: "manipulator hidden",
+            referenceX: cx,
+            referenceY: cy,
 
-            onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
-                    x: e.sceneX+e.referenceOffsetX, 
-                    y: e.sceneY+e.referenceOffsetY
-            })
+            onDrag: e=>{
+                e.value = {
+                    cx: e.sceneX+e.referenceOffsetX,
+                    cy: e.sceneY+e.referenceOffsetY,
+                    angle, diameter, edgeThickness, centerThickness
+                };
+                onChange(e);
+            }
         }, 
             h("path" /* draw shape */, {
+                className: "gizmo",
                 d: makePathFromLens({
-                    cx: entity.transform.translate.x, 
-                    cy: entity.transform.translate.y, 
-                    diameter: entity.shape.diameter, 
-                    edgeThickness: entity.shape.edgeThickness, 
-                    centerThickness: entity.shape.centerThickness,
+                    cx: cx, 
+                    cy: cy, 
+                    diameter: diameter, 
+                    edgeThickness: edgeThickness, 
+                    centerThickness: centerThickness,
                 }),
                 style: {
-                    transform: `rotate(${entity.transform.rotate}rad)`,
-                    transformOrigin: `${entity.transform.translate.x}px ${entity.transform.translate.y}px`
-                },
-                ...props
+                    transform: `rotate(${angle}rad)`,
+                    transformOrigin: `${cx}px ${cy}px`
+                }
+            })
+        ),
+
+        h("path" /* draw shape */, {
+            className: "presenter",
+            d: makePathFromLens({
+                cx: cx, 
+                cy: cy, 
+                diameter: diameter, 
+                edgeThickness: edgeThickness, 
+                centerThickness: centerThickness,
+            }),
+            style: {
+                transform: `rotate(${angle}rad)`,
+                transformOrigin: `${cx}px ${cy}px`
+            }
+        }),
+
+        h("g", {
+            className: "manipulator show-when-selected",
+        }, 
+            h(RotateManip,{
+                cx,cy,angle,
+                distance: Math.max(centerThickness/2+16, edgeThickness/2),
+                onChange: e=>{
+                    e.value = {
+                        cx,cy,
+                        angle:e.value,
+                        diameter, edgeThickness, centerThickness
+                    };
+                    onChange(e);
+                }
+                
             }),
 
-            h("g", {
-                className: "manipulator",
-                style: {
-                    display: entity.selected?"initial":"none"
-                }
-            }, 
-                h(RotateManip,{
-                    cx,cy,angle,
-                    distance: Math.max(entity.shape.centerThickness/2+16, entity.shape.edgeThickness/2),
-                    onChange: e=>entityStore.setValue(`${entityKey}.transform.rotate`, e.value)
-                    
-                }),
-
-                h(Manipulator /* manip centerThickness*/, {
-                    onDrag: e=>{
-                        const distance = Math.hypot(e.sceneX-entity.transform.translate.x, e.sceneY-entity.transform.translate.y)
-                        entityStore.setValue(`${entityKey}.shape.centerThickness`,
-                            Math.max(0, Math.min(distance*2, entity.shape.diameter))
-                        )
-                    },
-                    className:"gizmo"
-                }, 
-                    h('circle', {
-                        className: "handle",
-                        cx:entity.transform.translate.x+Math.cos(entity.transform.rotate)*entity.shape.centerThickness/2, 
-                        cy:entity.transform.translate.y+Math.sin(entity.transform.rotate)*entity.shape.centerThickness/2,
-                        r: 5,
-                        vectorEffect: "non-scaling-stroke",
-                        style: {cursor: "ew-resize"}
-                    })
-                ),
-
-                h(Manipulator /*  manip edgeThickness and diameter*/, {
-                    className:"manip",
-                    onDrag: e=>{
-                        const [localX, localY] = rotatePoint(e.sceneX, e.sceneY, -entity.transform.rotate, entity.transform.translate.x, entity.transform.translate.y);
-                        
-                        const newEdgeThickness = Math.max(1, (localX-entity.transform.translate.x)*2);
-                        const newDiameter = Math.max(1, (localY-entity.transform.translate.y)*2);
-                        const newCenterThickness = Math.max(1, newEdgeThickness-entity.shape.edgeThickness + entity.shape.centerThickness);
-
-                        entityStore.setValue(`${entityKey}.shape.edgeThickness`, newEdgeThickness);
-                        entityStore.setValue(`${entityKey}.shape.centerThickness`, newCenterThickness);
-                        entityStore.setValue(`${entityKey}.shape.diameter`, newDiameter);
-                    }
+            h(Manipulator /* manip centerThickness*/, {
+                onDrag: e=>{
+                    const distance = Math.hypot(e.sceneX-cx, e.sceneY-cy)
+                    e.value = {
+                        cx,cy,
+                        angle, diameter, edgeThickness, 
+                        centerThickness: Math.max(0, Math.min(distance*2, diameter))
+                    };
+                    onChange(e);
                 },
-                    h('circle', {
-                        className: "gizmo",
-                        cx:entity.transform.translate.x+Math.cos(entity.transform.rotate)*entity.shape.edgeThickness/2+Math.cos(entity.transform.rotate+Math.PI/2)*entity.shape.diameter/2, 
-                        cy:entity.transform.translate.y+Math.sin(entity.transform.rotate)*entity.shape.edgeThickness/2+Math.sin(entity.transform.rotate+Math.PI/2)*entity.shape.diameter/2,
-                        r: 5,
-                        vectorEffect: "non-scaling-stroke",
-                        style: {cursor: "nwse-resize"}
-                    }),
-                )
+                className:"gizmo"
+            }, 
+                h('circle', {
+                    className: "handle",
+                    cx:cx+Math.cos(angle)*centerThickness/2, 
+                    cy:cy+Math.sin(angle)*centerThickness/2,
+                    r: 5,
+                    vectorEffect: "non-scaling-stroke",
+                    style: {cursor: "ew-resize"}
+                })
+            ),
+
+            h(Manipulator /*  manip edgeThickness and diameter*/, {
+                className:"manip",
+                onDrag: e=>{
+                    const [localX, localY] = rotatePoint(e.sceneX, e.sceneY, -angle, cx, cy);
+                    
+                    const newEdgeThickness = Math.max(1, (localX-cx)*2);
+                    const newDiameter = Math.max(1, (localY-cy)*2);
+                    const newCenterThickness = Math.max(1, newEdgeThickness-edgeThickness + centerThickness);
+
+                    e.value = {
+                        cx,cy,
+                        angle, 
+                        diameter: newDiameter, 
+                        edgeThickness: newEdgeThickness, 
+                        centerThickness: newCenterThickness
+                    };
+                    onChange(e);
+                }
+            },
+                h('circle', {
+                    className: "gizmo",
+                    cx:cx+Math.cos(angle)*edgeThickness/2+Math.cos(angle+Math.PI/2)*diameter/2, 
+                    cy:cy+Math.sin(angle)*edgeThickness/2+Math.sin(angle+Math.PI/2)*diameter/2,
+                    r: 5,
+                    vectorEffect: "non-scaling-stroke",
+                    style: {cursor: "nwse-resize"}
+                }),
             )
         )
     )

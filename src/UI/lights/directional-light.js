@@ -1,7 +1,6 @@
 import React from "react";
-const h = React.createElement;
-
 import Manipulator, {RotateManip} from "../Manipulators.js";
+const h = React.createElement;
 
 function DirectionalLight({
     cx,cy,angle, width,
@@ -19,6 +18,7 @@ function DirectionalLight({
     }, 
     
         h(Manipulator /* move manip */, {
+            className: "manipulator hidden",
             referenceX: cx,
             referenceY: cy,
             onDrag: e=>{
@@ -33,19 +33,16 @@ function DirectionalLight({
         },
             h("line", {
                 x1, y1, x2, y2,
-                stroke: "transparent",
-                strokeWidth: 20,
-                strokeDasharray: "0"
+                className: "gizmo"
             })
         ),
 
         /* draw light icon */
-        h("g", {style: {pointerEvents: "none"}},
+        h("g", {
+            className: "presenter"
+        },
             h("line", {
                 x1, y1,x2,y2,
-                stroke: "white",
-                strokeWidth: 3,//entity.selected ? 3 : 1,
-                strokeLinecap: "round"
             }),
 
             Array.from({length: 9}).map((_, k)=>{
@@ -56,16 +53,15 @@ function DirectionalLight({
                     y1:cy+offsetY+Math.sin(angle)*4, 
                     x2:cx+offsetX+Math.cos(angle)*16, 
                     y2:cy+offsetY+Math.sin(angle)*16, 
-                    stroke: "white",
-                    strokeWidth: 1,//entity.selected ? 2 : 1,
-                    strokeLinecap: "round"
                 })
             }),
 
         ),
 
 
-        h("g", {}, 
+        h("g", {
+            className: "manipulator show-when-selected"
+        }, 
             h(RotateManip, {
                 cx,cy,angle,
                 distance: 100, 
@@ -93,7 +89,7 @@ function DirectionalLight({
                     cx: cx+Math.cos(angle+Math.PI/2)*(width/2+10), 
                     cy: cy+Math.sin(angle+Math.PI/2)*(width/2+10), 
                     r:5,
-                    className: "gizmo resize",
+                    className: "gizmo",
                     style: {
                         cursor: "ns-resize",
                     }

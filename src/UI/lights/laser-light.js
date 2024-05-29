@@ -1,6 +1,6 @@
 import React from "react";
-const h = React.createElement;
 import Manipulator, {RotateManip} from "../Manipulators.js";
+const h = React.createElement;
 
 function LaserLight({
     cx,cy,angle,
@@ -11,7 +11,8 @@ function LaserLight({
     return h("g", {
         ...props
     }, 
-        h(Manipulator /* tmove manip */, {
+        h(Manipulator /* move manip */, {
+            className: "manipulator hidden",
             referenceX: cx,
             referenceY: cy,
             onDrag: e=>{
@@ -24,6 +25,7 @@ function LaserLight({
             },
         },
             h("circle", {
+                className: "gizmo",
                 cx: cx, 
                 cy: cy, 
                 r:15, 
@@ -36,19 +38,12 @@ function LaserLight({
 
         /* draw light icon */
         h("g", {
-            style: {
-                pointerEvents: "none"
-            }
+            className: "presenter"
         }, 
             h("circle", {
                 cx: cx+Math.cos(angle)*16, 
                 cy: cy+Math.sin(angle)*16, 
                 r: 1,//entity.selected ? 1 : 1,
-                style: {
-                    fill: "white",
-                    stroke: "white",
-                    strokeDasharray: "0"
-                }
             }),
             Array.from({length: 7}).map((_, k)=>{
                 return h("line", {
@@ -75,7 +70,7 @@ function LaserLight({
         ),
 
         h("g", {
-            className: "manipulator",
+            className: "manipulator show-when-selected",
         }, 
             h(RotateManip, {
                 cx:cx, 
@@ -89,9 +84,7 @@ function LaserLight({
                     };
                     onChange(e);
                 }
-                
             })
-            
         )
     )
 }

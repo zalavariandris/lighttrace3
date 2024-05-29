@@ -20,6 +20,7 @@ function Triangle({
         ...props
     }, 
         h(Manipulator /* Move Manip */, {
+            className: "manipulator hidden",
             referenceX: cx,
             referenceY: cy,
             onDrag: e=>{
@@ -32,59 +33,71 @@ function Triangle({
             }
         }, 
             h("polygon" /* draw shape */, {
+                className: "gizmo",
+                points: svgPointsString,
                 style:{
                     transform: `rotate(${angle}rad) translate(${cx}px, ${cy}px)`,
                     transformOrigin: `${cx}px ${cy}px`
-                },
-                points: svgPointsString,
+                }
             })
         ),
 
-            h("g", {
-                className: "manipulator",
-            }, 
-                h(RotateManip, {
-                    cx, cy, angle, 
-                    distance: size+8,
-                    axis: "Y",
-                    onChange: e=>{
-                        e.value = {
-                            cx,cy,size,
-                            angle: e.value
-                        };
-                        onChange(e)
+        h("polygon" /* draw shape */, {
+            className: "presenter",
+            points: svgPointsString,
+            style:{
+                transform: `rotate(${angle}rad) translate(${cx}px, ${cy}px)`,
+                transformOrigin: `${cx}px ${cy}px`
+            }
+        }),
+
+        h("g", {
+            className: "manipulator show-when-selected",
+        }, 
+            h(RotateManip, {
+                className: "gizmo",
+                cx, cy, angle, 
+                distance: size+8,
+                axis: "Y",
+                onChange: e=>{
+                    e.value = {
+                        cx,cy,size,
+                        angle: e.value
+                    };
+                    onChange(e)
+                }
+            }),
+
+            h(Manipulator /*  manip size*/, {
+                onDragStart: e=>{
+                    prevSize = size;
+                },
+                onDrag: e=>{
+                    const distance0 = Math.hypot(e.sceneStartX-cx, e.sceneStartY-cy);
+                    const distance1 = Math.hypot(e.sceneX-cx, e.sceneY-cy);
+                    e.value = {
+                        cx,cy,angle,
+                        size: prevSize*distance1/distance0
+                    }
+                    onChange(e)
+                }
+            },
+                h('polygon', {
+                    className: "gizmo",
+                    points: svgPointsString,
+                    vectorEffect: "non-scaling-stroke",
+                    style: {
+                        fill: "none",
+                        stroke: "transparent",
+                        strokeWidth: 5,
+                        cursor: "nwse-resize",
+                        transform: `rotate(${angle}rad) translate(${cx}px, ${cy}px)`,
+                        transformOrigin: `${cx}px ${cy}px`
                     }
                 }),
-
-                h(Manipulator /*  manip size*/, {
-                    onDragStart: e=>{
-                        prevSize = size;
-                    },
-                    onDrag: e=>{
-                        const distance0 = Math.hypot(e.sceneStartX-cx, e.sceneStartY-cy);
-                        const distance1 = Math.hypot(e.sceneX-cx, e.sceneY-cy);
-                        e.value = {
-                            cx,cy,angle,
-                            size: prevSize*distance1/distance0
-                        }
-                        onChange(e)
-                    }
-                },
-                    h('polygon', {
-                        points: svgPointsString,
-                        vectorEffect: "non-scaling-stroke",
-                        style: {
-                            fill: "none",
-                            stroke: "transparent",
-                            strokeWidth: 5,
-                            cursor: "nwse-resize",
-                            transform: `rotate(${angle}rad) translate(${cx}px, ${cy}px)`,
-                            transformOrigin: `${cx}px ${cy}px`
-                        }
-                    }),
-                )
             )
         )
+    )
     
 }
 

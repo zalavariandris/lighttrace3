@@ -19,9 +19,18 @@ function cursorPoint(svg, {x, y}){
     return {x:scenePoint.x, y:scenePoint.y};
 }
 
-const generateId = ()=>{
-    return Math.random().toString(32).substring(2, 9);
-};
+function generateUniqueName(name_request, all_names) {
+    let baseName = name_request;
+    let counter = 1;
+    let newName = `${baseName}_${String(counter).padStart(3, '0')}`;
+
+    while (all_names.includes(newName)) {
+        counter++;
+        newName = `${baseName}_${String(counter).padStart(3, '0')}`;
+    }
+
+    return newName;
+}
 
 const selectAndMoveTool = e => {
 
@@ -35,7 +44,7 @@ const circleTool = e => {
     const [beginSceneX, beginSceneY] = [loc.x, loc.y];
 
     // create circle
-    const key = generateId();
+    const key = generateUniqueName("circle", Object.keys(entityStore.getSnapshot()));
     entityStore.addEntity(key, {
         transform:{
             translate: {
@@ -76,7 +85,7 @@ const rectangleTool = e => {
     let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
     const [beginSceneX, beginSceneY] = [loc.x, loc.y];
 
-    const key = generateId();
+    const key = generateUniqueName("rectangle", Object.keys(entityStore.getSnapshot()));
     entityStore.addEntity(key, {
         transform:{
             translate: {
@@ -120,7 +129,7 @@ const triangleTool = e => {
     let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
     const [beginSceneX, beginSceneY] = [loc.x, loc.y];
 
-    const key = generateId();
+    const key = generateUniqueName("triangle", Object.keys(entityStore.getSnapshot()));
     entityStore.addEntity(key, {
         transform:{
             translate: {
@@ -162,7 +171,7 @@ const lineTool = e => {
     let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
     const [beginSceneX, beginSceneY] = [loc.x, loc.y];
 
-    const entityKey = generateId();
+    const entityKey = generateUniqueName("line", Object.keys(entityStore.getSnapshot()));
     entityStore.addEntity(entityKey, {
         transform:{
             translate: {x: beginSceneX, y: beginSceneY},
@@ -208,7 +217,7 @@ const lensTool = e => {
     let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
     const [beginSceneX, beginSceneY] = [loc.x, loc.y];
 
-    const entityKey = generateId();
+    const entityKey = generateUniqueName("lens", Object.keys(entityStore.getSnapshot()));
     entityStore.addEntity(entityKey, {
         transform: {
             translate: {x: beginSceneX, y: beginSceneY},
@@ -251,7 +260,7 @@ const pointlightTool = e => {
     let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
     const [beginSceneX, beginSceneY] = [loc.x, loc.y];
 
-    const entityKey = generateId();
+    const entityKey = generateUniqueName("pointlight", Object.keys(entityStore.getSnapshot()));
     entityStore.addEntity(entityKey, {
         transform:{
             translate: {x: beginSceneX, y: beginSceneY},
@@ -288,7 +297,7 @@ const directionalLightTool = e => {
     let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
     const [beginSceneX, beginSceneY] = [loc.x, loc.y];
     
-    const key = generateId();
+    const key = generateUniqueName("directionalLight", Object.keys(entityStore.getSnapshot()));
     entityStore.addEntity(key, {
         transform:{
             translate: {x: beginSceneX, y: beginSceneY},
@@ -326,7 +335,7 @@ const laserTool = e => {
     let loc = cursorPoint(svg, {x: e.clientX, y:e.clientY});
     const [beginSceneX, beginSceneY] = [loc.x, loc.y];
 
-    const entityKey = generateId();
+    const entityKey = generateUniqueName("laser", Object.keys(entityStore.getSnapshot()));
     entityStore.addEntity(entityKey, {
         transform:{
             translate: {x: beginSceneX, y: beginSceneY},

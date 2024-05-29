@@ -5,6 +5,7 @@ const h = React.createElement;
 function LaserLight({
     cx,cy,angle,
     onChange,
+    selected,
     ...props})
 {
     
@@ -50,11 +51,7 @@ function LaserLight({
                     x1:cx+Math.cos(angle)*16+Math.cos((k-3)/7*Math.PI*1.7 + angle)*2.5, 
                     y1:cy+Math.sin(angle)*16+Math.sin((k-3)/7*Math.PI*1.7 + angle)*2.5, 
                     x2:cx+Math.cos(angle)*16+Math.cos((k-3)/7*Math.PI*1.7 + angle)*4.5, 
-                    y2:cy+Math.sin(angle)*16+Math.sin((k-3)/7*Math.PI*1.7 + angle)*4.5, 
-                    stroke: "white",
-                    strokeWidth: 1,//entity.selected ? 1 : 0.5,
-                    strokeLinecap: "round",
-                    strokeDasharray: "0"
+                    y2:cy+Math.sin(angle)*16+Math.sin((k-3)/7*Math.PI*1.7 + angle)*4.5
                 })
             }),
             h("line", {
@@ -63,9 +60,8 @@ function LaserLight({
                 x2:cx+Math.cos(angle)*16, 
                 y2:cy+Math.sin(angle)*16, 
                 stroke: "white",
-                strokeWidth: 4,//entity.selected ? 4 : 3,
-                strokeLinecap: "round",
-                strokeDasharray: "0"
+                strokeWidth: 3,//entity.selected ? 4 : 3,
+                strokeLinecap: "round"
             })
         ),
 

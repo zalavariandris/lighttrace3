@@ -43,17 +43,40 @@ function Outliner(props)
 
     /* could be a multiselect widget with auto height.
     support for hiearchies */
-    return h(ListView, {...props}, 
+    return h("ul", {
+        className: "outliner",
+        ...props
+    },
         Object.entries(scene)
             .map( ([key, entity])=>{
-                return h(ListItem, {
-                    onMouseDown: e=>entityStore.setSelection([key]),
-                    active: entity.selected
+                return h("li", {
+                    className: entity.selected?"active":""
+                }, 
+                h("a", {
+                    href: "#",
+                    onMouseDown: e=>{
+                        e.preventDefault();
+                        entityStore.setSelection([key]);
+                    }
                 }, 
                     h(Icon, {icon: getIcon(entity)}),
                     h("span", null, ` ${key}`)
                 )
+
+                )
         })
-    );
+    )
+    // return h(ListView, {...props}, 
+    //     Object.entries(scene)
+    //         .map( ([key, entity])=>{
+    //             return h(ListItem, {
+    //                 onMouseDown: e=>entityStore.setSelection([key]),
+    //                 active: entity.selected
+    //             }, 
+    //                 h(Icon, {icon: getIcon(entity)}),
+    //                 h("span", null, ` ${key}`)
+    //             )
+    //     })
+    // );
 }
 export default Outliner;

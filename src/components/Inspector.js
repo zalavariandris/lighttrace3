@@ -1,12 +1,10 @@
 import entityStore from "../stores/entity-store.js"
 import React from "react";
 const h = React.createElement;
-import Settings from "./Settings.js";
-import Animate from "./Animate.js";
 
-import {Input, Slider, Group, Checkbox} from "../UI/widgets.js"
+
 import { AttributeList, AttributeSection, AttributeRow, AttributeHeaderRow } from "../UI/AttributeList.js";
-import Icon from "../UI/Icon.js"
+
 
 function TransformInspector({entityKey, component, values}){
     return h(AttributeList, {}, 
@@ -195,16 +193,11 @@ function Inspector(props)
         return entity.selected ? true : false;
     }));
 
-
     return h("div", props,
         h("header", null, "INSPECTOR"), 
-        Object.keys(selection).length?
-            Object.entries(selection).map(([key, entity])=>{
-                return h(EntityInspector, {entityKey: key, entity})
-            })
-            :
-            h(Settings)
-
+        Object.entries(selection).map(([key, entity])=>{
+            return h(EntityInspector, {entityKey: key, entity})
+        })
     );
 }
 export default Inspector;

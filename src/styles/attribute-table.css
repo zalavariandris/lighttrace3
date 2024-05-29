@@ -1,0 +1,34 @@
+/* attributes table */
+.attributeList{
+    border-collapse: collapse;
+    width: 100%;
+    display: table;
+    table-layout:auto;
+}
+
+.attributeSection{
+    display: table-row-group;
+}
+
+.attributeRow{
+    display: table-row
+}
+.attributeHeaderRow{
+    display: table-row;
+    column-span: 2;
+}
+
+.attributeRow>*{
+    position: relative;
+    display: table-cell;
+}
+.attributeRow>*:first-child{
+    text-align: right;
+    width: 0%;
+    white-space: nowrap;
+    padding-right: 0.5rem;
+}
+.attributeRow>*:last-child{
+    text-align: left;
+    white-space: nowrap;
+}

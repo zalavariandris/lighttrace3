@@ -1,0 +1,24 @@
+.attribute-row{
+    display: flex;
+    flex-direction: row;
+}
+
+.attribute-row>*{
+    /* border: 1px solid green; */
+    width: 66%;
+}
+input[type=checkbox]{
+    width: auto;
+}
+.attribute-row>label{
+    width: 33%;
+    text-align: right;
+    margin-right: 0.5rem;
+}
+
+.my-input-group{
+    display: flex;
+}
+.my-input-group>*{
+    flex-basis: 100%;
+}

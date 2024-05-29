@@ -3,25 +3,27 @@ const h = React.createElement;
 import entityStore from "../../stores/entity-store.js";
 import Manipulator, {RotateManip} from "../Manipulators.js";
 
-function PointLight({entityKey, entity, ...props})
+function PointLight({
+    cx,cy,angle,
+    onChange,
+    ...props})
 {
-    
-    const cx = entity.transform.translate.x;
-    const cy = entity.transform.translate.y;
-    const angle = entity.transform.rotate;
 
     return h("g", {
-        className: entity.selected ? "light selected" : "light",
         ...props
     }, 
+        /* drag manipulator */
         h(Manipulator, {
-            referenceX: entity.transform.translate.x,
-            referenceY: entity.transform.translate.y,
-            onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
-                x: e.sceneX+e.referenceOffsetX, 
-                y: e.sceneY+e.referenceOffsetY
-            }),
-            onClick: e=>entityStore.setSelection([entityKey])
+            referenceX: cx,
+            referenceY: cy,
+            onDrag: e=>{
+                e.value = {
+                    cx: e.sceneX+e.referenceOffsetX,
+                    cy: e.sceneY+e.referenceOffsetY,
+                    angle
+                };
+                onChange(e);
+            },
         },
             h("circle", {
                 cx: cx, 
@@ -32,11 +34,15 @@ function PointLight({entityKey, entity, ...props})
         ), 
 
         /* draw light icon */
-        h("g", {style: {pointerEvents: "none"}}, 
+        h("g", {
+            style: {
+                pointerEvents: "none"
+            }
+        }, 
             h("circle", {
                 cx: cx, 
                 cy: cy, 
-                r:entity.selected ? 4 : 2,
+                r:2,//entity.selected ? 4 : 2,
                 style: {
                     fill: "white",
                     stroke: "white"
@@ -49,11 +55,13 @@ function PointLight({entityKey, entity, ...props})
                     x2:cx+Math.cos(k/9*Math.PI*2 + angle)*10, 
                     y2:cy+Math.sin(k/9*Math.PI*2 + angle)*10, 
                     stroke: "white",
-                    strokeWidth: entity.selected ? 3 : 1,
+                    strokeWidth: 1,//entity.selected ? 3 : 1,
                     strokeLinecap: "round"
                 })
             })
         )
+
+        /* manipulators */
     )
 }
 

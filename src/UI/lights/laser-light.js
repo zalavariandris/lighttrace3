@@ -1,27 +1,27 @@
 import React from "react";
 const h = React.createElement;
-import entityStore from "../../stores/entity-store.js";
 import Manipulator, {RotateManip} from "../Manipulators.js";
 
-function LaserLight({entityKey, entity, ...props})
+function LaserLight({
+    cx,cy,angle,
+    onChange,
+    ...props})
 {
     
-    const cx = entity.transform.translate.x;
-    const cy = entity.transform.translate.y;
-    const angle = entity.transform.rotate;
-
     return h("g", {
-        className: entity.selected ? "light selected" : "light",
         ...props
     }, 
         h(Manipulator /* tmove manip */, {
-            referenceX: entity.transform.translate.x,
-            referenceY: entity.transform.translate.y,
-            onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
-                x: e.sceneX+e.referenceOffsetX, 
-                y: e.sceneY+e.referenceOffsetY
-            }),
-            onClick: e=>entityStore.setSelection([entityKey])
+            referenceX: cx,
+            referenceY: cy,
+            onDrag: e=>{
+                e.value = {
+                    cx: e.sceneX+e.referenceOffsetX,
+                    cy: e.sceneY+e.referenceOffsetY,
+                    angle
+                };
+                onChange(e);
+            },
         },
             h("circle", {
                 cx: cx, 
@@ -43,7 +43,7 @@ function LaserLight({entityKey, entity, ...props})
             h("circle", {
                 cx: cx+Math.cos(angle)*16, 
                 cy: cy+Math.sin(angle)*16, 
-                r: entity.selected ? 1 : 1,
+                r: 1,//entity.selected ? 1 : 1,
                 style: {
                     fill: "white",
                     stroke: "white",
@@ -57,7 +57,7 @@ function LaserLight({entityKey, entity, ...props})
                     x2:cx+Math.cos(angle)*16+Math.cos((k-3)/7*Math.PI*1.7 + angle)*4.5, 
                     y2:cy+Math.sin(angle)*16+Math.sin((k-3)/7*Math.PI*1.7 + angle)*4.5, 
                     stroke: "white",
-                    strokeWidth: entity.selected ? 1 : 0.5,
+                    strokeWidth: 1,//entity.selected ? 1 : 0.5,
                     strokeLinecap: "round",
                     strokeDasharray: "0"
                 })
@@ -68,25 +68,28 @@ function LaserLight({entityKey, entity, ...props})
                 x2:cx+Math.cos(angle)*16, 
                 y2:cy+Math.sin(angle)*16, 
                 stroke: "white",
-                strokeWidth: entity.selected ? 4 : 3,
+                strokeWidth: 4,//entity.selected ? 4 : 3,
                 strokeLinecap: "round",
                 strokeDasharray: "0"
             })
         ),
 
-        
         h("g", {
             className: "manipulator",
-            style: {
-                display: entity.selected?"initial":"none"
-            }
         }, 
             h(RotateManip, {
                 cx:cx, 
                 cy:cy, 
                 angle: angle,
                 distance: 100,
-                onChange: e=>entityStore.setValue(`${entityKey}.transform.rotate`, e.value)
+                onChange: e=>{
+                    e.value = {
+                        cx, cy, 
+                        angle: e.value
+                    };
+                    onChange(e);
+                }
+                
             })
             
         )

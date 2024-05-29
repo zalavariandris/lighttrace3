@@ -200,11 +200,52 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                                 entityStore.setValue(`${key}.shape.radius`, e.value.r);
                             }
                         })
+                    case "triangle":
+                        return h(Triangle, {
+                            id: key,
+                            className: entity.selected ? "shape selected" : "shape",
+                            cx: entity.transform.translate.x,
+                            cy: entity.transform.translate.y,
+                            angle: entity.transform.rotate,
+                            size: entity.shape.size,
+                            onClick: e=>entityStore.setSelection([key]),
+                            onChange: e=>{
+                                const {cx,cy, angle, size} = e.value;
+    
+                                entityStore.setValue(`${key}.transform`, {
+                                    translate: {
+                                        x: cx,
+                                        y: cy,
+                                    },
+                                    rotate: angle
+                                });
+                                entityStore.setValue(`${key}.shape.size`, size);
+                            }
+                        })
                     case "rectangle":
                         return h(Rectangle, {
                             id: key,
+                            className: entity.selected ? "shape selected" : "shape",
+                            cx: entity.transform.translate.x,
+                            cy: entity.transform.translate.y,
+                            width:  entity.shape.width,
+                            height: entity.shape.height,
+                            angle: entity.transform.rotate,
                             entityKey: key, 
                             entity: entity,
+                            onChange: e=>{
+                                const {cx,cy,width, height, angle} = e.value;
+   
+                                entityStore.setValue(`${key}.transform`, {
+                                    translate: {
+                                        x: cx,
+                                        y: cy,
+                                    },
+                                    rotate: angle
+                                });
+                                entityStore.setValue(`${key}.shape.width`, width);
+                                entityStore.setValue(`${key}.shape.height`, height);
+                            },
                             onClick: e=>entityStore.setSelection([key]),
                         })
                     case "sphericalLens":
@@ -214,47 +255,25 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                             onClick: e=>entityStore.setSelection([key]),
                             id: key
                         })
-                    case "triangle":
-                        return h(Triangle, {
-                            entityKey: key, 
-                            entity: entity,
-                            onClick: e=>entityStore.setSelection([key]),
-                            id: key
-                        })
                     case "line":
                         return h(Line, {
+                            id: key,
+                            className: entity.selected ? "shape selected" : "shape",
                             x1: entity.transform.translate.x - Math.cos(entity.transform.rotate)*entity.shape.length/2,
                             y1: entity.transform.translate.y - Math.sin(entity.transform.rotate)*entity.shape.length/2,
                             x2: entity.transform.translate.x + Math.cos(entity.transform.rotate)*entity.shape.length/2,
                             y2: entity.transform.translate.y + Math.sin(entity.transform.rotate)*entity.shape.length/2,
-                            entityKey: key, 
-                            entity: entity,
                             onChange: e=>{
-                                function setP1(x1,y1)
-                                {
-                                    entityStore.setValue(`${entityKey}.transform`, {
-                                        translate: {
-                                            x: (x1+x2)/2, 
-                                            y: (y1+y2)/2
-                                        },
-                                        rotate: Math.atan2(y2-y1, x2-x1)
-                                    });
-                                    entityStore.setValue(`${entityKey}.shape.length`, Math.hypot(x2-x1, y2-y1));
-                                }
-                            
-                                function setP2(x2,y2)
-                                {
-                                    entityStore.setValue(`${entityKey}.transform`, {
-                                        translate: {
-                                            x: (x1+x2)/2, 
-                                            y: (y1+y2)/2
-                                        },
-                                        rotate: Math.atan2(y2-y1, x2-x1)
-                                    });
-                            
-                                    entityStore.setValue(`${entityKey}.shape.length`, Math.hypot(x2-x1, y2-y1));
-                                }
-                            }
+                                entityStore.setValue(`${key}.transform`, {
+                                    translate: {
+                                        x: (e.value.x1+e.value.x2)/2, 
+                                        y: (e.value.y1+e.value.y2)/2
+                                    },
+                                    rotate: Math.atan2(e.value.y2-e.value.y1, e.value.x2-e.value.x1)
+                                });
+                        
+                                entityStore.setValue(`${key}.shape.length`, Math.hypot(e.value.x2-e.value.x1, e.value.y2-e.value.y1));
+                            },
                             onClick: e=>entityStore.setSelection([key]),
                             id: key
                         })
@@ -277,11 +296,64 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
             .map( ([key, entity])=>{
                 switch (entity.light.type) {
                     case "point":
-                        return h(PointLight, {entityKey: key, entity: entity})
+                        return h(PointLight, {
+                            id: key,
+                            className: entity.selected ? "light selected" : "light",
+                            cx: entity.transform.translate.x,
+                            cy: entity.transform.translate.y,
+                            angle: entity.transform.rotate,
+                            onClick: e=>entityStore.setSelection([key]),
+                            onChange: e=>{
+                                const {cx,cy,angle} = e.value;
+                                entityStore.setValue(`${key}.transform`, {
+                                    translate: {
+                                        x: cx,
+                                        y: cy
+                                    },
+                                    rotate: angle
+                                });
+                            }
+                        })
                     case "laser":
-                        return h(LaserLight, {entityKey: key, entity: entity})
+                        return h(LaserLight, {
+                            id: key,
+                            className: entity.selected ? "light selected" : "light",
+                            cx: entity.transform.translate.x,
+                            cy: entity.transform.translate.y,
+                            angle: entity.transform.rotate,
+                            onClick: e=>entityStore.setSelection([key]),
+                            onChange: e=>{
+                                const {cx,cy,angle} = e.value;
+                                entityStore.setValue(`${key}.transform`, {
+                                    translate: {
+                                        x: cx,
+                                        y: cy
+                                    },
+                                    rotate: angle
+                                });
+                            }
+                        })
                     case "directional":
-                        return h(DirectionalLight, {entityKey: key, entity: entity})
+                        return h(DirectionalLight, {
+                            id: key,
+                            className: entity.selected ? "light selected" : "light",
+                            cx: entity.transform.translate.x,
+                            cy: entity.transform.translate.y,
+                            angle: entity.transform.rotate,
+                            width: entity.light.width,
+                            onClick: e=>entityStore.setSelection([key]),
+                            onChange: e=>{
+                                const {cx,cy,angle, width} = e.value;
+                                entityStore.setValue(`${key}.transform`, {
+                                    translate: {
+                                        x: cx,
+                                        y: cy
+                                    },
+                                    rotate: angle
+                                });
+                                entityStore.setValue(`${key}.light.width`, width);
+                            }
+                        })
                 
                     default:
                         break;

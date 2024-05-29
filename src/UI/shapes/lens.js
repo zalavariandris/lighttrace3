@@ -1,13 +1,13 @@
 import React from "react";
-const h = React.createElement;
-import entityStore from "../../stores/entity-store.js";
 import Manipulator, {RotateManip} from "../Manipulators.js";
 import {rotatePoint, makePathFromLens} from "../../utils.js"
 
-
+const h = React.createElement;
 
 function Lens({
-    entityKey, entity, ...props
+    entityKey, 
+    entity, 
+    ...props
 })
 {
     const cx = entity.transform.translate.x;

@@ -1,41 +1,35 @@
 import React from "react";
-const h = React.createElement;
-import entityStore from "../../stores/entity-store.js";
 import Manipulator, {RotateManip} from "../Manipulators.js";
+const h = React.createElement;
 
 function Triangle({
-    entityKey, entity, 
+    cx,cy,angle,size,
+    onChange,
     ...props
 })
 {
-    const [cx, cy] = [entity.transform.translate.x, entity.transform.translate.y];
-    const angle = entity.transform.rotate;
-    const size = entity.shape.size;
-
-
     const vertices = Array.from({length: 3}).map((_, k)=>{
         const angle = k/3.0*Math.PI*2-Math.PI/2;
-        return [Math.cos(angle)*entity.shape.size, Math.sin(angle)*entity.shape.size];
+        return [Math.cos(angle)*size, Math.sin(angle)*size];
     });
 
     const svgPointsString = vertices.map(P=>P.join(", ")).join(" ");
     let prevSize;
 
-    const onChange = e=>{
-
-    }
-
     return h("g", {
-        className: entity.selected ? "shape selected" : "shape",
         ...props
     }, 
         h(Manipulator /* Move Manip */, {
             referenceX: cx,
             referenceY: cy,
-            onDrag: e=>entityStore.setValue(`${entityKey}.transform.translate`, {
-                x: e.sceneX+e.referenceOffsetX, 
-                y: e.sceneY+e.referenceOffsetY
-            })
+            onDrag: e=>{
+                e.value = {
+                    cx: e.sceneX+e.referenceOffsetX,
+                    cy: e.sceneY+e.referenceOffsetY,
+                    angle, size
+                }
+                onChange(e)
+            }
         }, 
             h("polygon" /* draw shape */, {
                 style:{
@@ -43,36 +37,40 @@ function Triangle({
                     transformOrigin: `${cx}px ${cy}px`
                 },
                 points: svgPointsString,
-                ...props
-            }),
+            })
+        ),
 
             h("g", {
                 className: "manipulator",
-                style: {
-                    display: entity.selected?"initial":"none"
-                }
             }, 
                 h(RotateManip, {
                     cx, cy, angle, 
                     distance: size+8,
                     axis: "Y",
-                    onChange: e=>entityStore.setValue(`${entityKey}.transform.rotate`, e.value)
+                    onChange: e=>{
+                        e.value = {
+                            cx,cy,size,
+                            angle: e.value
+                        };
+                        onChange(e)
+                    }
                 }),
 
                 h(Manipulator /*  manip size*/, {
-                    className:"manip",
                     onDragStart: e=>{
                         prevSize = size;
                     },
                     onDrag: e=>{
-                        const d0 = Math.hypot(e.sceneStartX-cx, e.sceneStartY-cy);
-                        const d1 = Math.hypot(e.sceneX-cx, e.sceneY-cy);
-                        // console.log(newSize)
-                        entityStore.setValue(`${entityKey}.shape.size`, prevSize*d1/d0);
+                        const distance0 = Math.hypot(e.sceneStartX-cx, e.sceneStartY-cy);
+                        const distance1 = Math.hypot(e.sceneX-cx, e.sceneY-cy);
+                        e.value = {
+                            cx,cy,angle,
+                            size: prevSize*distance1/distance0
+                        }
+                        onChange(e)
                     }
                 },
                     h('polygon', {
-                        className: "gizmo",
                         points: svgPointsString,
                         vectorEffect: "non-scaling-stroke",
                         style: {
@@ -87,7 +85,7 @@ function Triangle({
                 )
             )
         )
-    )
+    
 }
 
 export default Triangle;

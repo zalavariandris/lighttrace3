@@ -100,13 +100,6 @@ function Toolbar({children, ...props}){
 
         h(CButtonGroup, {role:"group", ariaLabel:"Basic example"},
             h(Button, { 
-                icon: "restore",
-                onClick: e=>entityStore.removeEntities(Object.entries(entityStore.getSelection()).map( ([key, _])=>key))
-                
-            },
-                "restore"
-            ),
-            h(Button, { 
                 color: 'danger',
                 icon: "trash",
                 onClick: e=>{

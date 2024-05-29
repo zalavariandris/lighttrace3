@@ -25,6 +25,15 @@ body{
     width: 24rem;
 }
 
+#topbar{
+    position: fixed;
+    width: content-fit;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, 0);
+    /* width: 14rem; */
+}
+
 #bottombar{
     position: fixed;
     width: content-fit;

@@ -5,7 +5,7 @@ import Viewport  from "./components/Viewport.js"
 import Animate from "./components/Animate.js";
 import Toolbar from "./components/Toolbar.js";
 import entityStore from "./stores/entity-store.js"
-
+import Button from "./UI/Button.js"
 import Settings from "./components/Settings.js";
 const h = React.createElement;
 
@@ -30,8 +30,20 @@ function App({})
     return h("div", {},
         h(Viewport,  {id: "viewport"}),
 
+        h("div", {id: "topbar"},
+            "<topbar>"
+        ),
+
         h("div", {id:"leftSidebar", className: "panel"},
             h(Outliner),
+            h("hr"),
+            h(Button, { 
+                icon: "restore",
+                onClick: e=>entityStore.removeEntities(Object.entries(entityStore.getSelection()).map( ([key, _])=>key))
+                
+            },
+                "restore"
+            ),
         ),
 
         h("div", {

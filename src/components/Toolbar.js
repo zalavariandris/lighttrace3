@@ -64,6 +64,16 @@ function Toolbar({...props})
 
             h("label", null,
                 h("input",{
+                    type: "range",
+                    min:Math.log2(settings.raytrace.lightSamples), max:20, step:1,
+                    value: Math.log2(settings.raytrace.targetSamples),
+                    onChange: e=>settingsStore.setValue(`raytrace.targetSamples`, Math.pow(2,e.target.value))
+                }),
+                h("span", {style:{whiteSpace:"nowrap"}}, `target: ${settings.raytrace.targetSamples}`)
+            ),
+
+            h("label", null,
+                h("input",{
                     type: "checkbox",
                     checked: settings.display.render,
                     onChange: (e)=>{

@@ -4,9 +4,12 @@ import Inspector from "./components/Inspector.js"
 import Viewport  from "./components/Viewport.js"
 import Animate from "./components/Animate.js";
 import Toolbar from "./components/Toolbar.js";
-import entityStore from "./stores/entity-store.js"
 import Button from "./UI/Button.js"
 import Settings from "./components/Settings.js";
+
+import entityStore from "./stores/entity-store.js"
+import settingsStore from "./stores/settings-store.js";
+import statsStore from "./stores/stats-store.js";
 const h = React.createElement;
 
 function App({})
@@ -27,10 +30,19 @@ function App({})
         return entity.selected ? true : false;
     }));
 
+    const settings = React.useSyncExternalStore(settingsStore.subscribe, settingsStore.getSnapshot);
+    const stats = React.useSyncExternalStore(statsStore.subscribe, statsStore.getSnapshot);
+
     return h("div", {},
         h(Viewport,  {id: "viewport"}),
 
-        h("div", {id: "topbar"},
+        h("div", {
+            id: "topbar",
+            style: {display: "flex", flexDirection: "column"}
+        },
+            h("progress", {
+                value: stats.samplesCount/settings.raytrace.targetSamples
+            }),
             h("select", {
                 onChange: e=>{
                     switch (e.target.value) {

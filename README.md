@@ -22,32 +22,33 @@
 - [x] physically accurate BSDFs. eg dielectric relfection.
 - [x] add linesegment shape
 - [x] add prism shape
+- [x] refactor svg viewport. Use child elements, to map entities to their own elements.
 
-- [ ] support dispersion in svg-raytracer
-- [ ] physically accurate wavelength to color wavelength->XYZ->linearRGB->sRGB
-- [ ] review tonemapping. support multiple colorspaces
-- [ ]refacto svg and gl viewport. Use child elements, to map entities to their own elements.
 
 ### UI/UX
 - [x] align ui group attributes to each group.
-- [ ] add label inside AttributeRow. and put all children in the second column.
 - [x] mousetools to create and delete objects
-- [ ] show when lights are selected. selection shape is too small? hard to select
+- [x] show when lights are selected. selection shape is too small? hard to select
 - [x] persistent scene
 - [x] persistent settings
-- [ ] persistent viewbox
-- [ ] reset persistent stores
-- [ ] handle errors in components. eg raytracing errors in SVGRaytracer component
 - [x] implement settings
+- [x] fix ugly sidebars
+- [x] fix ugly manipulators
 
-- [ ] fix ugly sidebars
-- [ ] fix ugly manipulators
-- [ ] direction light width manip is a bit strange. should act on the axis only not by distance
 
 ## fix bugs
-- [ ] refacto mousetools (eg. react component)
-- [ ] lens intersect outside iof diemeter, when edge thickness is greater then zero
-- [ ] fix GLRaytracer memory leak?
-- [ ] when sampling lights handle nonexistent type in svg- and g-raytracer
+- [ ] persistent viewbox
+- [ ] handle errors in components. eg raytracing errors in SVGRaytracer component
+- [ ] fix convex lens rayrtacing in webgl reaytracer
+- [ ] lens intersect outside of diemeter, when edge thickness is greater then zero
+- [ ] physically accurate wavelength to color wavelength->XYZ->linearRGB->sRGB
+- [ ] review tonemapping. support multiple colorspaces
+- [ ] refactor glviewport to map entities to its internal data (eg initialrays array, transformArray, shapes Array materialsArray...)
+
+- [ ] fix svg raytracer.
 - [ ] fix SVGRaytracer interacting with a rectangle.
-- [ ] todo: Ispector handle unknown shape and light types
+- [ ] support dispersion in svg-raytracer?
+
+- [ ] direction light width manip is a bit strange. should act on the axis only not by distance
+- [ ] refactor mousetools (eg. react component)
+- [ ] fix GLRaytracer memory leak?

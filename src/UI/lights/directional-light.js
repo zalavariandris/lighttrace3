@@ -28,8 +28,7 @@ function DirectionalLight({
                     angle, width
                 },
                 onChange(e)
-            },
-            onClick: e=>entityStore.setSelection([entityKey])
+            }
         },
             h("line", {
                 x1, y1, x2, y2,

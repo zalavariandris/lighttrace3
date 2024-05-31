@@ -9,7 +9,6 @@ const h = React.createElement;
 import SVGRaytracer from "../raytracers/svg-raytracer/SVGRaytracer.js";
 import {selectAndMoveTool, circleTool, rectangleTool, triangleTool, lineTool, lensTool, pointlightTool, directionalLightTool, laserTool} from "./MouseTools.js"
 import _ from "lodash";
-import Icon from "./icons/icon.js";
 
 /* import shapes */
 import Circle from "../UI/shapes/circle.js"

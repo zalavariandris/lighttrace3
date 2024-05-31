@@ -103,11 +103,309 @@ const defaultScene = {
 
 };
 
+const cornelBoxScene = {
+    "light":{
+        transform:{
+            translate: {x: 50, y:100},
+            rotate: 0.0
+        },
+        light: {
+            type: "point",
+            temperature: 6500,
+            intensity:1.0,
+        },
+        selected: false
+    },
+
+    "rectangle":{
+        transform:{
+            translate: {x: 150,y: 250},
+            rotate: 0/180*Math.PI
+        },
+        shape: {
+            type: "rectangle",
+            width: 300,
+            height: 400
+        },
+        material: {
+            type: "glass"
+        },
+        selected: false
+    },
+
+    "glassball":{
+        transform:{
+            translate: {x: 230, y: 350},
+            rotate: 0
+        },
+        shape: {
+            type: "circle",
+            radius: 50
+        },
+        material: {
+            type: "glass"
+        },
+        selected: false
+    },
+    "mirrorball":{
+        transform:{
+            translate: {x: 70, y: 350},
+            rotate: 0
+        },
+        shape: {
+            type: "circle",
+            radius: 50
+        },
+        material: {
+            type: "mirror"
+        },
+        selected: false
+    }
+}
+
+const lensesScene = {
+    "sun":{
+        transform:{
+            translate: {x: 50, y: 200},
+            rotate: 0/180*Math.PI
+        },
+        light: {
+            type: "directional",
+            width: 100,
+            temperature: 6500,
+            intensity:3,
+        },
+        selected: false
+    },
+    "lens": {
+        transform: {
+            translate: {x: 180, y: 200},
+            rotate: 0
+        },
+        shape: {
+            type: "sphericalLens",
+            diameter: 140,
+            edgeThickness: 20,
+            centerThickness: 80
+        },
+        material: {
+            type: "glass"
+        },
+        selected: false
+    },
+    "concave": {
+        transform: {
+            translate: {x: 280, y: 200},
+            rotate: 0
+        },
+        shape: {
+            type: "sphericalLens",
+            diameter: 140,
+            edgeThickness: 80,
+            centerThickness: 10
+        },
+        material: {
+            type: "glass"
+        },
+        selected: false
+    }
+}
+
+const prismScene = {
+    "pointer": {
+        transform:{
+            translate: {x: 100, y: 210},
+            rotate: -0.0*Math.PI/180.0
+        },
+        light: {
+            type: "laser",
+            temperature: 6500,
+            intensity:3,
+        },
+        selected: false
+    },
+    "prism": {
+        transform: {
+            translate: {x: 230, y: 220},
+            rotate: 0
+        },
+        shape: {
+            type: "triangle",
+            size: 50
+        },
+        material: {
+            type: "glass"
+        },
+        selected: false
+    }
+}
+
+const lightsScene = {
+    "laser":{
+        transform:{
+            translate: {x: 150, y: 200},
+            rotate: 90/180*Math.PI
+        },
+        light: {
+            type: "laser",
+            temperature: 6500,
+            intensity:3,
+        },
+        selected: false
+    },
+    "sun":{
+        transform:{
+            translate: {x: 250, y: 200},
+            rotate: 90/180*Math.PI
+        },
+        light: {
+            type: "directional",
+            width: 30,
+            temperature: 6500,
+            intensity:3,
+        },
+        selected: false
+    },
+    "light":{
+        transform:{
+            translate: {x: 350, y: 200},
+            rotate: 90/180*Math.PI
+        },
+        light: {
+            type: "point",
+            temperature: 6500,
+            intensity:1.0,
+        },
+        selected: false
+    },
+    "ground": {
+        transform:{
+            translate: {x: 256, y: 450},
+            rotate: 0.0
+        },
+        shape: {
+            type: "line", 
+            length: 400.0
+        },
+        material: {
+            type: "diffuse"
+        },
+        selected: false
+    }
+}
+
+const shapesScene = {
+    "sun":{
+        transform:{
+            translate: {x: 10, y: 250},
+            rotate: 10/180*Math.PI
+        },
+        light: {
+            type: "directional",
+            width: 300,
+            temperature: 6500,
+            intensity:3,
+        },
+        selected: false
+    },
+    "ground": {
+        transform:{
+            translate: {x: 256, y: 450},
+            rotate: 0.0
+        },
+        shape: {
+            type: "line", 
+            length: 400.0
+        },
+        material: {
+            type: "diffuse"
+        },
+        selected: false
+    },
+    "circle":{
+        transform:{
+            translate: {
+                x: 100,
+                y: 150
+            },
+            rotate: 0
+        },
+        shape: {
+            type: "circle",
+            radius: 20
+        },
+        material: {
+            type: "glass"
+        },
+    },
+    "rectangle":{
+        transform:{
+            translate: {x: 100,y: 210},
+            rotate: -10/180*Math.PI
+        },
+        shape: {
+            type: "rectangle",
+            width: 40,
+            height: 40
+        },
+        material: {
+            type: "glass"
+        },
+        selected: false
+    },
+    "prism":{
+        transform:{
+            translate: {x: 100,y: 270},
+            rotate: 0
+        },
+        shape: {
+            type: "triangle",
+            size: 25,
+        },
+        material: {
+            type: "glass"
+        },
+        selected: false
+    }, 
+    "concave lens": {
+        transform: {
+            translate: {x: 100, y: 320},
+            rotate: 0
+        },
+        shape: {
+            type: "sphericalLens",
+            diameter: 40,
+            edgeThickness: 5,
+            centerThickness: 20
+        },
+        material: {
+            type: "glass"
+        },
+        selected: false
+    },
+    "convex lens": {
+        transform: {
+            translate: {x: 100, y: 380},
+            rotate: 0
+        },
+        shape: {
+            type: "sphericalLens",
+            diameter: 40,
+            edgeThickness: 40,
+            centerThickness: 20
+        },
+        material: {
+            type: "glass"
+        },
+        selected: false
+    }
+}
+
 let scene;
-scene = JSON.parse(localStorage.getItem("scene"));
+// scene = JSON.parse(localStorage.getItem("scene"));
 if(!scene)
 {
-    scene = defaultScene;
+    scene = cornelBoxScene;
 }
 
 
@@ -128,6 +426,29 @@ export default {
     loadDefault()
     {
         scene = defaultScene;
+        emitChange();
+    },
+
+    loadExample(name)
+    {
+        switch (name) {
+            case "lenses":
+                scene=lensesScene;
+                break;
+            case "prism":
+                scene=prismScene;
+                break;
+            case "shapes":
+                scene=shapesScene;
+                break;
+            case "lights":
+                scene=lightsScene;
+                break;
+            case "cornel box":
+                scene = cornelBoxScene;
+            default:
+                break;
+        }
         emitChange();
     },
 

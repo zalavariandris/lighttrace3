@@ -31,27 +31,56 @@ function App({})
         h(Viewport,  {id: "viewport"}),
 
         h("div", {id: "topbar"},
-            "<topbar>"
-        ),
-
-        h("div", {id:"leftSidebar", className: "panel"},
-            h(Outliner),
-            h("hr"),
-            h(Button, { 
-                icon: "restore",
-                onClick: e=>entityStore.removeEntities(Object.entries(entityStore.getSelection()).map( ([key, _])=>key))
-                
+            h("select", {
+                onChange: e=>{
+                    switch (e.target.value) {
+                        case "lenses":
+                            entityStore.loadExample("lenses")
+                            break;
+                        case "prism":
+                            entityStore.loadExample("prism")
+                            break;
+                        case "shapes":
+                            entityStore.loadExample("shapes")
+                            break;
+                        case "lights":
+                            entityStore.loadExample("lights")
+                            break;
+                        case "cornel box":
+                            entityStore.loadExample("cornel box")
+                            break;
+                        default:
+                            break;
+                    }
+                }
             },
-                "restore"
-            ),
+                h("option", null, "<examples>"),
+                h("option", null, "lenses"),
+                h("option", null, "prism"),
+                h("option", null, "shapes"),
+                h("option", null, "lights"),
+                h("option", null, "cornel box")
+            )
         ),
 
-        h("div", {
-            id:"rightSidebar", 
-            className: "panel",
-        },
-            Object.keys(selection).length ? h(Inspector) : h(Settings)
-        ),
+        // h("div", {id:"leftSidebar", className: "panel"},
+        //     h(Outliner),
+        //     h("hr"),
+        //     h(Button, { 
+        //         icon: "restore",
+        //         onClick: e=>entityStore.removeEntities(Object.entries(entityStore.getSelection()).map( ([key, _])=>key))
+                
+        //     },
+        //         "restore"
+        //     ),
+        // ),
+
+        // h("div", {
+        //     id:"rightSidebar", 
+        //     className: "panel",
+        // },
+        //     Object.keys(selection).length ? h(Inspector) : h(Settings)
+        // ),
 
         h("div", {id: "bottombar", className: "panel", style: {background: "transparent"}},
             h(Toolbar)

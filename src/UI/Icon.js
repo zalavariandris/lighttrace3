@@ -35,6 +35,8 @@ function Icon({icon, ...props})
                 return "cil-cog";
             case "restore":
                 return "cil-reload";
+            case "circle-left":
+                return "cil-arrow-circle-left"
         
             default:
                 return "cil-vector";
@@ -45,7 +47,7 @@ function Icon({icon, ...props})
         case "line":
             return h("svg", {
                 className: "icon",
-                width:32,
+                width: 32,
                 height: 32,
                 viewBox: "0, 0, 32, 32",
                 style: {
@@ -66,9 +68,9 @@ function Icon({icon, ...props})
         case "material":
             return h("svg", {
                 className: "icon",
-                width:32,
+                width: 32,
                 height: 32,
-                viewBox: "0, 0, 32, 32",
+                viewBox: "0, 0, 18, 18",
                 style: {
                     width: "1em",
                     height: "1em"

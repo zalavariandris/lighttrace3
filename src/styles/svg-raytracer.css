@@ -13,7 +13,8 @@ g.shape .presenter{
     fill: transparent;
 }
 
-g.shape.selected .presenter{
+g.shape.selected .presenter,
+g.shape:hover .presenter{
     opacity: 1.0;
     stroke-dasharray: 0 8 0;
 }
@@ -29,7 +30,8 @@ g.light .presenter{ /* root light group*/
     stroke-width: 1;
     /* opacity: 0.5; */
 }
-.light.selected .presenter{
+.light.selected .presenter,
+.light:hover .presenter{
     opacity: 1.0;
     stroke-width: 3;
 }
@@ -48,6 +50,7 @@ g.light .presenter{ /* root light group*/
 .manipulator.show-when-selected .gizmo{
     display: none;
 }
+
 .selected .manipulator.show-when-selected .gizmo{
     display: block;
 }

@@ -1,0 +1,100 @@
+body{
+    background-color: black;
+    color: white;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+/* Buttons */
+button{
+    border: none;
+    height: 3rem;
+    min-width: 3rem;
+    box-sizing: border-box;
+    margin: 0.5rem 0.5rem;
+    white-space: nowrap;
+    cursor: pointer;
+
+    background: transparent;
+    color:white;
+    text-shadow: 2px 1px 1px black;
+}
+
+button:hover{
+    color:aquamarine;
+    stroke:aquamarine;
+}
+
+button.active{
+    background-color: transparent;
+    color:aquamarine;
+    stroke:aquamarine;
+}
+
+button.danger{
+    color: red;
+}
+
+/* INPUTS */
+select, option{
+    color: inherit;
+    background: inherit;
+    border: none;
+    text-align: left;
+}
+
+option{
+    color: black;
+    background-color: white;
+}
+
+/* Toolbar */
+.toolbar{
+    text-align: center;
+    display: flex;
+    align-items: center;
+}
+
+.toolbar button{
+    text-align: center;
+}
+
+.toolbar button>.icon{
+    display: block;
+    margin: auto;
+}
+
+.toolbar.horizontal hr {
+    display: inline-block;
+    border: none;
+    margin: 2px;
+    height: 20px;
+    width: 1px;
+    background-color: white;
+    padding: 0;
+}
+
+/* ICONS */
+i.icon{
+    font-weight: bold !important;
+    color:inherit;
+    /* text-shadow: 2px 2px 2px black; */
+}
+
+/* lists */
+ul.outliner{
+    list-style: none;
+    padding-left:0;
+}
+ul li .icon{
+    margin: 0 0.25rem;
+}
+ul li>a{
+    color: inherit;
+    text-decoration: none;
+}
+ul li>a:hover{
+    color: aquamarine
+}
+ul li.active>a{
+    color: aquamarine
+}

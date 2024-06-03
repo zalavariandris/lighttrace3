@@ -2,7 +2,8 @@ import {produce} from "immer";
 import _ from "lodash"
 
 let uiState = {
-    "activeMouseTool": null
+    "activeMouseTool": null,
+    "page": "default", // default | settings (the toolbar)
 };
 
 let listeners = [];

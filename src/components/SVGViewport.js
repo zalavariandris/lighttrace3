@@ -1,5 +1,5 @@
 import React from "react";
-
+import ErrorBoundary from "react-error-boundary"
 import entityStore from "../stores/entity-store.js";
 import uiStore from "../stores/ui-store.js";
 import settingsStore from "../stores/settings-store.js";
@@ -297,7 +297,6 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                     default:
                         break;
                 }
-
             })
         ),
 

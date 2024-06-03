@@ -1,8 +1,17 @@
+/*RESET*/
+body{
+    margin: 0;
+    padding: 0;
+}
+ul{
+    margin: 0;
+}
+
 body{
     user-select: none;
 }
 
-/* Layout main panel compnents*/
+/* Layout main compnents*/
 #viewport{
     position: fixed;
     left:0;
@@ -15,7 +24,6 @@ body{
     position: fixed;
     left: 0;
     top:0;
-    /* width: 14rem; */
 }
 
 #rightSidebar{
@@ -40,127 +48,4 @@ body{
     bottom: 0;
     left: 50%;
     transform: translate(-50%, 0);
-}
-
-/*RESET*/
-body{
-    margin: 0;
-    padding: 0;
-}
-ul{
-    margin: 0;
-}
-
-/* UI Color style*/
-body{
-    background-color: black;
-    color: white;
-}
-
-.panel
-{
-    background-color: transparent;
-    color: white;
-    text-shadow: 2px 1px 1px black;
-    /* backdrop-filter: blur(3px); */
-}
-
-/* panel layout */
-.panel{
-    padding: 1em;
-}
-
-.panel section{
-    margin-top: 1rem;
-}
-
-hr.vertical{
-    display: inline-block;
-    border: none;
-    margin: 2px;
-    height: 1rem;
-    width: 1px;
-    background-color: white;
-    padding: 0;
-}
-
-/* Attribute editor */
-section.group>label:not(:has(input)){
-    text-align: right;
-    margin-right: 1rem;
-}
-
-/* additional core ui stuff*/
-.list-group-item-action{
-    cursor: pointer;
-}
-
-
-
-.my-input-group{
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-}
-
-
-
-/* input[type=range],
-input[type=number]
-progress{
-    width: 100% !important;
-} */
-
-button.button{
-    border: none;
-    height: 3rem;
-    min-width: 3rem;
-    box-sizing: border-box;
-    margin: 0.5rem 0.5rem;
-    white-space: nowrap;
-
-    background: transparent;
-    color:white;
-    text-shadow: 2px 1px 1px black;
-}
-.button:hover{
-    color:aquamarine;
-    stroke:aquamarine;
-}
-.button.active{
-    background-color: transparent;
-    color:aquamarine;
-    stroke:aquamarine;
-}
-
-i.icon{
-    font-weight: bold !important;
-    color:inherit;
-    /* text-shadow: 2px 2px 2px black; */
-}
-
-#bottombar button{
-    text-align: center;
-}
-#bottombar button>.icon{
-    display: block;
-    margin: auto;
-}
-
-ul.outliner{
-    list-style: none;
-    padding-left:0;
-}
-ul li .icon{
-    margin: 0 0.25rem;
-}
-ul li>a{
-    color: inherit;
-    text-decoration: none;
-}
-ul li>a:hover{
-    color: aquamarine
-}
-ul li.active>a{
-    color: aquamarine
 }

@@ -34,13 +34,17 @@
 - [x] implement settings
 - [x] fix ugly sidebars
 - [x] fix ugly manipulators
+- [x] remove coreui
 
 
 ## fix bugs
-- [ ] persistent viewbox
-- [ ] handle errors in components. eg raytracing errors in SVGRaytracer component
+- [x] persistent viewbox
+- [ ] stop gl rendering when hidden
+- [ ] handle errors in components. eg.: raytracing errors in SVGRaytracer component
+
 - [ ] fix convex lens rayrtacing in webgl reaytracer
 - [ ] lens intersect outside of diemeter, when edge thickness is greater then zero
+
 - [ ] physically accurate wavelength to color wavelength->XYZ->linearRGB->sRGB
 - [ ] review tonemapping. support multiple colorspaces
 - [ ] refactor glviewport to map entities to its internal data (eg initialrays array, transformArray, shapes Array materialsArray...)

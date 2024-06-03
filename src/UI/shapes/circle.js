@@ -43,7 +43,7 @@ function Circle({
 
         /* other manipulators */
         h("g", {
-            className: "manipulator"
+            className: "manipulator show-when-selected",
         },
             
             h(Manipulator /*  manip radius*/, {

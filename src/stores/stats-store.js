@@ -2,7 +2,7 @@ import {produce} from "immer";
 import _ from "lodash"
 
 let stats = {
-    samplesCount: 0,
+    renderedPasses: 0
 };
 
 
@@ -20,6 +20,17 @@ export default {
     {
         const updatedStats = produce(stats, draft=>{
             _.set(draft, keyPath, value);
+        });
+
+        if(stats!=updatedStats){
+            stats=updatedStats;
+            emitChange();
+        }
+    },
+    incrementPasses(keyPath, value)
+    {
+        const updatedStats = produce(stats, draft=>{
+            draft.renderedPasses=stats.renderedPasses+1;
         });
 
         if(stats!=updatedStats){

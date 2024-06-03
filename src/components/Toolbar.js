@@ -49,11 +49,11 @@ function SettingsToolbar({
         h("label", null,
             h("input",{
                 type: "range",
-                min:Math.log2(settings.raytrace.lightSamples), max:20, step:1,
-                value: Math.log2(settings.raytrace.targetSamples),
-                onChange: e=>settingsStore.setValue(`raytrace.targetSamples`, Math.pow(2,e.target.value))
+                min: 1, max:100, step:1,
+                value: settings.raytrace.targetPasses,
+                onChange: e=>settingsStore.setValue(`raytrace.targetPasses`, e.target.value)
             }),
-            h("span", {style:{whiteSpace:"nowrap"}}, `target: ${settings.raytrace.targetSamples}`)
+            h("span", {style:{whiteSpace:"nowrap"}}, `target passes: ${settings.raytrace.targetPasses}`)
         ),
 
         h("label", null,
@@ -66,6 +66,17 @@ function SettingsToolbar({
                 }
             }),
             h("span", {style:{whiteSpace:"nowrap"}}, `weblg render`)
+        ),
+
+        h("label", null,
+            h("input",{
+                type: "checkbox",
+                checked: settings.display.debug,
+                onChange: (e)=>{
+                    settingsStore.setValue("display.debug", e.target.checked);
+                }
+            }),
+            h("span", {style:{whiteSpace:"nowrap"}}, `debug`)
         )
     );
 }

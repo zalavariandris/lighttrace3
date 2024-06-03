@@ -402,7 +402,7 @@ const shapesScene = {
 }
 
 let scene;
-// scene = JSON.parse(localStorage.getItem("scene"));
+scene = JSON.parse(localStorage.getItem("scene"));
 if(!scene)
 {
     scene = cornelBoxScene;

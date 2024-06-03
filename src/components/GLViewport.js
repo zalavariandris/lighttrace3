@@ -2,11 +2,10 @@ import entityStore from "../stores/entity-store.js"
 import settingsStore from "../stores/settings-store.js";
 import statsStore from "../stores/stats-store.js";
 import React from "react";
-
-
 import GLRaytracer from "../raytracers/gl-raytracer/GLRaytracer.js";
 
 const h = React.createElement;
+
 
 function GLViewport({
     width, 
@@ -20,63 +19,71 @@ function GLViewport({
 {
     const scene = React.useSyncExternalStore(entityStore.subscribe, entityStore.getSnapshot);
     const settings = React.useSyncExternalStore(settingsStore.subscribe, settingsStore.getSnapshot);
-    const stats = React.useSyncExternalStore(statsStore.subscribe, statsStore.getSnapshot);
 
     const canvasRef = React.useRef(null);
     const renderer = React.useRef(null);
-    const renderInfo = React.useRef([scene, viewBox]);
 
+    // Setup GLRaytracer
     React.useEffect(()=>{
         renderer.current = new GLRaytracer(canvasRef.current);
         renderer.current.initGL();
-        renderer.current.onPassRendered((raysCount)=>{
-            statsStore.setValue("samplesCount", stats.samplesCount + raysCount)
-        })
-        renderer.current.resizeGL();
 
+        // handler resize
         function onResize(e)
         {
             renderer.current.resizeGL();
         }
+        onResize()
         window.addEventListener("resize", onResize);
         return ()=>{
             window.removeEventListener("resize", onResize);
         }
     }, []);
 
-    // const requestId = React.useRef();
-    // React.useEffect(() => {
-    //     const animate = (timestamp) => {
-    //         // Animation code goes here
-    //         renderer.current.renderGL(renderInfo.current[0], renderInfo.current[1])
-    //         requestId.current = requestAnimationFrame(animate);
-    //     };
-    //     requestId.current = requestAnimationFrame(animate);
-    //     return () => {
-    //         cancelAnimationFrame(requestId.current);
-    //     };
-    // }, []);
+
+    // Progressive Raytrace on AnimationFRame
+    const requestId = React.useRef();
+    const render = (timestamp) => {
+        statsStore.incrementPasses();
+        renderer.current.renderPass(scene, viewBox);
+
+        if(statsStore.getSnapshot().renderedPasses<settings.raytrace.targetPasses)
+        {
+            requestId.current = requestAnimationFrame(render);
+        }
+        
+    };
+
+    React.useEffect(() => {
+        renderer.current.clear();
+        renderer.current.settings = {
+            lightSamples: settings.raytrace.lightSamples,
+            maxBounce: settings.raytrace.maxBounce,
+            debug: settings.display.debug,
+            downres: 1     
+        }
+        statsStore.setValue("renderedPasses", 0);
+        requestId.current = requestAnimationFrame(render);
+        return () => {
+            cancelAnimationFrame(requestId.current);
+        };
+    }, [scene, viewBox, settings]);
 
     React.useEffect(()=>{
-        renderInfo.current = [scene, viewBox];
-        renderer.current.renderGL(renderInfo.current[0], renderInfo.current[1])
-    }, [scene, viewBox]);
-
-    React.useEffect(()=>{
-        Object.assign(renderer.current.settings, settings.raytrace);
-        renderer.current.renderGL(renderInfo.current[0], renderInfo.current[1])
-    }, [settings]);
+        console.log("settings changed")
+    }, [settings])
 
 
+    // Render Elements
     return h("canvas", {
         className, 
         style: {
-            opacity: settings.display.render?1.0:0.0,
             ...style
         },
         ref: canvasRef, 
         ...props
     });
 }
+
 
 export default GLViewport;

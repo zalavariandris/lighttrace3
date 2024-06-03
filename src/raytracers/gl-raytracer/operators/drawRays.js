@@ -90,11 +90,12 @@ function drawRays(regl, {
                     gl_Position = projection * vec4(rayEnd, 0, 1);
                 }
             }`,
+
         frag:`precision mediump float;
             uniform vec4 raysColor;
             void main()
             {
-                gl_FragColor = vec4(raysColor);
+                gl_FragColor = vec4(raysColor.rgb, 1.0);
             }`
     })();
 }

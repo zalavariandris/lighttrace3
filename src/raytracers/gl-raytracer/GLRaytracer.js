@@ -71,7 +71,7 @@ class GLRaytracer{
         // settings
         this.settings = {
             lightSamples: Math.pow(4,5),//128*128; //Math.pow(4,4);
-            targetSamples: 1_000_000,
+            debug: true,
             maxBounce: 7,
             downres: 1      
         };
@@ -83,8 +83,8 @@ class GLRaytracer{
     animate()
     {
         this.animationHandler = requestAnimationFrame(()=>this.animate());
-        if(this.totalSamples<this.settings.targetSamples){
-            this.renderPass()
+        if(this.passesRendered<this.settings.targetPasses){
+            this.renderPass();
         }
     }
 
@@ -94,7 +94,6 @@ class GLRaytracer{
         this.initRegl();
         this.initTextures();
         this.initFramebuffers();
-        console.log("initGL")
     }
 
     initRegl(){
@@ -305,24 +304,8 @@ class GLRaytracer{
         this.outputResolution = [width, height]
     }
 
-    onPassRendered(listener) 
+    clear()
     {
-        this.listeners = [...this.listeners, listener];
-        return () => {
-            this.listeners = this.listeners.filter(l => l !== listener);
-        };
-    }
-
-    emitChange() {
-        for (let listener of this.listeners) {
-            listener(this.totalSamples);
-        }
-    }
-
-    renderGL(scene, viewBox){
-        this.scene = scene;
-        this.viewBox = viewBox;
-
         const regl = this.regl;
         regl.clear({
             framebuffer: this.postFbo1, 
@@ -336,12 +319,8 @@ class GLRaytracer{
         this.totalSamples=0;
     }
 
-    renderPass()
+    renderPass(scene, viewBox)
     {
-        
-
-        const scene = this.scene;
-        const viewBox = this.viewBox;
         if(!scene || !viewBox)
         {
             return;
@@ -516,32 +495,30 @@ class GLRaytracer{
                 frag:bounceRaysShader
             })()
 
-
-
             /*
                 Draw rays to sceneFBO;
             */
             /* draw hitPoints */
-            // drawRays(regl, {
-            //     raysCount: rays.length,
-            //     raysTexture: this.hitDataTexture,
-            //     raysLength: 5.0,
-            //     raysColor: [1,1,1,.01],
+            drawRays(regl, {
+                raysCount: rays.length,
+                raysTexture: this.hitDataTexture,
+                raysLength: 5.0,
+                raysColor: [1,1,1,.1],
+                outputResolution: this.outputResolution,
+            //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+                framebuffer: this.sceneFbo
+            });
+
+            /* draw rays */
+            // drawLines(regl, {
+            //     linesCount: rays.length,
+            //     startpoints: this.rayDataTexture,
+            //     endpoints: this.hitDataTexture,
+            //     colors: this.rayColorsDataTexture,
             //     outputResolution: this.outputResolution,
             //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
             //     framebuffer: this.sceneFbo
             // });
-
-            /* draw rays */
-            drawLines(regl, {
-                linesCount: rays.length,
-                startpoints: this.rayDataTexture,
-                endpoints: this.hitDataTexture,
-                colors: this.rayColorsDataTexture,
-                outputResolution: this.outputResolution,
-                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-                framebuffer: this.sceneFbo
-            });
 
             /* Swap Buffers */
             [this.rayDataFbo, this.secondaryRayDataFbo] = [this.secondaryRayDataFbo, this.rayDataFbo];
@@ -550,7 +527,7 @@ class GLRaytracer{
         }
 
         this.totalSamples+=rays.length;
-        this.emitChange()
+        // this.emitChange()
 
         /* POST PROCESSING */
 

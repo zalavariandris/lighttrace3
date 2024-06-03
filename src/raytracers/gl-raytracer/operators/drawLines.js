@@ -84,19 +84,27 @@ function drawLines(regl, {
 
                 // Set vertex position
                 bool IsLineStartPoint = mod(vertexIdx, 2.0) < 1.0;
+                vec2 startPoint = texelFetchByIdx(startpointsTexture, startpointsResolution, lineIdx).xy;
+                vec2 endPoint = texelFetchByIdx(endpointsTexture, endpointsResolution, lineIdx).xy;
                 if(IsLineStartPoint)
                 {
-                    vec2 startPoint = texelFetchByIdx(startpointsTexture, startpointsResolution, lineIdx).xy;
+                    
                     gl_Position = projection * vec4(startPoint, 0.0, 1.0);
                 }
                 else
                 {
-                    vec2 endPoint = texelFetchByIdx(endpointsTexture, endpointsResolution, lineIdx).xy;
+                    
                     gl_Position = projection * vec4(endPoint, 0.0, 1.0);
                 }
 
+                // rasterization bias
+                vec2 dir = endPoint-startPoint;
+                float biasCorrection = clamp(length(dir)/max(abs(dir.x), abs(dir.y)), 1.0, 1.414214);
+                // vec2 dir = endPoint-startPoint;
+                // float bias = length(V) / max(abs(V.x),abs(V.y));
+
                 // set vertex colors
-                vColor = texelFetchByIdx(colorsTexture, colorsResolution, lineIdx).rgba;
+                vColor = texelFetchByIdx(colorsTexture, colorsResolution, lineIdx).rgba * vec4(biasCorrection,biasCorrection,biasCorrection,1);
             }`,
 
         frag:`precision mediump float;

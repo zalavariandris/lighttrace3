@@ -46,6 +46,8 @@ function Viewport(props)
 {
     // sync svg- and glviewport viewbox
     const [viewBox, setViewBox] = React.useState( JSON.parse(localStorage.getItem("viewBox")) || {x:0, y:0, w:512, h:512});
+    const settings = React.useSyncExternalStore(settingsStore.subscribe, settingsStore.getSnapshot);
+
     React.useEffect(()=>{
         localStorage.setItem("viewBox", JSON.stringify(viewBox));
     }, [viewBox]);
@@ -72,7 +74,7 @@ function Viewport(props)
         h(ErrorBoundary, {
             fallback:h("div", null, "GLViewport error")
         },
-            h(GLViewport, {
+            settings.display.render?h(GLViewport, {
                 viewBox: viewBox,
                 style: {
                     position: "absolute", 
@@ -81,7 +83,7 @@ function Viewport(props)
                     pointerEvents: "none",
                     transform: "scale(1, -1) translateZ(0)"   
                 }
-            })
+            }):null
         ),
         h(ErrorBoundary, {
             fallback:h("div", null, "SVGViewport error")
@@ -119,9 +121,13 @@ function App({})
             id: "topbar",
             style: {display: "flex", flexDirection: "column"}
         },
-            h("progress", {
-                value: stats.samplesCount/settings.raytrace.targetSamples
-            }),
+            h("div", {style: {display: "flex", gap:".5rem"}},
+                h("progress", {
+                    value: stats.renderedPasses/settings.raytrace.targetPasses
+                }),
+                h("span", null, `${stats.renderedPasses} / ${settings.raytrace.targetPasses}`),
+            ),
+            
             h("select", {
                 onChange: e=>{
                     switch (e.target.value) {

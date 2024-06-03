@@ -39,13 +39,20 @@
 
 ## fix bugs
 - [x] persistent viewbox
-- [ ] stop gl rendering when hidden
-- [ ] handle errors in components. eg.: raytracing errors in SVGRaytracer component
+- [x] stop gl rendering when hidden
+- [x] circle size handler is usable even when not selected...
 
-- [ ] fix convex lens rayrtacing in webgl reaytracer
+
+- [/] handle errors in components. eg.: raytracing errors in SVGRaytracer component
+- [ ] distrubute lightSamples among all lights (based on intensity)
+
+- [x] rasterize bias: fix ray energy uniform in all direction
+- [ ] fix convex lens rayrtacing in webgl raytracer
 - [ ] lens intersect outside of diemeter, when edge thickness is greater then zero
-
 - [ ] physically accurate wavelength to color wavelength->XYZ->linearRGB->sRGB
+
+- [ ] review data texture types. eg.: dont use alpha for light color. some texture a
+
 - [ ] review tonemapping. support multiple colorspaces
 - [ ] refactor glviewport to map entities to its internal data (eg initialrays array, transformArray, shapes Array materialsArray...)
 
@@ -55,4 +62,7 @@
 
 - [ ] direction light width manip is a bit strange. should act on the axis only not by distance
 - [ ] refactor mousetools (eg. react component)
-- [ ] fix GLRaytracer memory leak?
+
+- [ ] check if GLRaytracer leaks memory?
+
+- [ ] mobile support

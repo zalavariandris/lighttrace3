@@ -7,13 +7,13 @@ const defaultSettings = {
         lights: true,
         rays: false,
         normals: false,
-        debug: false,
+        debug: true,
         render: true
     },
     "raytrace": {
         lightSamples: Math.pow(4,5),//128*128; //Math.pow(4,4);
         maxBounce: 7,
-        targetSamples: 1_000_000,
+        targetPasses: 10,
         downres: 1/2
     }
 };

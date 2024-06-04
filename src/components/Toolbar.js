@@ -69,6 +69,34 @@ function SettingsToolbar({
         ),
 
         h("label", null,
+            h("div", {style: {display: "flex", gap:"0.5rem"}},
+                h("label", null,
+                    h("input",{
+                        type: "radio",
+                        checked: settings.display.render,
+                        onChange: (e)=>{
+                            settingsStore.setValue("display.render", e.target.checked);
+                            settingsStore.setValue("display.rays", !e.target.checked);
+                        }
+                    }), 
+                    // "WebGL"
+                ),
+                h("label", null,
+                    h("input",{
+                        type: "radio",
+                        checked: !settings.display.render,
+                        onChange: (e)=>{
+                            settingsStore.setValue("display.render", !e.target.checked);
+                            settingsStore.setValue("display.rays", e.target.checked);
+                        }
+                    }), 
+                    // "SVG"
+                )
+            ),
+            h("span", {style:{whiteSpace:"nowrap"}}, `WebGL/SVG`)
+        ),
+
+        h("label", null,
             h("input",{
                 type: "checkbox",
                 checked: settings.display.debug,

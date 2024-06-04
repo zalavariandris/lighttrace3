@@ -19,7 +19,7 @@ const defaultSettings = {
 };
 
 let settings;
-// settings = JSON.parse(localStorage.getItem("settings"));
+settings = JSON.parse(localStorage.getItem("settings"));
 
 if(!settings)
 {

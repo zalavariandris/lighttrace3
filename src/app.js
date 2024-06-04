@@ -118,6 +118,12 @@ function App({})
         h(Viewport,  {id: "viewport"}),
 
         h("div", {
+            id: "leftSidebar"
+        },
+            h(Outliner)
+        ),
+
+        h("div", {
             id: "topbar",
             style: {display: "flex", flexDirection: "column"}
         },

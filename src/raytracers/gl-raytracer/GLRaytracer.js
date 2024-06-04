@@ -503,22 +503,22 @@ class GLRaytracer{
                 raysCount: rays.length,
                 raysTexture: this.hitDataTexture,
                 raysLength: 5.0,
-                raysColor: [1,1,1,.1],
+                raysColor: [0,1,0,1],
                 outputResolution: this.outputResolution,
-            //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
                 framebuffer: this.sceneFbo
             });
 
             /* draw rays */
-            // drawLines(regl, {
-            //     linesCount: rays.length,
-            //     startpoints: this.rayDataTexture,
-            //     endpoints: this.hitDataTexture,
-            //     colors: this.rayColorsDataTexture,
-            //     outputResolution: this.outputResolution,
-            //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-            //     framebuffer: this.sceneFbo
-            // });
+            drawLines(regl, {
+                linesCount: rays.length,
+                startpoints: this.rayDataTexture,
+                endpoints: this.hitDataTexture,
+                colors: this.rayColorsDataTexture,
+                outputResolution: this.outputResolution,
+                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+                framebuffer: this.sceneFbo
+            });
 
             /* Swap Buffers */
             [this.rayDataFbo, this.secondaryRayDataFbo] = [this.secondaryRayDataFbo, this.rayDataFbo];

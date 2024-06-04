@@ -31,7 +31,7 @@ function sampleLaserLight(entity, lightSamples)
     });
 };
 
-function sampleDirectionalLight(entity, lightSamples)
+function sampleDirectionalLight(entity, lightSamples, uniform=false)
 {
     const offsetX = Math.cos(entity.transform.rotate+Math.PI/2);
     const offsetY = Math.sin(entity.transform.rotate+Math.PI/2);
@@ -39,10 +39,12 @@ function sampleDirectionalLight(entity, lightSamples)
     const centerY = entity.transform.translate.y;
 
     return Array.from({length: lightSamples}).map((_, i)=>{
-        const randomRayOffset = entity.light.width*Math.random()-entity.light.width/2
+        const randomRayOffset = entity.light.width*Math.random()-entity.light.width/2;
+        const uniformOffset = entity.light.width*(i/(lightSamples-1))-entity.light.width/2;
+        const rayOffset = uniform ? uniformOffset : randomRayOffset; 
         return {
-            x: centerX + offsetX * randomRayOffset,
-            y: centerY + offsetY * randomRayOffset, 
+            x: centerX + offsetX * rayOffset,
+            y: centerY + offsetY * rayOffset, 
             dx: Math.cos(entity.transform.rotate),
             dy: Math.sin(entity.transform.rotate),
             intensity: entity.light.intensity/lightSamples,

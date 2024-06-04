@@ -92,8 +92,81 @@ float smallestPositive(float a, float b, float value)
     }
 }
 
+/* ray circle intersections*/
+struct HitSpan{
+    float tEnter;
+    float tExit;
+};
+
+HitSpan Union(HitSpan A, HitSpan B)
+{
+    // closest enter
+    float tEnter = A.tEnter;
+    if(B.tEnter>0.0 && B.tEnter<tEnter) {tEnter = B.tEnter;}
+
+    //farthest exit
+    float tExit = A.tExit;
+    if(B.tExit>0.0 && B.tExit<tExit){tExit = B.tExit;}
+
+    return HitSpan(tEnter, tExit);
+}
+
+HitSpan Intersection(HitSpan A, HitSpan B){
+    //farthest enter
+    float tEnter = A.tEnter;
+    if(B.tEnter>0.0 && B.tEnter>tEnter) {tEnter = B.tEnter;}
+
+    // closest exit
+    float tExit = A.tExit;
+    if(B.tExit>0.0 && B.tExit>tExit){tExit = B.tExit;}
+
+    return HitSpan(tEnter, tExit);
+}
+
+HitSpan Difference(HitSpan A, HitSpan B)
+{
+    // closest enter
+    float tEnter = A.tEnter;
+    if(B.tExit>0.0 && B.tExit<tEnter) {tEnter = B.tExit;}
+
+    //farthest exit
+    float tExit = A.tExit;
+    if(B.tEnter>0.0 && B.tEnter<tExit){tExit = B.tEnter;}
+
+    return HitSpan(tEnter, tExit);
+}
+
+HitSpan intersect(Ray ray, Circle circle)
+{
+    vec2 p = ray.origin - circle.center;
+    float B = dot(p, ray.direction);
+    float C = dot(p, p) - circle.radius*circle.radius;
+    float detSq = B*B - C;
+    if (detSq >= 0.0)
+    {
+        float det = sqrt(detSq);
+        float tNear = max(0.0, -B - det);
+        float tFar  = max(0.0, -B + det);
+        return HitSpan(tNear, tFar);
+    }
+}
+
+HitSpan intersect(Ray incidentRay, Rectangle rectangle)
+{
+    Ray ray = Ray(rotate(incidentRay.origin, -rectangle.angle, rectangle.center), rotate(incidentRay.direction, -rectangle.angle));
+
+    float tNearX = (rectangle.center.x - rectangle.width  / 2.0 - ray.origin.x) / ray.direction.x;
+    float tNearY = (rectangle.center.y - rectangle.height / 2.0 - ray.origin.y) / ray.direction.y;
+    float tFarX =  (rectangle.center.x + rectangle.width  / 2.0 - ray.origin.x) / ray.direction.x;
+    float tFarY =  (rectangle.center.y + rectangle.height / 2.0 - ray.origin.y) / ray.direction.y;
+
+    float tNear = max(min(tNearX, tFarX), min(tNearY, tFarY));
+    float tFar = min(max(tNearX, tFarX), max(tNearY, tFarY));
+
+    return HitSpan(tNear, tFar);
+}
 /*return closest intersection along the ray*/
-HitInfo intersect(Ray ray, Circle circle)//vec2 center, float radius)
+HitInfo hitTest(Ray ray, Circle circle)//vec2 center, float radius)
 {
     vec2 p = ray.origin - circle.center;
     float B = dot(p, ray.direction);
@@ -117,7 +190,7 @@ HitInfo intersect(Ray ray, Circle circle)//vec2 center, float radius)
     }
 }
 
-HitInfo intersect(Ray ray, Segment segment)
+HitInfo hitTest(Ray ray, Segment segment)
 {
     HitInfo hit = HitInfo(9999.0, vec2(0.0, 0.0), vec2(0.0, 0.0), -1);
 
@@ -148,9 +221,7 @@ HitInfo intersect(Ray ray, Segment segment)
     return hit;
 }
 
-
-
-HitInfo intersect(Ray ray, Triangle triangle)
+HitInfo hitTest(Ray ray, Triangle triangle)
 {
     // make vertices from triangle size and transform
     vec2 vertices[3];
@@ -168,9 +239,9 @@ HitInfo intersect(Ray ray, Triangle triangle)
     Segment c = Segment(vertices[2], vertices[0]);
 
     // intersect each side
-    HitInfo hitA = intersect(ray, a);
-    HitInfo hitB = intersect(ray, b);
-    HitInfo hitC = intersect(ray, c);
+    HitInfo hitA = hitTest(ray, a);
+    HitInfo hitB = hitTest(ray, b);
+    HitInfo hitC = hitTest(ray, c);
 
     // find closest
     HitInfo hit = hitA;
@@ -207,7 +278,7 @@ bool contains(Rectangle bbox, vec2 P){
            bbox.center.y-bbox.height/2.0 < P.y && P.y < bbox.center.y+bbox.height/2.0;
 }
 
-HitInfo intersect(Ray incidentRay, Rectangle rectangle)
+HitInfo hitTest(Ray incidentRay, Rectangle rectangle)
 {
     Ray ray = Ray(rotate(incidentRay.origin, -rectangle.angle, rectangle.center), rotate(incidentRay.direction, -rectangle.angle));
 
@@ -247,7 +318,7 @@ HitInfo intersect(Ray incidentRay, Rectangle rectangle)
     }
 }
 
-HitInfo intersect(Ray incidentRay, SphericalLens lens){
+HitInfo hitTest(Ray incidentRay, SphericalLens lens){
 
     Ray ray = Ray(rotate(incidentRay.origin, -lens.angle, lens.center), rotate(incidentRay.direction, -lens.angle));
     HitInfo hit = HitInfo(9999.0, vec2(0.0, 0.0), vec2(0.0, 0.0), -1);
@@ -263,8 +334,8 @@ HitInfo intersect(Ray incidentRay, SphericalLens lens){
     vec2 bottomRight = vec2(lens.center.x +   lens.edgeThickness/2.0, lens.center.y-lens.diameter/2.0);
     Circle rightCircle = makeCircleFromThreePoints(topRight, middleRight, bottomRight);
 
-    HitInfo leftHit = intersect(ray, leftCircle);
-    HitInfo rightHit = intersect(ray, rightCircle);
+    HitInfo leftHit = hitTest(ray, leftCircle);
+    HitInfo rightHit = hitTest(ray, rightCircle);
 
     bool IsConvex = lens.centerThickness>lens.edgeThickness;
 
@@ -325,7 +396,7 @@ HitInfo intersectScene(Ray ray)
                 float radius = shapeData[i].y;
 
                 // intersect Circle
-                currentHit = intersect(ray, Circle(center, radius));
+                currentHit = hitTest(ray, Circle(center, radius));
             }
             else if(shapeData[i].x==1.0) // RECTANGLE
             {
@@ -335,7 +406,7 @@ HitInfo intersectScene(Ray ray)
                                            shapeData[i].y, 
                                            shapeData[i].z);
                 // intersect Rectangle
-                currentHit = intersect(ray, rect);
+                currentHit = hitTest(ray, rect);
             }
             else if(shapeData[i].x==2.0) // SphericalLens
             {
@@ -346,7 +417,7 @@ HitInfo intersectScene(Ray ray)
                                                    shapeData[i].w,
                                                    shapeData[i].z);
                 // intersect Lens
-                currentHit = intersect(ray, lens);
+                currentHit = hitTest(ray, lens);
 
             }
             else if(shapeData[i].x==3.0) // Triangle
@@ -356,7 +427,7 @@ HitInfo intersectScene(Ray ray)
                                            transformData[i].z, 
                                            shapeData[i].y);
                 // intersect Lens
-                currentHit = intersect(ray, triangle);
+                currentHit = hitTest(ray, triangle);
             }
             else if(shapeData[i].x==4.0) // LineSegment
             {
@@ -369,7 +440,7 @@ HitInfo intersectScene(Ray ray)
                 vec2 P2 = C+tangent*segmentLength/2.0;
                 Segment segment = Segment(P1, P2);
                 // intersect Lens
-                currentHit = intersect(ray, segment);
+                currentHit = hitTest(ray, segment);
             }
             else
             {

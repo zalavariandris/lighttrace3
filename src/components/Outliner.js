@@ -47,11 +47,10 @@ function Outliner(props)
         className: "outliner",
         ...props
     },
-        Object.entries(scene)
-            .map( ([key, entity])=>{
-                return h("li", {
-                    className: entity.selected?"active":""
-                }, 
+        Object.entries(scene).map( ([key, entity])=>{
+            return h("li", {
+                className: entity.selected?"active":""
+            }, 
                 h("a", {
                     href: "#",
                     onMouseDown: e=>{
@@ -62,8 +61,7 @@ function Outliner(props)
                     h(Icon, {icon: getIcon(entity)}),
                     h("span", null, ` ${key}`)
                 )
-
-                )
+            )
         })
     )
     // return h(ListView, {...props}, 

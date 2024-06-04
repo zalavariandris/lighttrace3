@@ -6,7 +6,7 @@ import settingsStore from "../../stores/settings-store.js";
 import * as vec2 from "./math-utils.js"
 
 import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../sampleLights.js";
-import {HitInfo, intersectCircle, intersectLineSegment, intersectTriangle, intersectSphericalLens, intersectRectangle} from "./intersect.js"
+import {HitInfo, hitCircle, hitLineSegment, hitTriangle, hitSphericalLens, hitRectangle} from "./hitTest.js"
 import { sampleMirror, sampleDiffuse, sampleDielectric } from "./sampleMaterials.js";
 
 
@@ -23,6 +23,7 @@ function SVGRaytracer()
     */
 
     /* prepare svg visualization objects */
+    let allRays = [];
     let rayLines = [];
     let hitLines = [];
 
@@ -36,7 +37,7 @@ function SVGRaytracer()
                 case "laser":
                     return sampleLaserLight(entity, 16);
                 case "directional":
-                    return sampleDirectionalLight(entity, 16);
+                    return sampleDirectionalLight(entity, 16, true);
                 default:
                     return {
                         x:0, 
@@ -67,13 +68,13 @@ function SVGRaytracer()
                 switch (entity.shape.type) {
 
                     case "circle":
-                        currentHit = intersectCircle(ray, 
+                        currentHit = hitCircle(ray, 
                             cx, 
                             cy, 
                             entity.shape.radius);
                         break;
                     case "rectangle":
-                        currentHit = intersectRectangle(ray, 
+                        currentHit = hitRectangle(ray, 
                             cx, 
                             cy, 
                             angle, 
@@ -81,7 +82,7 @@ function SVGRaytracer()
                             entity.shape.height);
                         break;
                     case "sphericalLens":
-                        currentHit = intersectSphericalLens(ray, 
+                        currentHit = hitSphericalLens(ray, 
                             cx, 
                             cy, 
                             angle, 
@@ -90,7 +91,7 @@ function SVGRaytracer()
                             entity.shape.edgeThickness);
                         break;
                     case "triangle":
-                        currentHit = intersectTriangle(ray, 
+                        currentHit = hitTriangle(ray, 
                                                        entity.transform.translate.x, 
                                                        entity.transform.translate.y, 
                                                      entity.transform.rotate, 
@@ -101,7 +102,7 @@ function SVGRaytracer()
                         const y1 = cy - Math.sin(angle)*entity.shape.length/2;
                         const x2 = cx + Math.cos(angle)*entity.shape.length/2;
                         const y2 = cy + Math.sin(angle)*entity.shape.length/2;
-                        currentHit = intersectLineSegment(ray, x1, y1, x2, y2);
+                        currentHit = hitLineSegment(ray, x1, y1, x2, y2);
                         break;
                     default:
                         break;
@@ -118,6 +119,7 @@ function SVGRaytracer()
         });
 
         /* add lines to SVG */
+        allRays = [...allRays, ...rays];
         rayLines = [...rayLines, ..._.zip(rays, hits).map(([ray, hit])=>{
             return {
                 x1: ray.x,
@@ -209,12 +211,11 @@ function SVGRaytracer()
                 })
             )
         ),
-        hitLines.map(path =>
+
+        // draw hit normals
+        settings.display.debug?hitLines.map(path =>
             h('g', {
-                className: 'intersections',
-                style: {
-                    opacity: settings.display.normals?1.0:0.0
-                }
+                className: 'intersections'
             },
                 h('line', {
                     x1: path.x1,
@@ -229,7 +230,27 @@ function SVGRaytracer()
                     }
                 })
             )
-        ),
+        ):null,
+
+        // draw rays
+        settings.display.debug?allRays.map(ray =>
+            h('g', {
+                className: 'intersections'
+            },
+                h('line', {
+                    x1: ray.x,
+                    y1: ray.y,
+                    x2: ray.x+ray.dx*50,
+                    y2: ray.y+ray.dy*50,
+                    className: 'intersection',
+                    vectorEffect: "non-scaling-stroke",
+                    style: {
+                        stroke: "orange"
+                        // stroke: RGBToCSS(wavelengthToRGB(ray.wavelength), ray.intensity)
+                    }
+                })
+            )
+        ):null,
     );
 }
 

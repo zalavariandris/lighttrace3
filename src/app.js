@@ -117,11 +117,25 @@ function App({})
     return h("div", {},
         h(Viewport,  {id: "viewport"}),
 
-        h("div", {
+        settings.debug?h("div", {
             id: "leftSidebar"
         },
-            h(Outliner)
-        ),
+            h(Outliner),
+            h("hr"),
+            h("div", {className: "toolbar vertical"},
+                Object.keys(settings.display).map(something=>{
+                    return h("label", null,
+                        h("input", {
+                            checked: settings.display[something],
+                            onChange: e=>settingsStore.setValue(`display.${something}`, e.target.checked),
+                            type: "checkbox"
+                        }),
+                        `show ${something}`
+                    )
+                })
+
+            )
+        ):null,
 
         h("div", {
             id: "topbar",

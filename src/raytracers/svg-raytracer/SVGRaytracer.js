@@ -6,7 +6,8 @@ import settingsStore from "../../stores/settings-store.js";
 import * as vec2 from "./math-utils.js"
 
 import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../sampleLights.js";
-import {HitInfo, hitCircle, hitLineSegment, hitTriangle, hitSphericalLens, hitRectangle} from "./hitTest.js"
+import { HitInfo, hitCircle, hitLineSegment, hitTriangle, hitSphericalLens, hitRectangle } from "./hitTest.js"
+import { intersectCircle, intersectRectangle } from "./intersect.js"
 import { sampleMirror, sampleDiffuse, sampleDielectric } from "./sampleMaterials.js";
 
 
@@ -66,7 +67,6 @@ function SVGRaytracer()
                 const cy = entity.transform.translate.y;
                 const angle = entity.transform.rotate;
                 switch (entity.shape.type) {
-
                     case "circle":
                         currentHit = hitCircle(ray, 
                             cx, 
@@ -182,6 +182,19 @@ function SVGRaytracer()
 
         rays = secondary;
     }
+
+    const hitSpans = rays.map(ray=>{
+        return shapeEntities.forEach(entity=>{
+            switch (entity.shape.type) {
+                case "circle":
+                    return intersectCircle(ray, cx, cy, entity.shape.radius);
+                case "rectangle":
+                    return intersectRectangle(ray, cx, cy, angle, entity.shape.width, entity.shape.height);
+                default:
+                    break;
+            }
+        })
+    }).flat(1)
     
     return h('g', {
         className: 'svg-raytracer',
@@ -189,9 +202,10 @@ function SVGRaytracer()
             pointerEvents: "none"
         }
     },
-        rayLines.map(path =>
+        // draw rayArrows
+        settings.display.paths && rayLines.map(path =>
             h('g', {
-                className: 'rays',
+                className: 'lightpaths',
                 style: {
                     opacity: settings.display.rays?1.0:0.0
                 }
@@ -213,9 +227,9 @@ function SVGRaytracer()
         ),
 
         // draw hit normals
-        settings.display.debug?hitLines.map(path =>
+        settings.display.normals && hitLines.map(path =>
             h('g', {
-                className: 'intersections'
+                className: 'hitNormals'
             },
                 h('line', {
                     x1: path.x1,
@@ -230,12 +244,12 @@ function SVGRaytracer()
                     }
                 })
             )
-        ):null,
+        ),
 
-        // draw rays
-        settings.display.debug?allRays.map(ray =>
+        // draw ray paths
+        settings.display.rays && allRays.map(ray =>
             h('g', {
-                className: 'intersections'
+                className: 'rays'
             },
                 h('line', {
                     x1: ray.x,
@@ -250,7 +264,7 @@ function SVGRaytracer()
                     }
                 })
             )
-        ):null,
+        ),
     );
 }
 

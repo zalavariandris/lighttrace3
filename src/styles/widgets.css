@@ -51,6 +51,18 @@ option{
 .toolbar{
     text-align: center;
     display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.toolbar.vertical{
+    flex-direction: column;
+    align-items: baseline;
+}
+
+.toolbar.horizontal{
+    flex-direction: row;
     align-items: center;
 }
 
@@ -62,6 +74,8 @@ option{
     display: block;
     margin: auto;
 }
+
+
 
 .toolbar.horizontal hr {
     display: inline-block;

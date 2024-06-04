@@ -465,6 +465,7 @@ class GLRaytracer{
             this.postFbo1.resize(this.outputResolution[0], this.outputResolution[1]);
             this.postFbo2.resize(this.outputResolution[0], this.outputResolution[1]);
         }
+
         for(let i=0; i<this.settings.maxBounce; i++)
         {
             /* INTERSECT RAYS WITH CSG */

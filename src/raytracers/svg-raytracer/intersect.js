@@ -23,7 +23,7 @@ function Intersection(A, B){
     const tExit = A.tExit;
     if(B.tExit>0.0 && B.tExit>tExit){tExit = B.tExit;}
 
-    if(tExit?tEnter){
+    if(tExit < tEnter){
         return {tEnter: -1, tExit: -1};
     }
     return {tEnter, tExit};
@@ -80,3 +80,5 @@ function intersectRectangle(ray, cx, cy, angle, width, height)
 
     return {tEnter, tExit}
 }
+
+export {intersectCircle, intersectRectangle};

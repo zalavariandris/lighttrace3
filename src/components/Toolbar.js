@@ -56,52 +56,52 @@ function SettingsToolbar({
             h("span", {style:{whiteSpace:"nowrap"}}, `target passes: ${settings.raytrace.targetPasses}`)
         ),
 
+        // h("label", null,
+        //     h("input",{
+        //         type: "checkbox",
+        //         checked: settings.display.render,
+        //         onChange: (e)=>{
+        //             settingsStore.setValue("display.render", e.target.checked);
+        //             settingsStore.setValue("display.rays", !e.target.checked);
+        //         }
+        //     }),
+        //     h("span", {style:{whiteSpace:"nowrap"}}, `WebGL render`)
+        // ),
+
+        // h("label", null,
+        //     h("div", {style: {display: "flex", gap:"0.5rem"}},
+        //         h("label", null,
+        //             h("input",{
+        //                 type: "radio",
+        //                 checked: settings.display.render,
+        //                 onChange: (e)=>{
+        //                     settingsStore.setValue("display.render", e.target.checked);
+        //                     settingsStore.setValue("display.rays", !e.target.checked);
+        //                 }
+        //             }), 
+        //             // "WebGL"
+        //         ),
+        //         h("label", null,
+        //             h("input",{
+        //                 type: "radio",
+        //                 checked: !settings.display.render,
+        //                 onChange: (e)=>{
+        //                     settingsStore.setValue("display.render", !e.target.checked);
+        //                     settingsStore.setValue("display.rays", e.target.checked);
+        //                 }
+        //             }), 
+        //             // "SVG"
+        //         )
+        //     ),
+        //     h("span", {style:{whiteSpace:"nowrap"}}, `WebGL/SVG`)
+        // ),
+
         h("label", null,
             h("input",{
                 type: "checkbox",
-                checked: settings.display.render,
+                checked: settings.debug,
                 onChange: (e)=>{
-                    settingsStore.setValue("display.render", e.target.checked);
-                    settingsStore.setValue("display.rays", !e.target.checked);
-                }
-            }),
-            h("span", {style:{whiteSpace:"nowrap"}}, `weblg render`)
-        ),
-
-        h("label", null,
-            h("div", {style: {display: "flex", gap:"0.5rem"}},
-                h("label", null,
-                    h("input",{
-                        type: "radio",
-                        checked: settings.display.render,
-                        onChange: (e)=>{
-                            settingsStore.setValue("display.render", e.target.checked);
-                            settingsStore.setValue("display.rays", !e.target.checked);
-                        }
-                    }), 
-                    // "WebGL"
-                ),
-                h("label", null,
-                    h("input",{
-                        type: "radio",
-                        checked: !settings.display.render,
-                        onChange: (e)=>{
-                            settingsStore.setValue("display.render", !e.target.checked);
-                            settingsStore.setValue("display.rays", e.target.checked);
-                        }
-                    }), 
-                    // "SVG"
-                )
-            ),
-            h("span", {style:{whiteSpace:"nowrap"}}, `WebGL/SVG`)
-        ),
-
-        h("label", null,
-            h("input",{
-                type: "checkbox",
-                checked: settings.display.debug,
-                onChange: (e)=>{
-                    settingsStore.setValue("display.debug", e.target.checked);
+                    settingsStore.setValue("debug", e.target.checked);
                 }
             }),
             h("span", {style:{whiteSpace:"nowrap"}}, `debug`)

@@ -2,13 +2,14 @@ import {produce} from "immer";
 import _ from "lodash"
 
 const defaultSettings = {
+    debug: true,
     "display": {
         shapes: true,
         lights: true,
-        rays: false,
-        normals: false,
-        debug: true,
-        render: true
+        rays: true,
+        normals: true,
+        paths: true,
+        render: false
     },
     "raytrace": {
         lightSamples: Math.pow(4,5),//128*128; //Math.pow(4,4);
@@ -19,7 +20,7 @@ const defaultSettings = {
 };
 
 let settings;
-settings = JSON.parse(localStorage.getItem("settings"));
+// settings = JSON.parse(localStorage.getItem("settings"));
 
 if(!settings)
 {

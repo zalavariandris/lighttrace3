@@ -1,4 +1,4 @@
-import * as vec2 from "./math-utils.js";
+import * as vec2 from "../../vec2.js";
 
 /* ray circle intersections*/
 function Union(A, B)

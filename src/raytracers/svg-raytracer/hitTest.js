@@ -1,4 +1,4 @@
-import * as vec2 from "./math-utils.js"
+import * as vec2 from "../../vec2.js"
 
 class HitInfo
 {
@@ -19,7 +19,7 @@ class HitInfo
  * @param {number} cx - The x-coordinate of the circle's center.
  * @param {number} cy - The y-coordinate of the circle's center.
  * @param {number} r - The radius of the circle.
- * @returns {HitInfo} - 
+ * @returns {[HitInfo, HitInfo]} - a pair of enter/exit hitInfo
  */
 function hitCircle(ray, cx, cy, r)
 {
@@ -46,11 +46,11 @@ function hitCircle(ray, cx, cy, r)
 
         let [Nx, Ny] = vec2.normalize(Ix-cx, Iy-cy);
         
-        return new HitInfo(t, Ix, Iy, Nx, Ny, -1);
+        return [new HitInfo(t, Ix, Iy, Nx, Ny, -1), null];
     }
     else
     {
-        return new HitInfo(9999, 0,0, 0,0, -1);
+        return [new HitInfo(9999, 0,0, 0,0, -1), null];
     }
 }
 

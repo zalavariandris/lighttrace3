@@ -3,14 +3,13 @@ import React from "react";
 import entityStore from "../../stores/entity-store.js";
 import settingsStore from "../../stores/settings-store.js";
 
-import * as vec2 from "./math-utils.js"
+import * as vec2 from "../../vec2.js"
 
 import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../sampleLights.js";
 import { HitInfo, hitCircle, hitLineSegment, hitTriangle, hitSphericalLens, hitRectangle } from "./hitTest.js"
-import { intersectCircle, intersectRectangle } from "./intersect.js"
 import { sampleMirror, sampleDiffuse, sampleDielectric } from "./sampleMaterials.js";
 
-
+const EPSILON = 0.001;
 
 const h = React.createElement;
 
@@ -57,10 +56,13 @@ function SVGRaytracer()
     {
         /* intersect scene */
         const hits = rays.map(ray=>{
+            ray.x+=ray.dx*EPSILON;
+            ray.y+=ray.dy*EPSILON;
             let hitInfo = new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1);
     
             /* intersect rays with CSG */
             let currentHit = hitInfo;
+            let exitHit;
 
             shapeEntities.forEach(entity=>{
                 const cx = entity.transform.translate.x;
@@ -68,7 +70,7 @@ function SVGRaytracer()
                 const angle = entity.transform.rotate;
                 switch (entity.shape.type) {
                     case "circle":
-                        currentHit = hitCircle(ray, 
+                        [currentHit, exitHit] = hitCircle(ray, 
                             cx, 
                             cy, 
                             entity.shape.radius);
@@ -143,7 +145,7 @@ function SVGRaytracer()
             const RandomNumber = i/rays.length;
             const [tangentX, tangentY] = [-hit.ny, hit.nx];
 
-            // incident ray to tangent spaca
+            // incident ray to tangent space
             const wiX = vec2.dot([tangentX, tangentY], [ray.dx, ray.dy]);
             const wiY = vec2.dot([hit.nx, hit.ny], [ray.dx, ray.dy]);
 

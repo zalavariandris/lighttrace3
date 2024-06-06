@@ -13,47 +13,6 @@ class HitInfo
     }
 }
 
-/* ray circle intersections*/
-function Union(A, B)
-{
-    // closest enter
-    const tEnter = A.tEnter;
-    if(B.tEnter>0.0 && B.tEnter<tEnter) {tEnter = B.tEnter;}
-
-    //farthest exit
-    const tExit = A.tExit;
-    if(B.tExit>0.0 && B.tExit<tExit){tExit = B.tExit;}
-
-    return {tEnter, tExit};
-}
-
-function Intersection(A, B){
-    //farthest enter
-    const tEnter = A.tEnter;
-    if(B.tEnter>0.0 && B.tEnter>tEnter) {tEnter = B.tEnter;}
-
-    // closest exit
-    const tExit = A.tExit;
-    if(B.tExit>0.0 && B.tExit>tExit){tExit = B.tExit;}
-
-    return {tEnter, tExit};
-}
-
-function Difference(A, B)
-{
-    // closest enter
-    const tEnter = A.tEnter;
-    if(B.tExit>0.0 && B.tExit<tEnter) {tEnter = B.tExit;}
-
-    //farthest exit
-    const tExit = A.tExit;
-    if(B.tEnter>0.0 && B.tEnter<tExit){tExit = B.tEnter;}
-
-    return {tEnter, tExit};
-}
-
-
-
 /**
  * Calculates the closest intersection of a ray with a circle.
  * @param {Ray} ray - The ray object with properties origin and direction.

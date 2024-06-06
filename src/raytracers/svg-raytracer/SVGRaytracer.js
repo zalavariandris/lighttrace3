@@ -182,19 +182,6 @@ function SVGRaytracer()
 
         rays = secondary;
     }
-
-    const hitSpans = rays.map(ray=>{
-        return shapeEntities.forEach(entity=>{
-            switch (entity.shape.type) {
-                case "circle":
-                    return intersectCircle(ray, cx, cy, entity.shape.radius);
-                case "rectangle":
-                    return intersectRectangle(ray, cx, cy, angle, entity.shape.width, entity.shape.height);
-                default:
-                    break;
-            }
-        })
-    }).flat(1)
     
     return h('g', {
         className: 'svg-raytracer',

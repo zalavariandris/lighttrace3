@@ -1,5 +1,5 @@
 import React from "react";
-import ErrorBoundary from "react-error-boundary"
+import ErrorBoundary from "../components/ErrorBoundary.js"
 import entityStore from "../stores/entity-store.js";
 import uiStore from "../stores/ui-store.js";
 import settingsStore from "../stores/settings-store.js";

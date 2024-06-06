@@ -108,6 +108,7 @@ function SVGRaytracer()
                         hitSpan = hitLineSegment(ray, x1, y1, x2, y2);
                         break;
                     default:
+                        hitSpan = new HitSpan(null, null);
                         break;
                 }
 

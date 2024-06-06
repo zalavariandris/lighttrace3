@@ -2,7 +2,7 @@ import * as vec2 from "../../vec2.js"
 
 class HitInfo
 {
-     constructor(t, x, y, nx, ny, material)
+     constructor(t, x, y, nx=0, ny=0, material=-1)
     {
         this.t = t;
         this.x = x;
@@ -22,8 +22,11 @@ class HitSpan{
     }
 }
 
-function collapseSpan(a, b){
-
+function collapseSpan(a, b)
+{
+    const enter = a.enter.t < b.enter.t ? a.enter : b.enter;
+    const exit =  a.exit.t  > b.exit.t ?  a.exit  : b.exit;
+    return new HitSpan(enter, exit);
 }
 
 function intersectSpan(a, b){
@@ -57,21 +60,25 @@ function hitCircle(ray, cx, cy, r)
         const tNear = -B - det;
         const tFar  = -B + det;
 
-        // find smallest t
-        let t = 9999;
-        if(tNear>EPSILON && tNear<(t+EPSILON)) t = tNear;
-        if(tFar>EPSILON && tFar<(t+EPSILON)) t = tFar;
-        
-        const Ix = ray.x+ray.dx*t;
-        const Iy = ray.y+ray.dy*t;
+        if(tNear>tFar){ [tNear, tFar] = [tFar, tNear]; }
 
-        let [Nx, Ny] = vec2.normalize(Ix-cx, Iy-cy);
-        
-        return new HitSpan(new HitInfo(t, Ix, Iy, Nx, Ny, -1), null);
+        // enter
+        const Ix1 = ray.x+ray.dx*tNear;
+        const Iy1 = ray.y+ray.dy*tNear;
+        let [Nx1, Ny1] = vec2.normalize(Ix1-cx, Iy1-cy);
+        const enter = new HitInfo(tNear, Ix1, Iy1, -Nx1, -Ny1, -1);
+
+        //exit point
+        const Ix2 = ray.x+ray.dx*tFar;
+        const Iy2 = ray.y+ray.dy*tFar;
+        let [Nx2, Ny2] = vec2.normalize(Ix2-cx, Iy2-cy);
+        const exit = new HitInfo(tFar, Ix2, Iy2, -Nx2, -Ny2, -1);
+
+        return new HitSpan(enter, exit);
     }
     else
     {
-        return new HitSpan(new HitInfo(9999, 0,0, 0,0, -1), null);
+        return new HitSpan(new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999), new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999));
     }
 }
 
@@ -386,6 +393,12 @@ function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThi
     const leftCircle = makeCircleFromThreePoints(edgeLeft, top, centerLeft, cy, edgeLeft, bottom);
     const rightCircle = makeCircleFromThreePoints(edgeRight, top, centerRight, cy, edgeRight, bottom);
 
+
+    const leftHitSpan = hitCircle(ray, leftCircle.cx, leftCircle.cy, leftCircle.r);
+    const rightHitSpan = hitCircle(ray, rightCircle.cx, rightCircle.cy, rightCircle.r);
+
+    return rightHitSpan;
+    return collapseSpan(leftHitSpan, rightHitSpan);
     
 }
 

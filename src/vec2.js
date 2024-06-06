@@ -1,11 +1,11 @@
 function add([x1,y1], [x2,y2])
 {
-    eturn [x1+x2, y1+y2];
+    return [x1+x2, y1+y2];
 }
 
 function sub([x1,y1], [x2,y2])
 {
-    eturn [x1-x2, y1-y2];
+    return [x1-x2, y1-y2];
 }
 
 function mult([x1,y1], b)
@@ -24,7 +24,7 @@ function rotate([x, y], radAngle, [pivotX, pivotY]=[0.0,0.0])
     return [rX, rY];
 }
 
-function dot([x1, y1], [x2, y2])
+function dot([x1,y1], [x2,y2])
 {
     return x1*x2 + y1*y2;
 }

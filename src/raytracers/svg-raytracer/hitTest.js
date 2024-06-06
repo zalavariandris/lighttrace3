@@ -63,10 +63,10 @@ const EPSILON = 0.001;
  * @param {number} y1 - The y-coordinate of P1
  * @param {number} x2 - The x-coordinate of P2
  * @param {number} y2 - The y-coordinate of P2
- * @returns {HitInfo} - 
+ * @returns {[HitInfo, HitInfo]} - a pair of enter/exit hitInfo
  */
 function hitLineSegment(ray, x1, y1, x2, y2){
-    let result = new HitInfo(9999, ray.x+ray.dx*9999,ray.y+ray.dy*9999, 0,0, -1);
+    let result = [new HitInfo(9999, ray.x+ray.dx*9999,ray.y+ray.dy*9999, 0,0, -1), null];
 
     const tangentX = x2-x1;
     const tangentY = y2-y1;
@@ -96,7 +96,7 @@ function hitLineSegment(ray, x1, y1, x2, y2){
         let Nx = -tangentY;
         let Ny = tangentX;
         [Nx, Ny] = vec2.normalize(-Nx, -Ny);
-        result = new HitInfo(t1, Ix, Iy, Nx, Ny, -1);
+        result = [new HitInfo(t1, Ix, Iy, Nx, Ny, -1), new HitInfo(t1, Ix, Iy, Nx, Ny, -1)];
     }
 
     return result;
@@ -109,7 +109,7 @@ function hitLineSegment(ray, x1, y1, x2, y2){
  * @param {number} cy - center of triangle
  * @param {number} angle - triabngle rotation
  * @param {number} size - vertices distance from center
- * @returns {HitInfo} - 
+ * @returns {[HitInfo, HitInfo]} - a pair of enter/exit hitInfo
  */
 function hitTriangle(ray, cx, cy, angle, size){
     const vertices = Array.from({length:3}).map( (_,k)=>{
@@ -121,15 +121,21 @@ function hitTriangle(ray, cx, cy, angle, size){
     });
 
     // intersect each side
-    const hitA = hitLineSegment(ray, vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y);
-    const hitB = hitLineSegment(ray, vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y);
-    const hitC = hitLineSegment(ray, vertices[2].x, vertices[2].y, vertices[0].x, vertices[0].y);
+    const [hitA,hitAExit] = hitLineSegment(ray, vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y);
+    const [hitB,hitBExit] = hitLineSegment(ray, vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y);
+    const [hitC,hitCExit] = hitLineSegment(ray, vertices[2].x, vertices[2].y, vertices[0].x, vertices[0].y);
 
     // find closest intersection
-    let hit = hitA;
-    if(hitB.t<hit.t) hit = hitB;
-    if(hitC.t<hit.t) hit = hitC;
-    return hit;
+    let hitEnter = hitA;
+    if(hitB.t < hitEnter.t) hitEnter = hitB;
+    if(hitC.t < hitEnter.t) hitEnter = hitC;
+
+    // find farthest intersection
+    let hitExit = hitA;
+    if(hitB.t > hitExit.t) hitExit = hitB;
+    if(hitC.t > hitExit.t) hitExit = hitC;
+
+    return [hitEnter, hitExit];
 }
 
 /**
@@ -140,14 +146,14 @@ function hitTriangle(ray, cx, cy, angle, size){
  * @param {number} angle - rotation (in radians)
  * @param {number} width - the width of the rectangle
  * @param {number} height - rectangle height
- * @returns {HitInfo} - 
+ * @returns {[HitInfo, HitInfo]} - a pair of enter/exit hitInfo
  */
 function hitRectangle(ray, cx, cy, angle, width, height)
 {
-    let result = new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1);
+    let result = [new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1), null];
 
-    const [rayX, rayY] = vec2.rotate(ray.x, ray.y, -angle, cx, cy);
-    const [dirX, dirY] = vec2.rotate(ray.dx, ray.dy, -angle);
+    const [rayX, rayY] = vec2.rotate([ray.x, ray.y], -angle, [cx, cy]);
+    const [dirX, dirY] = vec2.rotate([ray.dx, ray.dy], -angle);
 
     const tNearX = (cx - width  / 2.0 - rayX) / dirX;
     const tNearY = (cy - height / 2.0 - rayY) / dirY;
@@ -163,7 +169,7 @@ function hitRectangle(ray, cx, cy, angle, width, height)
     if(tFar>0 && tFar<t) t = tFar;
 
     if (t == 9999) {
-        return result;
+        return [result, null];
     }
 
     let Ix = rayX+dirX*t;
@@ -184,10 +190,10 @@ function hitRectangle(ray, cx, cy, angle, width, height)
             [Nx, Ny] = [0.0, 1.0];
         }
 
-        [Ix, Iy] = vec2.rotate(Ix, Iy, angle, cx, cy);
-        [Nx, Ny] = vec2.rotate(Nx, Ny, angle);
+        [Ix, Iy] = vec2.rotate([Ix, Iy], angle, [cx, cy]);
+        [Nx, Ny] = vec2.rotate([Nx, Ny], angle);
 
-        result = new HitInfo(t, Ix, Iy, Nx, Ny, -1);
+        result = [new HitInfo(t, Ix, Iy, Nx, Ny, -1), null];
     }
 
     return result;
@@ -267,10 +273,10 @@ function rectangleContainsPoint(rect, px, py){
  */
 function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThickness)
 {
-    let result = new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1);
+    let result = [new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1), null];
 
-    const [rayX, rayY] = vec2.rotate(ray.x, ray.y, -angle, cx, cy);
-    const [dirX, dirY] = vec2.rotate(ray.dx, ray.dy, -angle);
+    const [rayX, rayY] = vec2.rotate([ray.x, ray.y], -angle, [cx, cy]);
+    const [dirX, dirY] = vec2.rotate([ray.dx, ray.dy], -angle);
 
     // make circles
     const top =         cy + diameter/2.0;
@@ -284,8 +290,8 @@ function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThi
     const rightCircle = makeCircleFromThreePoints(edgeRight, top, centerRight, cy, edgeRight, bottom);
 
     // intersect circles
-    const leftHit = hitCircle(ray, leftCircle.cx, leftCircle.cy, leftCircle.r);
-    const rightHit = hitCircle(ray, rightCircle.cx, rightCircle.cy, rightCircle.r);
+    const [leftHit, leftHitExit] = hitCircle(ray, leftCircle.cx, leftCircle.cy, leftCircle.r);
+    const [rightHit, rightHitExit] = hitCircle(ray, rightCircle.cx, rightCircle.cy, rightCircle.r);
     
     const IsConvex = centerThickness>edgeThickness;
 
@@ -299,17 +305,17 @@ function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThi
            RightCircleContains_LeftIntersection)
         {
             // Return closest hitpoint that is inside the circles intersection
-            if(leftHit.t<result.t) result = leftHit;
-            if(rightHit.t<result.t) result = rightHit;
+            if(leftHit.t<result.t) result = [leftHit, null];
+            if(rightHit.t<result.t) result = [rightHit, null];
             
         }
         else if (LeftCircleContains_RightIntersection)
         {
-            result = rightHit;
+            result = [rightHit, null];
         }
         else if (RightCircleContains_LeftIntersection)
         {
-            result = leftHit;
+            result = [leftHit, null];
         }
     }
     else //Concave
@@ -324,11 +330,11 @@ function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThi
         if(rectangleContainsPoint(bbox, leftHit.x, leftHit.y) && 
         rectangleContainsPoint(bbox, leftHit.x, leftHit.y))
         {
-            if(leftHit.t < rightHit.t) {result = leftHit;} else {result = rightHit;};
+            if(leftHit.t < rightHit.t) {result = [leftHit, null];} else {result = [rightHit, null];};
         }
         else if(rectangleContainsPoint(bbox, leftHit.x, leftHit.y))
         {
-            result = leftHit;
+            result = [leftHit, null];
         }
     }
 

@@ -67,8 +67,8 @@ function intersectRectangle(ray, cx, cy, angle, width, height)
 {
     let result = new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1);
 
-    const [rayX, rayY] = vec2.rotate(ray.x, ray.y, -angle, cx, cy);
-    const [dirX, dirY] = vec2.rotate(ray.dx, ray.dy, -angle);
+    const [rayX, rayY] = vec2.rotate([ray.x, ray.y], -angle, [cx, cy]);
+    const [dirX, dirY] = vec2.rotate([ray.dx, ray.dy], -angle);
 
     const tNearX = (cx - width  / 2.0 - rayX) / dirX;
     const tNearY = (cy - height / 2.0 - rayY) / dirY;

@@ -76,7 +76,7 @@ function SVGRaytracer()
                             entity.shape.radius);
                         break;
                     case "rectangle":
-                        currentHit = hitRectangle(ray, 
+                        [currentHit, exitHit] = hitRectangle(ray, 
                             cx, 
                             cy, 
                             angle, 
@@ -84,7 +84,7 @@ function SVGRaytracer()
                             entity.shape.height);
                         break;
                     case "sphericalLens":
-                        currentHit = hitSphericalLens(ray, 
+                        [currentHit, exitHit] = hitSphericalLens(ray, 
                             cx, 
                             cy, 
                             angle, 
@@ -93,7 +93,7 @@ function SVGRaytracer()
                             entity.shape.edgeThickness);
                         break;
                     case "triangle":
-                        currentHit = hitTriangle(ray, 
+                        [currentHit, exitHit] = hitTriangle(ray, 
                                                        entity.transform.translate.x, 
                                                        entity.transform.translate.y, 
                                                      entity.transform.rotate, 
@@ -104,7 +104,7 @@ function SVGRaytracer()
                         const y1 = cy - Math.sin(angle)*entity.shape.length/2;
                         const x2 = cx + Math.cos(angle)*entity.shape.length/2;
                         const y2 = cy + Math.sin(angle)*entity.shape.length/2;
-                        currentHit = hitLineSegment(ray, x1, y1, x2, y2);
+                        [currentHit, exitHit] = hitLineSegment(ray, x1, y1, x2, y2);
                         break;
                     default:
                         break;

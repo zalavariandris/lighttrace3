@@ -294,7 +294,7 @@ function rectangleContainsPoint(rect, px, py){
  * @param {number} edgeThickness
  * @returns {HitInfo} - 
  */
-function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThickness)
+function hitSphericalLens_old(ray, cx, cy, angle, diameter, centerThickness, edgeThickness)
 {
     let result = new HitSpan(new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1), null);
 
@@ -371,6 +371,22 @@ function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThi
     }
 
     return result;
+}
+
+function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThickness)
+{
+    // make circles
+    const top =         cy + diameter/2.0;
+    const bottom =      cy - diameter/2.0;
+    const edgeLeft =    cx -   edgeThickness/2.0;
+    const edgeRight =   cx + edgeThickness/2.0;
+    const centerLeft =  cx - centerThickness/2.0
+    const centerRight = cx +   centerThickness/2.0
+
+    const leftCircle = makeCircleFromThreePoints(edgeLeft, top, centerLeft, cy, edgeLeft, bottom);
+    const rightCircle = makeCircleFromThreePoints(edgeRight, top, centerRight, cy, edgeRight, bottom);
+
+    
 }
 
 export {HitInfo, HitSpan, hitCircle, hitLineSegment, hitTriangle, hitSphericalLens, hitRectangle}

@@ -13,13 +13,34 @@ class HitInfo
     }
 }
 
+class HitSpan{
+    enter;
+    exit;
+    constructor(enter, exit){
+        this.enter = enter;
+        this.exit = exit;
+    }
+}
+
+function collapseSpan(a, b){
+
+}
+
+function intersectSpan(a, b){
+
+}
+
+function subtractSpan(a, b){
+
+}
+
 /**
  * Calculates the closest intersection of a ray with a circle.
  * @param {Ray} ray - The ray object with properties origin and direction.
  * @param {number} cx - The x-coordinate of the circle's center.
  * @param {number} cy - The y-coordinate of the circle's center.
  * @param {number} r - The radius of the circle.
- * @returns {[HitInfo, HitInfo]} - a pair of enter/exit hitInfo
+ * @returns {HitSpan} - a pair of enter/exit hitInfo
  */
 function hitCircle(ray, cx, cy, r)
 {
@@ -46,11 +67,11 @@ function hitCircle(ray, cx, cy, r)
 
         let [Nx, Ny] = vec2.normalize(Ix-cx, Iy-cy);
         
-        return [new HitInfo(t, Ix, Iy, Nx, Ny, -1), null];
+        return new HitSpan(new HitInfo(t, Ix, Iy, Nx, Ny, -1), null);
     }
     else
     {
-        return [new HitInfo(9999, 0,0, 0,0, -1), null];
+        return new HitSpan(new HitInfo(9999, 0,0, 0,0, -1), null);
     }
 }
 
@@ -63,10 +84,10 @@ const EPSILON = 0.001;
  * @param {number} y1 - The y-coordinate of P1
  * @param {number} x2 - The x-coordinate of P2
  * @param {number} y2 - The y-coordinate of P2
- * @returns {[HitInfo, HitInfo]} - a pair of enter/exit hitInfo
+ * @returns {HitSpan} - a pair of enter/exit hitInfo
  */
 function hitLineSegment(ray, x1, y1, x2, y2){
-    let result = [new HitInfo(9999, ray.x+ray.dx*9999,ray.y+ray.dy*9999, 0,0, -1), null];
+    let result = new HitSpan(new HitInfo(9999, ray.x+ray.dx*9999,ray.y+ray.dy*9999, 0,0, -1), null);
 
     const tangentX = x2-x1;
     const tangentY = y2-y1;
@@ -96,7 +117,7 @@ function hitLineSegment(ray, x1, y1, x2, y2){
         let Nx = -tangentY;
         let Ny = tangentX;
         [Nx, Ny] = vec2.normalize(-Nx, -Ny);
-        result = [new HitInfo(t1, Ix, Iy, Nx, Ny, -1), new HitInfo(t1, Ix, Iy, Nx, Ny, -1)];
+        result = new HitSpan(new HitInfo(t1, Ix, Iy, Nx, Ny, -1), new HitInfo(t1, Ix, Iy, Nx, Ny, -1));
     }
 
     return result;
@@ -109,7 +130,7 @@ function hitLineSegment(ray, x1, y1, x2, y2){
  * @param {number} cy - center of triangle
  * @param {number} angle - triabngle rotation
  * @param {number} size - vertices distance from center
- * @returns {[HitInfo, HitInfo]} - a pair of enter/exit hitInfo
+ * @returns {HitSpan} - a pair of enter/exit hitInfo
  */
 function hitTriangle(ray, cx, cy, angle, size){
     const vertices = Array.from({length:3}).map( (_,k)=>{
@@ -121,10 +142,12 @@ function hitTriangle(ray, cx, cy, angle, size){
     });
 
     // intersect each side
-    const [hitA,hitAExit] = hitLineSegment(ray, vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y);
-    const [hitB,hitBExit] = hitLineSegment(ray, vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y);
-    const [hitC,hitCExit] = hitLineSegment(ray, vertices[2].x, vertices[2].y, vertices[0].x, vertices[0].y);
-
+    const hitSpanA = hitLineSegment(ray, vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y);
+    const hitA = hitSpanA.enter;
+    const hitSpanB = hitLineSegment(ray, vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y);
+    const hitB = hitSpanB.enter;
+    const hitSpanC = hitLineSegment(ray, vertices[2].x, vertices[2].y, vertices[0].x, vertices[0].y);
+    const hitC = hitSpanC.enter;
     // find closest intersection
     let hitEnter = hitA;
     if(hitB.t < hitEnter.t) hitEnter = hitB;
@@ -135,7 +158,7 @@ function hitTriangle(ray, cx, cy, angle, size){
     if(hitB.t > hitExit.t) hitExit = hitB;
     if(hitC.t > hitExit.t) hitExit = hitC;
 
-    return [hitEnter, hitExit];
+    return new HitSpan(hitEnter, hitExit);
 }
 
 /**
@@ -150,7 +173,7 @@ function hitTriangle(ray, cx, cy, angle, size){
  */
 function hitRectangle(ray, cx, cy, angle, width, height)
 {
-    let result = [new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1), null];
+    let result = new HitSpan(new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1), null);
 
     const [rayX, rayY] = vec2.rotate([ray.x, ray.y], -angle, [cx, cy]);
     const [dirX, dirY] = vec2.rotate([ray.dx, ray.dy], -angle);
@@ -169,7 +192,7 @@ function hitRectangle(ray, cx, cy, angle, width, height)
     if(tFar>0 && tFar<t) t = tFar;
 
     if (t == 9999) {
-        return [result, null];
+        return result
     }
 
     let Ix = rayX+dirX*t;
@@ -193,7 +216,7 @@ function hitRectangle(ray, cx, cy, angle, width, height)
         [Ix, Iy] = vec2.rotate([Ix, Iy], angle, [cx, cy]);
         [Nx, Ny] = vec2.rotate([Nx, Ny], angle);
 
-        result = [new HitInfo(t, Ix, Iy, Nx, Ny, -1), null];
+        result = new HitSpan(new HitInfo(t, Ix, Iy, Nx, Ny, -1), null);
     }
 
     return result;
@@ -273,7 +296,7 @@ function rectangleContainsPoint(rect, px, py){
  */
 function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThickness)
 {
-    let result = [new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1), null];
+    let result = new HitSpan(new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1), null);
 
     const [rayX, rayY] = vec2.rotate([ray.x, ray.y], -angle, [cx, cy]);
     const [dirX, dirY] = vec2.rotate([ray.dx, ray.dy], -angle);
@@ -290,8 +313,10 @@ function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThi
     const rightCircle = makeCircleFromThreePoints(edgeRight, top, centerRight, cy, edgeRight, bottom);
 
     // intersect circles
-    const [leftHit, leftHitExit] = hitCircle(ray, leftCircle.cx, leftCircle.cy, leftCircle.r);
-    const [rightHit, rightHitExit] = hitCircle(ray, rightCircle.cx, rightCircle.cy, rightCircle.r);
+    const leftHitSpan = hitCircle(ray, leftCircle.cx, leftCircle.cy, leftCircle.r);
+    const leftHit = leftHitSpan.enter;
+    const rightHitSpan = hitCircle(ray, rightCircle.cx, rightCircle.cy, rightCircle.r);
+    const rightHit = rightHitSpan.enter;
     
     const IsConvex = centerThickness>edgeThickness;
 
@@ -305,17 +330,17 @@ function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThi
            RightCircleContains_LeftIntersection)
         {
             // Return closest hitpoint that is inside the circles intersection
-            if(leftHit.t<result.t) result = [leftHit, null];
-            if(rightHit.t<result.t) result = [rightHit, null];
+            if(leftHit.t<result.enter.t) result = new HitSpan(leftHit, null);
+            if(rightHit.t<result.enter.t) result = new HitSpan(rightHit, null);
             
         }
         else if (LeftCircleContains_RightIntersection)
         {
-            result = [rightHit, null];
+            result = new HitSpan(rightHit, null);
         }
         else if (RightCircleContains_LeftIntersection)
         {
-            result = [leftHit, null];
+            result = new HitSpan(leftHit, null);
         }
     }
     else //Concave
@@ -330,15 +355,22 @@ function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThi
         if(rectangleContainsPoint(bbox, leftHit.x, leftHit.y) && 
         rectangleContainsPoint(bbox, leftHit.x, leftHit.y))
         {
-            if(leftHit.t < rightHit.t) {result = [leftHit, null];} else {result = [rightHit, null];};
+            if(leftHit.t < rightHit.t)
+                {
+                result = new HitSpan(leftHit, null);
+            }
+            else
+            {
+                result = new HitSpan(rightHit, null);
+            };
         }
         else if(rectangleContainsPoint(bbox, leftHit.x, leftHit.y))
         {
-            result = [leftHit, null];
+            result = new HitSpan(leftHit, null);
         }
     }
 
     return result;
 }
 
-export {HitInfo, hitCircle, hitLineSegment, hitTriangle, hitSphericalLens, hitRectangle}
+export {HitInfo, HitSpan, hitCircle, hitLineSegment, hitTriangle, hitSphericalLens, hitRectangle}

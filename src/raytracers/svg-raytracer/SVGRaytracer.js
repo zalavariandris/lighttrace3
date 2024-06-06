@@ -68,15 +68,16 @@ function SVGRaytracer()
                 const cx = entity.transform.translate.x;
                 const cy = entity.transform.translate.y;
                 const angle = entity.transform.rotate;
+                let hitSpan;
                 switch (entity.shape.type) {
                     case "circle":
-                        [currentHit, exitHit] = hitCircle(ray, 
+                        hitSpan = hitCircle(ray, 
                             cx, 
                             cy, 
                             entity.shape.radius);
                         break;
                     case "rectangle":
-                        [currentHit, exitHit] = hitRectangle(ray, 
+                        hitSpan = hitRectangle(ray, 
                             cx, 
                             cy, 
                             angle, 
@@ -84,7 +85,7 @@ function SVGRaytracer()
                             entity.shape.height);
                         break;
                     case "sphericalLens":
-                        [currentHit, exitHit] = hitSphericalLens(ray, 
+                        hitSpan = hitSphericalLens(ray, 
                             cx, 
                             cy, 
                             angle, 
@@ -93,23 +94,24 @@ function SVGRaytracer()
                             entity.shape.edgeThickness);
                         break;
                     case "triangle":
-                        [currentHit, exitHit] = hitTriangle(ray, 
-                                                       entity.transform.translate.x, 
-                                                       entity.transform.translate.y, 
-                                                     entity.transform.rotate, 
-                                                      entity.shape.size);
+                        hitSpan = hitTriangle(ray, 
+                            entity.transform.translate.x, 
+                            entity.transform.translate.y, 
+                            entity.transform.rotate, 
+                            entity.shape.size);
                         break;
                     case "line":
                         const x1 = cx - Math.cos(angle)*entity.shape.length/2;
                         const y1 = cy - Math.sin(angle)*entity.shape.length/2;
                         const x2 = cx + Math.cos(angle)*entity.shape.length/2;
                         const y2 = cy + Math.sin(angle)*entity.shape.length/2;
-                        [currentHit, exitHit] = hitLineSegment(ray, x1, y1, x2, y2);
+                        hitSpan = hitLineSegment(ray, x1, y1, x2, y2);
                         break;
                     default:
                         break;
                 }
 
+                currentHit = hitSpan.enter;
                 if(currentHit.t<hitInfo.t)
                 {
                     hitInfo = currentHit;

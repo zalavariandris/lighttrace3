@@ -60,6 +60,7 @@ function hitCircle(ray, cx, cy, r)
         const tNear = -B - det;
         const tFar  = -B + det;
 
+        console.log(tNear, tFar)
         if(tNear>tFar){ [tNear, tFar] = [tFar, tNear]; }
 
         // enter

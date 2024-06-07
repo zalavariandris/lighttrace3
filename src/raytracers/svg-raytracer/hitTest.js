@@ -27,6 +27,7 @@ function collapseSpan(a, b)
     if(a && b){
         const enter = a.enter.t < b.enter.t ? a.enter : b.enter;
         const exit =  a.exit.t  > b.exit.t ?  a.exit  : b.exit;
+        if(enter.t>exit.t) {return null;}
         return new HitSpan(enter, exit);
     } else if(a){
         return a;
@@ -43,6 +44,9 @@ function intersectSpan(a, b){
     if(a && b){
         const enter = a.enter.t > b.enter.t ? a.enter : b.enter;
         const exit  = a.exit.t  < b.exit.t  ? a.exit  : b.exit;
+        if(enter.t>exit.t){
+            return null;
+        }
         return new HitSpan(enter, exit)
     }else{
         return null;
@@ -147,10 +151,10 @@ function hitLineSegment(ray, x1, y1, x2, y2){
     
     /* check if intersections are in boundary */
     // const IntersectionWithinRay = tNear>EPSILON;
-    const IntersectionWithinLinesegment = tLine>EPSILON && tLine<(1.0+EPSILON);
-    if(!IntersectionWithinLinesegment){
-        return null;
-    }
+    // const IntersectionWithinLinesegment = tLine>EPSILON && tLine<(1.0+EPSILON);
+    // if(!IntersectionWithinLinesegment){
+    //     return null;
+    // }
 
     // if(!IntersectionWithinRay)
     // {
@@ -207,7 +211,7 @@ function hitTriangle(ray, cx, cy, angle, size){
     const hitSpanA = hitLineSegment(ray, vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y);
     const hitSpanB = hitLineSegment(ray, vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y);
     const hitSpanC = hitLineSegment(ray, vertices[2].x, vertices[2].y, vertices[0].x, vertices[0].y);
-    return hitSpanC;
+    // return hitSpanC;
     // return hitSpanB;
     // return hitSpanC;
     // return intersectSpan(hitSpanA, hitSpanB)

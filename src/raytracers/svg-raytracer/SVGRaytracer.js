@@ -147,7 +147,7 @@ function SVGRaytracer()
             return {
                 x1: ray.x,
                 y1: ray.y,
-                x2: hit?hit.x:ray.x+ray.dx*9000,
+                x2: hit?hit.x:ray.x+ray.dx*9999,
                 y2: hit?hit.y:ray.y+ray.dy*9999,
                 opacity: ray.intensity
             }

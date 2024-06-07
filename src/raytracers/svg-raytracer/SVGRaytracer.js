@@ -9,7 +9,7 @@ import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../s
 import { HitInfo, HitSpan, collapseSpan, hitCircle, hitLineSegment, hitTriangle, hitSphericalLens, hitRectangle } from "./hitTest.js"
 import { sampleMirror, sampleDiffuse, sampleDielectric } from "./sampleMaterials.js";
 
-const EPSILON = 10.001;
+const EPSILON = 0.001;
 
 const h = React.createElement;
 

@@ -6,7 +6,7 @@ import settingsStore from "../../stores/settings-store.js";
 import * as vec2 from "../../vec2.js"
 
 import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../sampleLights.js";
-import { HitInfo, hitCircle, hitLineSegment, hitTriangle, hitSphericalLens, hitRectangle } from "./hitTest.js"
+import { HitInfo, HitSpan, collapseSpan, hitCircle, hitLineSegment, hitTriangle, hitSphericalLens, hitRectangle } from "./hitTest.js"
 import { sampleMirror, sampleDiffuse, sampleDielectric } from "./sampleMaterials.js";
 
 const EPSILON = 0.001;
@@ -56,95 +56,102 @@ function SVGRaytracer()
     {
         /* intersect scene */
         const hits = rays.map(ray=>{
+            if(ray==null){return null;}
             ray.x+=ray.dx*EPSILON;
             ray.y+=ray.dy*EPSILON;
-            let hitInfo = new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1);
+            
     
             /* intersect rays with CSG */
-            let currentHit = hitInfo;
-            let exitHit;
-
+            // let hitInfo = new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1);
+            let sceneHitSpan = null;
             shapeEntities.forEach(entity=>{
                 const cx = entity.transform.translate.x;
                 const cy = entity.transform.translate.y;
                 const angle = entity.transform.rotate;
-                let hitSpan;
+                let shapeHitSpan;
                 switch (entity.shape.type) {
                     case "circle":
-                        hitSpan = hitCircle(ray, 
+                        shapeHitSpan = hitCircle(ray, 
                             cx, 
                             cy, 
                             entity.shape.radius);
                         break;
-                    case "rectangle":
-                        hitSpan = hitRectangle(ray, 
-                            cx, 
-                            cy, 
-                            angle, 
-                            entity.shape.width, 
-                            entity.shape.height);
-                        break;
-                    case "sphericalLens":
-                        hitSpan = hitSphericalLens(ray, 
-                            cx, 
-                            cy, 
-                            angle, 
-                            entity.shape.diameter,
-                            entity.shape.centerThickness,
-                            entity.shape.edgeThickness);
-                        break;
+                    // case "rectangle":
+                    //     shapeHitSpan = hitRectangle(ray, 
+                    //         cx, 
+                    //         cy, 
+                    //         angle, 
+                    //         entity.shape.width, 
+                    //         entity.shape.height);
+                    //     break;
+                    // case "sphericalLens":
+                    //     shapeHitSpan = hitSphericalLens(ray, 
+                    //         cx, 
+                    //         cy, 
+                    //         angle, 
+                    //         entity.shape.diameter,
+                    //         entity.shape.centerThickness,
+                    //         entity.shape.edgeThickness);
+                    //     break;
                     case "triangle":
-                        hitSpan = hitTriangle(ray, 
+                        shapeHitSpan = hitTriangle(ray, 
                             entity.transform.translate.x, 
                             entity.transform.translate.y, 
                             entity.transform.rotate, 
                             entity.shape.size);
                         break;
-                    case "line":
-                        const x1 = cx - Math.cos(angle)*entity.shape.length/2;
-                        const y1 = cy - Math.sin(angle)*entity.shape.length/2;
-                        const x2 = cx + Math.cos(angle)*entity.shape.length/2;
-                        const y2 = cy + Math.sin(angle)*entity.shape.length/2;
-                        hitSpan = hitLineSegment(ray, x1, y1, x2, y2);
-                        break;
+                    // case "line":
+                    //     const x1 = cx - Math.cos(angle)*entity.shape.length/2;
+                    //     const y1 = cy - Math.sin(angle)*entity.shape.length/2;
+                    //     const x2 = cx + Math.cos(angle)*entity.shape.length/2;
+                    //     const y2 = cy + Math.sin(angle)*entity.shape.length/2;
+                    //     shapeHitSpan = hitLineSegment(ray, x1, y1, x2, y2);
+                    //     break;
                     default:
-                        hitSpan = new HitSpan(null, null);
                         break;
                 }
 
-                currentHit = hitSpan.enter;
-                if(currentHit.t<hitInfo.t)
-                {
-                    hitInfo = currentHit;
-                    hitInfo.material = entity.material;
+                
+                if(sceneHitSpan && shapeHitSpan){
+                    sceneHitSpan = collapseSpan(shapeHitSpan, sceneHitSpan);
+                }else if(shapeHitSpan){
+                    sceneHitSpan = shapeHitSpan;
+                }else{
+                    return null;
                 }
+                
             });
-
-            return hitInfo;
+            return sceneHitSpan ? (sceneHitSpan.enter.t>0 ? sceneHitSpan.enter : sceneHitSpan.exit) : null;
         });
 
         /* add lines to SVG */
-        allRays = [...allRays, ...rays];
+        allRays = [...allRays, ...rays].filter(ray=>ray);
         rayLines = [...rayLines, ..._.zip(rays, hits).map(([ray, hit])=>{
+            if(ray==null) {return null;}
             return {
                 x1: ray.x,
                 y1: ray.y,
-                x2: hit.x,
-                y2: hit.y,
+                x2: hit?hit.x:ray.x+ray.dx*9000,
+                y2: hit?hit.y:ray.y+ray.dy*9999,
                 opacity: ray.intensity
             }
-        })]
+        }).filter(line=>line)];
+
         hitLines = [...hitLines, ...hits.map(hit=>{
+            if(hit==null) {return null;}
             return {
                 x1: hit.x,
                 y1: hit.y,
                 x2: hit.x+hit.nx*20,
                 y2: hit.y+hit.ny*20
-            }
-        })]
+            };
+        }).filter(line=>line)]
 
         /* BOUNCE RAYS */
         const secondary = _.zip(rays, hits).map( ([ray, hit], i)=>{
+            if(hit==null){
+                return null;
+            }
             const RandomNumber = i/rays.length;
             const [tangentX, tangentY] = [-hit.ny, hit.nx];
 

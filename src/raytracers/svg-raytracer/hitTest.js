@@ -1,5 +1,5 @@
 import * as vec2 from "../../vec2.js"
-
+const EPSILON = 0.001;
 class HitInfo
 {
      constructor(t, x, y, nx=0, ny=0, material=-1)
@@ -60,30 +60,40 @@ function hitCircle(ray, cx, cy, r)
         const tNear = -B - det;
         const tFar  = -B + det;
 
+        if(tNear>tFar){ [tNear, tFar] = [tFar,tNear]; }
+
         console.log(tNear, tFar)
-        if(tNear>tFar){ [tNear, tFar] = [tFar, tNear]; }
+        if(tFar>0)
+        {
+            //exit point
+            const Ix2 = ray.x+ray.dx*tFar;
+            const Iy2 = ray.y+ray.dy*tFar;
+            let [Nx2, Ny2] = vec2.normalize(Ix2-cx, Iy2-cy);
+            const exit = new HitInfo(tFar, Ix2, Iy2, -Nx2, -Ny2, -1);
 
-        // enter
-        const Ix1 = ray.x+ray.dx*tNear;
-        const Iy1 = ray.y+ray.dy*tNear;
-        let [Nx1, Ny1] = vec2.normalize(Ix1-cx, Iy1-cy);
-        const enter = new HitInfo(tNear, Ix1, Iy1, -Nx1, -Ny1, -1);
+            if(tNear<0){
+                return new HitSpan(
+                    new HitInfo(0, ray.x,ray.y), 
+                    exit
+                );
+            }
 
-        //exit point
-        const Ix2 = ray.x+ray.dx*tFar;
-        const Iy2 = ray.y+ray.dy*tFar;
-        let [Nx2, Ny2] = vec2.normalize(Ix2-cx, Iy2-cy);
-        const exit = new HitInfo(tFar, Ix2, Iy2, -Nx2, -Ny2, -1);
+            // enter
+            const Ix1 = ray.x+ray.dx*tNear;
+            const Iy1 = ray.y+ray.dy*tNear;
+            let [Nx1, Ny1] = vec2.normalize(Ix1-cx, Iy1-cy);
+            const enter = new HitInfo(tNear, Ix1, Iy1, -Nx1, -Ny1, -1);
 
-        return new HitSpan(enter, exit);
+            //
+            return new HitSpan(enter, exit);
+        }
     }
-    else
-    {
-        return new HitSpan(new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999), new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999));
-    }
+
+    return null;
+
 }
 
-const EPSILON = 0.001;
+
 
 /**
  * Calculates the closest intersection of a ray with a line segment.
@@ -181,7 +191,10 @@ function hitTriangle(ray, cx, cy, angle, size){
  */
 function hitRectangle(ray, cx, cy, angle, width, height)
 {
-    let result = new HitSpan(new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1), null);
+    let result = new HitSpan(
+        new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1), 
+        null
+    );
 
     const [rayX, rayY] = vec2.rotate([ray.x, ray.y], -angle, [cx, cy]);
     const [dirX, dirY] = vec2.rotate([ray.dx, ray.dy], -angle);
@@ -403,4 +416,6 @@ function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThi
     
 }
 
-export {HitInfo, HitSpan, hitCircle, hitLineSegment, hitTriangle, hitSphericalLens, hitRectangle}
+export {HitInfo, HitSpan}
+export {collapseSpan, intersectSpan, subtractSpan}
+export {hitCircle, hitLineSegment, hitTriangle, hitSphericalLens, hitRectangle}

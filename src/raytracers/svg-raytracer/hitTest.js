@@ -24,13 +24,29 @@ class HitSpan{
 
 function collapseSpan(a, b)
 {
-    const enter = a.enter.t < b.enter.t ? a.enter : b.enter;
-    const exit =  a.exit.t  > b.exit.t ?  a.exit  : b.exit;
-    return new HitSpan(enter, exit);
+    if(a && b){
+        const enter = a.enter.t < b.enter.t ? a.enter : b.enter;
+        const exit =  a.exit.t  > b.exit.t ?  a.exit  : b.exit;
+        return new HitSpan(enter, exit);
+    } else if(a){
+        return a;
+    }else if(b){
+        return b
+    }else{
+        return null;
+    }
 }
 
 function intersectSpan(a, b){
+    // find the closest overlapping ranges
 
+    if(a && b){
+        const enter = a.enter.t > b.enter.t ? a.enter : b.enter;
+        const exit  = a.exit.t  < b.exit.t  ? a.exit  : b.exit;
+        return new HitSpan(enter, exit)
+    }else{
+        return null;
+    }
 }
 
 function subtractSpan(a, b){
@@ -60,16 +76,20 @@ function hitCircle(ray, cx, cy, r)
         const tNear = -B - det;
         const tFar  = -B + det;
 
-        if(tNear>tFar){ [tNear, tFar] = [tFar,tNear]; }
-
-        console.log(tNear, tFar)
+        // If t far is greater than 0 than ther is an exit point
+        // If enter point is negative we are inside the shape, 
+        // then Let the intersection span begin at the origin of ray
         if(tFar>0)
         {
             //exit point
             const Ix2 = ray.x+ray.dx*tFar;
             const Iy2 = ray.y+ray.dy*tFar;
+            // exit normal
             let [Nx2, Ny2] = vec2.normalize(Ix2-cx, Iy2-cy);
+
+            // exit info
             const exit = new HitInfo(tFar, Ix2, Iy2, -Nx2, -Ny2, -1);
+
 
             if(tNear<0){
                 return new HitSpan(
@@ -78,13 +98,17 @@ function hitCircle(ray, cx, cy, r)
                 );
             }
 
-            // enter
+            // enter point
             const Ix1 = ray.x+ray.dx*tNear;
             const Iy1 = ray.y+ray.dy*tNear;
+
+            // enter normal
             let [Nx1, Ny1] = vec2.normalize(Ix1-cx, Iy1-cy);
+
+            //enter info
             const enter = new HitInfo(tNear, Ix1, Iy1, -Nx1, -Ny1, -1);
 
-            //
+            // intersection span
             return new HitSpan(enter, exit);
         }
     }
@@ -105,8 +129,6 @@ function hitCircle(ray, cx, cy, r)
  * @returns {HitSpan} - a pair of enter/exit hitInfo
  */
 function hitLineSegment(ray, x1, y1, x2, y2){
-    let result = new HitSpan(new HitInfo(9999, ray.x+ray.dx*9999,ray.y+ray.dy*9999, 0,0, -1), null);
-
     const tangentX = x2-x1;
     const tangentY = y2-y1;
 
@@ -114,31 +136,53 @@ function hitLineSegment(ray, x1, y1, x2, y2){
     const determinant = ray.dx * tangentY - ray.dy * tangentX;
 
     if (Math.abs(determinant) < EPSILON){
-        return result;
+        return null;
     }
 
     // Calculate the intersection along the ray
-    const t1 = ((x1 - ray.x) * tangentY - (y1 - ray.y) * tangentX) / determinant;
+    const tNear = Math.max(0,((x1 - ray.x) * tangentY - (y1 - ray.y) * tangentX) / determinant);
 
-    // calculate intersection along the line
-    const t2 = ((x1 - ray.x) * ray.dy - (y1 - ray.y) * ray.dx) / determinant;
+    // Calculate intersection along the line
+    const tLine = ((x1 - ray.x) * ray.dy - (y1 - ray.y) * ray.dx) / determinant;
     
     /* check if intersections are in boundary */
-    const IntersectionWithinRay = t1>EPSILON;
-    const IntersectionWithinLinesegment = t2>EPSILON && t2<(1.0+EPSILON);
-
-    if(IntersectionWithinRay && IntersectionWithinLinesegment)
-    {
-        const Ix = ray.x+ray.dx*t1;
-        const Iy = ray.y+ray.dy*t1;
-
-        let Nx = -tangentY;
-        let Ny = tangentX;
-        [Nx, Ny] = vec2.normalize(-Nx, -Ny);
-        result = new HitSpan(new HitInfo(t1, Ix, Iy, Nx, Ny, -1), new HitInfo(t1, Ix, Iy, Nx, Ny, -1));
+    // const IntersectionWithinRay = tNear>EPSILON;
+    const IntersectionWithinLinesegment = tLine>EPSILON && tLine<(1.0+EPSILON);
+    if(!IntersectionWithinLinesegment){
+        return null;
     }
 
-    return result;
+    // if(!IntersectionWithinRay)
+    // {
+    //     // return null
+    //     tNear=0.0;
+    // }
+
+    const Ix = ray.x+ray.dx*tNear;
+    const Iy = ray.y+ray.dy*tNear;
+
+    let Nx = -tangentY;
+    let Ny = tangentX;
+    [Nx, Ny] = vec2.normalize(-Nx, -Ny);
+
+    // return new HitSpan(
+    //     new HitInfo(tNear, Ix, Iy, Nx, Ny, -1), 
+    //     new HitInfo(tNear, Ix, Iy, Nx, Ny, -1), 
+    // );
+
+    // return null;
+
+    if (determinant < 0){ // from outside
+        return new HitSpan(
+            new HitInfo(tNear, Ix, Iy, Nx, Ny, -1), 
+            new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0,0, -1)
+        );
+    }else{ // from inside
+        return new HitSpan(
+            new HitInfo(0, ray.x, ray.y, 0, 0, -1), 
+            new HitInfo(tNear, Ix, Iy, Nx, Ny, -1)
+        );
+    }
 }
 
 /**
@@ -161,22 +205,32 @@ function hitTriangle(ray, cx, cy, angle, size){
 
     // intersect each side
     const hitSpanA = hitLineSegment(ray, vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y);
-    const hitA = hitSpanA.enter;
     const hitSpanB = hitLineSegment(ray, vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y);
-    const hitB = hitSpanB.enter;
     const hitSpanC = hitLineSegment(ray, vertices[2].x, vertices[2].y, vertices[0].x, vertices[0].y);
-    const hitC = hitSpanC.enter;
-    // find closest intersection
-    let hitEnter = hitA;
-    if(hitB.t < hitEnter.t) hitEnter = hitB;
-    if(hitC.t < hitEnter.t) hitEnter = hitC;
+    return hitSpanC;
+    // return hitSpanB;
+    // return hitSpanC;
+    // return intersectSpan(hitSpanA, hitSpanB)
 
-    // find farthest intersection
-    let hitExit = hitA;
-    if(hitB.t > hitExit.t) hitExit = hitB;
-    if(hitC.t > hitExit.t) hitExit = hitC;
+    return intersectSpan(intersectSpan(hitSpanA, hitSpanB), hitSpanC)
 
-    return new HitSpan(hitEnter, hitExit);
+    //     if(!hitSpanA || !hitSpanB || !hitSpanC){
+//         return null;
+//     }
+//     const hitA = hitSpanA.enter;
+//     const hitB = hitSpanB.enter;
+//     const hitC = hitSpanC.enter;
+//     // find closest intersection
+//     let hitEnter = hitA;
+//     if(hitB.t < hitEnter.t) hitEnter = hitB;
+//     if(hitC.t < hitEnter.t) hitEnter = hitC;
+
+//     // find farthest intersection
+//     let hitExit = hitA;
+//     if(hitB.t > hitExit.t) hitExit = hitB;
+//     if(hitC.t > hitExit.t) hitExit = hitC;
+
+//     return new HitSpan(hitEnter, hitExit);
 }
 
 /**
@@ -191,11 +245,6 @@ function hitTriangle(ray, cx, cy, angle, size){
  */
 function hitRectangle(ray, cx, cy, angle, width, height)
 {
-    let result = new HitSpan(
-        new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1), 
-        null
-    );
-
     const [rayX, rayY] = vec2.rotate([ray.x, ray.y], -angle, [cx, cy]);
     const [dirX, dirY] = vec2.rotate([ray.dx, ray.dy], -angle);
 
@@ -205,42 +254,73 @@ function hitRectangle(ray, cx, cy, angle, width, height)
     const tFarY =  (cy + height / 2.0 - rayY) / dirY;
 
     const tNear = Math.max(Math.min(tNearX, tFarX), Math.min(tNearY, tFarY));
-    const tFar = Math.min(Math.max(tNearX, tFarX), Math.max(tNearY, tFarY));
+    const tFar =  Math.min(Math.max(tNearX, tFarX), Math.max(tNearY, tFarY));
 
+    if(tNear>tFar) return null;
     // find closest
-    let t = 9999;
-    if(tNear>0 && tNear<t) t=tNear;
-    if(tFar>0 && tFar<t) t = tFar;
+    if(tFar>0){
+        //exit point
+        let Ix2 = rayX+dirX*tFar;
+        let Iy2 = rayY+dirY*tFar;
 
-    if (t == 9999) {
-        return result
-    }
-
-    let Ix = rayX+dirX*t;
-    let Iy = rayY+dirY*t;
-
-    let Nx = 0.0;
-    let Ny = 0.0;
-
-    if (Ix+EPSILON >= cx - width / 2.0  && Ix-EPSILON <= cx + width / 2.0 &&
-        Iy+EPSILON >= cy - height / 2.0 && Iy-EPSILON <= cy + height / 2.0) {
-        if (Math.abs(Ix - cx + width / 2.0) < EPSILON) {
-            [Nx, Ny] = [-1.0, 0.0];
-        } else if (Math.abs(Ix - cx - width / 2.0) < EPSILON) {
-            [Nx, Ny] = [1.0, 0.0];
-        } else if (Math.abs(Iy - cy + height / 2.0) < EPSILON) {
-            [Nx, Ny] = [0.0, -1.0];
-        } else if (Math.abs(Iy - cy - height / 2.0) < EPSILON) {
-            [Nx, Ny] = [0.0, 1.0];
+        // exit normal
+        let Nx2 = 0.0;
+        let Ny2 = 0.0;
+        if (Ix2+EPSILON >= cx - width / 2.0  && Ix2-EPSILON <= cx + width / 2.0 &&
+            Iy2+EPSILON >= cy - height / 2.0 && Iy2-EPSILON <= cy + height / 2.0) {
+            if        (Math.abs(Ix2 - cx + width / 2.0) < EPSILON) {
+                [Nx2, Ny2] = [-1.0, 0.0];
+            } else if (Math.abs(Ix2 - cx - width / 2.0) < EPSILON) {
+                [Nx2, Ny2] = [1.0, 0.0];
+            } else if (Math.abs(Iy2 - cy + height / 2.0) < EPSILON) {
+                [Nx2, Ny2] = [0.0, -1.0];
+            } else if (Math.abs(Iy2 - cy - height / 2.0) < EPSILON) {
+                [Nx2, Ny2] = [0.0, 1.0];
+            }
         }
 
-        [Ix, Iy] = vec2.rotate([Ix, Iy], angle, [cx, cy]);
-        [Nx, Ny] = vec2.rotate([Nx, Ny], angle);
+        [Ix2, Iy2] = vec2.rotate([Ix2, Iy2], angle, [cx, cy]);
+        [Nx2, Ny2] = vec2.rotate([Nx2, Ny2], angle);
+        const exit = new HitInfo(tFar, Ix2, Iy2, Nx2, Ny2, -1);
 
-        result = new HitSpan(new HitInfo(t, Ix, Iy, Nx, Ny, -1), null);
+        if(tNear<0){
+            // when the enter point is behind the ray's origin, 
+            // then intersection span will begin at the rays origin
+            return new HitSpan(
+                new HitInfo(0, ray.x, ray.y),
+                exit
+            );
+        }
+
+        //exenterit point
+        let Ix1 = rayX+dirX*tNear;
+        let Iy1 = rayY+dirY*tNear;
+
+        // enter normal
+        let Nx1 = 0.0;
+        let Ny1 = 0.0;
+        if (Ix1+EPSILON >= cx - width / 2.0  && Ix1-EPSILON <= cx + width / 2.0 &&
+            Iy1+EPSILON >= cy - height / 2.0 && Iy1-EPSILON <= cy + height / 2.0) {
+            if        (Math.abs(Ix1 - cx + width / 2.0) < EPSILON) {
+                [Nx1, Ny1] = [-1.0, 0.0];
+            } else if (Math.abs(Ix1 - cx - width / 2.0) < EPSILON) {
+                [Nx1, Ny1] = [1.0, 0.0];
+            } else if (Math.abs(Iy1 - cy + height / 2.0) < EPSILON) {
+                [Nx1, Ny1] = [0.0, -1.0];
+            } else if (Math.abs(Iy1 - cy - height / 2.0) < EPSILON) {
+                [Nx1, Ny1] = [0.0, 1.0];
+            }
+        }
+
+        // enter hit info
+        [Ix1, Iy1] = vec2.rotate([Ix1, Iy1], angle, [cx, cy]);
+        [Nx1, Ny1] = vec2.rotate([Nx1, Ny1], angle);
+        const enter = new HitInfo(tNear, Ix1, Iy1, Nx1, Ny1, -1);
+
+        // return intersection span between the enter- and exit point
+        return new HitSpan(enter, exit);
     }
-
-    return result;
+    return null;
 }
 
 /**

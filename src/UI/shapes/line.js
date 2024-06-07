@@ -9,11 +9,10 @@ function Line({
     ...props
 })
 {
-    // const x1 = entity.transform.translate.x - Math.cos(entity.transform.rotate)*entity.shape.length/2;
-    // const y1 = entity.transform.translate.y - Math.sin(entity.transform.rotate)*entity.shape.length/2;
-    // const x2 = entity.transform.translate.x + Math.cos(entity.transform.rotate)*entity.shape.length/2;
-    // const y2 = entity.transform.translate.y + Math.sin(entity.transform.rotate)*entity.shape.length/2;
 
+    const [cx, cy] = [x1/2+x2/2, y1/2+y2/2]
+    const angle = Math.atan2(y2-y1, x2-x1)
+    const width = Math.hypot(y2-y1, x2-x1);
     return h("g", {
         ...props
     }, 
@@ -51,6 +50,33 @@ function Line({
             y2: y2,
             x2: x2
         }),
+
+        
+        h("rect", /* draw shape */ {
+            className: "presenter",
+            x: x1, 
+            y: y1, 
+            width: width, 
+            height:10,
+            style: {
+                transform: `rotate(${angle}rad)`,
+                transformOrigin: `${x1}px ${y1}px`,
+                fill: "rgba(255,255,255,0.1)",
+                stroke: "none"
+            }
+        }),
+
+        h("text", {
+            className: "presenter",
+            x: x1, 
+            y: y1
+        }, "P1"),
+
+        h("text", {
+            className: "presenter",
+            x: x2, 
+            y: y2
+        }, "P2"),
 
 
         /* Manipulators */

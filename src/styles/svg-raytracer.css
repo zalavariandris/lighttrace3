@@ -13,6 +13,11 @@ g.shape .presenter{
     fill: transparent;
 }
 
+g.shape text.presenter{
+    stroke: none;
+    fill: white;
+}
+
 g.shape.selected .presenter,
 g.shape:hover .presenter{
     opacity: 1.0;
@@ -26,7 +31,6 @@ g.light .presenter{ /* root light group*/
     vector-effect: non-scaling-stroke;
     stroke: white;
     fill: transparent;
-
     stroke-width: 1;
     /* opacity: 0.5; */
 }

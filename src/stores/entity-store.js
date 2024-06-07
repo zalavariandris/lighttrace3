@@ -100,7 +100,6 @@ const defaultScene = {
         },
         selected: false
     }
-
 };
 
 const cornelBoxScene = {
@@ -147,6 +146,7 @@ const cornelBoxScene = {
         },
         selected: false
     },
+    
     "mirrorball":{
         transform:{
             translate: {x: 70, y: 350},

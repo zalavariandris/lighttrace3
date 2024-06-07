@@ -9,7 +9,7 @@ import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../s
 import { HitInfo, HitSpan, collapseSpan, hitCircle, hitLineSegment, hitTriangle, hitSphericalLens, hitRectangle } from "./hitTest.js"
 import { sampleMirror, sampleDiffuse, sampleDielectric } from "./sampleMaterials.js";
 
-const EPSILON = 0.001;
+const EPSILON = 10.001;
 
 const h = React.createElement;
 
@@ -24,6 +24,8 @@ function SVGRaytracer()
 
     /* prepare svg visualization objects */
     let allRays = [];
+    const allIntersectionSpans = []
+
     let rayLines = [];
     let hitLines = [];
 
@@ -51,6 +53,7 @@ function SVGRaytracer()
         }).flat(1);
 
     /* BOUNCE RAYS AROUND SCENE */
+    
     const shapeEntities = Object.values(scene).filter(entity=>entity.hasOwnProperty("shape"));
     for(let i=0; i<settings.raytrace.maxBounce; i++)
     {
@@ -76,14 +79,28 @@ function SVGRaytracer()
                             cy, 
                             entity.shape.radius);
                         break;
-                    // case "rectangle":
-                    //     shapeHitSpan = hitRectangle(ray, 
-                    //         cx, 
-                    //         cy, 
-                    //         angle, 
-                    //         entity.shape.width, 
-                    //         entity.shape.height);
-                    //     break;
+                    case "rectangle":
+                        shapeHitSpan = hitRectangle(ray, 
+                            cx, 
+                            cy, 
+                            angle, 
+                            entity.shape.width, 
+                            entity.shape.height);
+                        break;
+                    case "triangle":
+                        shapeHitSpan = hitTriangle(ray, 
+                            entity.transform.translate.x, 
+                            entity.transform.translate.y, 
+                            entity.transform.rotate, 
+                            entity.shape.size);
+                        break;
+                    case "line":
+                        const x1 = cx - Math.cos(angle)*entity.shape.length/2;
+                        const y1 = cy - Math.sin(angle)*entity.shape.length/2;
+                        const x2 = cx + Math.cos(angle)*entity.shape.length/2;
+                        const y2 = cy + Math.sin(angle)*entity.shape.length/2;
+                        shapeHitSpan = hitLineSegment(ray, x1, y1, x2, y2);
+                        break;
                     // case "sphericalLens":
                     //     shapeHitSpan = hitSphericalLens(ray, 
                     //         cx, 
@@ -93,35 +110,34 @@ function SVGRaytracer()
                     //         entity.shape.centerThickness,
                     //         entity.shape.edgeThickness);
                     //     break;
-                    case "triangle":
-                        shapeHitSpan = hitTriangle(ray, 
-                            entity.transform.translate.x, 
-                            entity.transform.translate.y, 
-                            entity.transform.rotate, 
-                            entity.shape.size);
-                        break;
-                    // case "line":
-                    //     const x1 = cx - Math.cos(angle)*entity.shape.length/2;
-                    //     const y1 = cy - Math.sin(angle)*entity.shape.length/2;
-                    //     const x2 = cx + Math.cos(angle)*entity.shape.length/2;
-                    //     const y2 = cy + Math.sin(angle)*entity.shape.length/2;
-                    //     shapeHitSpan = hitLineSegment(ray, x1, y1, x2, y2);
-                    //     break;
                     default:
                         break;
                 }
 
                 
+                
                 if(sceneHitSpan && shapeHitSpan){
-                    sceneHitSpan = collapseSpan(shapeHitSpan, sceneHitSpan);
+                    sceneHitSpan = new HitSpan(
+                        sceneHitSpan.enter.t < shapeHitSpan.enter.t ? sceneHitSpan.enter : shapeHitSpan.enter,
+                        sceneHitSpan.exit.t < shapeHitSpan.exit.t ? sceneHitSpan.exit : shapeHitSpan.exit
+                    );
+
+                    // sceneHitSpan = collapseSpan(sceneHitSpan, shapeHitSpan);
+                    sceneHitSpan.material = entity.material;
                 }else if(shapeHitSpan){
                     sceneHitSpan = shapeHitSpan;
+                    sceneHitSpan.material = entity.material;
+                    
                 }else{
                     return null;
                 }
                 
             });
-            return sceneHitSpan ? (sceneHitSpan.enter.t>0 ? sceneHitSpan.enter : sceneHitSpan.exit) : null;
+            allIntersectionSpans.push(sceneHitSpan);
+            const hitInfo = sceneHitSpan ? (sceneHitSpan.enter.t>EPSILON ? sceneHitSpan.enter : sceneHitSpan.exit) : null;
+
+            
+            return hitInfo;
         });
 
         /* add lines to SVG */
@@ -194,7 +210,7 @@ function SVGRaytracer()
 
         rays = secondary;
     }
-    
+    console.log(allIntersectionSpans)
     return h('g', {
         className: 'svg-raytracer',
         style: {
@@ -226,11 +242,9 @@ function SVGRaytracer()
         ),
 
         // draw hit normals
+        h('g', {className: 'hitNormals'},
         settings.display.normals && hitLines.map(path =>
-            h('g', {
-                className: 'hitNormals'
-            },
-                h('line', {
+            h('line', {
                     x1: path.x1,
                     y1: path.y1,
                     x2: path.x2,
@@ -246,10 +260,10 @@ function SVGRaytracer()
         ),
 
         // draw ray paths
-        settings.display.rays && allRays.map(ray =>
-            h('g', {
-                className: 'rays'
-            },
+        h('g', {
+            className: 'rays'
+        },
+            settings.display.rays && allRays.map(ray =>
                 h('line', {
                     x1: ray.x,
                     y1: ray.y,
@@ -264,6 +278,25 @@ function SVGRaytracer()
                 })
             )
         ),
+
+        h("g", {className:"intersection-spans"},
+            allIntersectionSpans.filter(ispan=>ispan).map(ispan =>
+                
+                h('line', {
+                    x1: ispan.enter.x,
+                    y1: ispan.enter.y,
+                    x2: ispan.exit.x,
+                    y2: ispan.exit.y,
+                    className: 'intersection',
+                    vectorEffect: "non-scaling-stroke",
+                    style: {
+                        stroke: "cyan",
+                        strokeWidth: 1
+                        // stroke: RGBToCSS(wavelengthToRGB(ray.wavelength), ray.intensity)
+                    }
+                })
+            )
+        )
     );
 }
 

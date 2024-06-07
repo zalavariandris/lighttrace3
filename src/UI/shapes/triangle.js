@@ -51,6 +51,12 @@ function Triangle({
             }
         }),
 
+        vertices.map( ([x, y], idx)=>h("text", {
+            className: "presenter",
+            x: x+cx, 
+            y: y+cy
+        }, `P${idx+1}`)),
+
         h("g", {
             className: "manipulator show-when-selected",
         }, 

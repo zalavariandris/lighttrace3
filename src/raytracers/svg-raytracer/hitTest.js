@@ -22,6 +22,12 @@ class HitSpan{
     }
 }
 
+
+function makeRectangle(cx, cy, angle, width, height)
+{
+    return {cx,cy,angle, width, height};
+}
+
 function collapseSpan(a, b)
 {
     if(a && b){
@@ -54,7 +60,7 @@ function intersectSpan(a, b){
 }
 
 function subtractSpan(a, b){
-
+    
 }
 
 /**
@@ -458,7 +464,7 @@ function hitSphericalLens_old(ray, cx, cy, angle, diameter, centerThickness, edg
 
         const bbox = {cx: cx, cy: cy, width: Math.max(edgeThickness, centerThickness), height: diameter};
         if(rectangleContainsPoint(bbox, leftHit.x, leftHit.y) && 
-        rectangleContainsPoint(bbox, leftHit.x, leftHit.y))
+           rectangleContainsPoint(bbox, leftHit.x, leftHit.y))
         {
             if(leftHit.t < rightHit.t)
                 {
@@ -483,20 +489,23 @@ function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThi
     // make circles
     const top =         cy + diameter/2.0;
     const bottom =      cy - diameter/2.0;
-    const edgeLeft =    cx -   edgeThickness/2.0;
+    const edgeLeft =    cx - edgeThickness/2.0;
     const edgeRight =   cx + edgeThickness/2.0;
     const centerLeft =  cx - centerThickness/2.0
-    const centerRight = cx +   centerThickness/2.0
+    const centerRight = cx + centerThickness/2.0
 
+    // subshapes
     const leftCircle = makeCircleFromThreePoints(edgeLeft, top, centerLeft, cy, edgeLeft, bottom);
     const rightCircle = makeCircleFromThreePoints(edgeRight, top, centerRight, cy, edgeRight, bottom);
+    const boundingBox = makeRectangle(cx, cy, angle, Math.max(centerThickness, edgeThickness), diameter);
 
-
+    // hitspans
     const leftHitSpan = hitCircle(ray, leftCircle.cx, leftCircle.cy, leftCircle.r);
     const rightHitSpan = hitCircle(ray, rightCircle.cx, rightCircle.cy, rightCircle.r);
-
-    return rightHitSpan;
-    return collapseSpan(leftHitSpan, rightHitSpan);
+    const boundingSpan = hitRectangle(ray, boundingBox.cx, boundingBox.cy, angle, boundingBox.width, boundingBox.height);
+    console.log("bboxspan:", boundingSpan)
+    // return bboxSpan;
+    return intersectSpan(boundingSpan, intersectSpan(leftHitSpan, rightHitSpan));
     
 }
 

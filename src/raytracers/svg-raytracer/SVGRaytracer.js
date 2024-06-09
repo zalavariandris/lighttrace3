@@ -101,15 +101,15 @@ function SVGRaytracer()
                         const y2 = cy + Math.sin(angle)*entity.shape.length/2;
                         shapeHitSpan = hitLineSegment(ray, x1, y1, x2, y2);
                         break;
-                    // case "sphericalLens":
-                    //     shapeHitSpan = hitSphericalLens(ray, 
-                    //         cx, 
-                    //         cy, 
-                    //         angle, 
-                    //         entity.shape.diameter,
-                    //         entity.shape.centerThickness,
-                    //         entity.shape.edgeThickness);
-                    //     break;
+                    case "sphericalLens":
+                        shapeHitSpan = hitSphericalLens(ray, 
+                            cx, 
+                            cy, 
+                            angle, 
+                            entity.shape.diameter,
+                            entity.shape.centerThickness,
+                            entity.shape.edgeThickness);
+                        break;
                     default:
                         break;
                 }

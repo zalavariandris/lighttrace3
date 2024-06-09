@@ -92,7 +92,7 @@ function hitCircle(ray, cx, cy, r)
             let [Nx2, Ny2] = vec2.normalize(Ix2-cx, Iy2-cy);
 
             // exit info
-            const exit = new HitInfo(tFar, Ix2, Iy2, -Nx2, -Ny2, -1);
+            const exit = new HitInfo(tFar, Ix2, Iy2, Nx2, Ny2, -1);
 
 
             if(tNear<0){
@@ -110,7 +110,7 @@ function hitCircle(ray, cx, cy, r)
             let [Nx1, Ny1] = vec2.normalize(Ix1-cx, Iy1-cy);
 
             //enter info
-            const enter = new HitInfo(tNear, Ix1, Iy1, -Nx1, -Ny1, -1);
+            const enter = new HitInfo(tNear, Ix1, Iy1, Nx1, Ny1, -1);
 
             // intersection span
             return new HitSpan(enter, exit);

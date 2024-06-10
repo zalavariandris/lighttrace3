@@ -7,6 +7,7 @@ const defaultSettings = {
         shapes: true,
         lights: true,
         rays: true,
+        hitSpans: true,
         normals: true,
         paths: true,
         render: false

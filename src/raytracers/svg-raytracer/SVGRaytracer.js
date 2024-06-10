@@ -5,8 +5,9 @@ import settingsStore from "../../stores/settings-store.js";
 
 import * as vec2 from "../../vec2.js"
 
+import { makeCircle, makeTriangle, makeLineSegment, makeRectangle, makeSphericalLens } from "./hitTest.js";
 import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../sampleLights.js";
-import { HitInfo, HitSpan, collapseSpan, hitCircle, hitLineSegment, hitTriangle, hitSphericalLens, hitRectangle } from "./hitTest.js"
+import { HitInfo, HitSpan, collapseSpan, hitCircle, hitLine, hitTriangle, hitSphericalLens, hitRectangle } from "./hitTest.js"
 import { sampleMirror, sampleDiffuse, sampleDielectric } from "./sampleMaterials.js";
 
 const EPSILON = 0.001;
@@ -74,47 +75,45 @@ function SVGRaytracer()
                 let shapeHitSpan;
                 switch (entity.shape.type) {
                     case "circle":
-                        shapeHitSpan = hitCircle(ray, 
+                        shapeHitSpan = hitCircle(ray, makeCircle(
                             cx, 
                             cy, 
-                            entity.shape.radius);
+                            entity.shape.radius));
                         break;
                     case "rectangle":
-                        shapeHitSpan = hitRectangle(ray, 
+                        shapeHitSpan = hitRectangle(ray, makeRectangle(
                             cx, 
                             cy, 
                             angle, 
                             entity.shape.width, 
-                            entity.shape.height);
+                            entity.shape.height));
                         break;
                     case "triangle":
-                        shapeHitSpan = hitTriangle(ray, 
+                        shapeHitSpan = hitTriangle(ray, makeTriangle(
                             entity.transform.translate.x, 
                             entity.transform.translate.y, 
                             entity.transform.rotate, 
-                            entity.shape.size);
+                            entity.shape.size));
                         break;
                     case "line":
                         const x1 = cx - Math.cos(angle)*entity.shape.length/2;
                         const y1 = cy - Math.sin(angle)*entity.shape.length/2;
                         const x2 = cx + Math.cos(angle)*entity.shape.length/2;
                         const y2 = cy + Math.sin(angle)*entity.shape.length/2;
-                        shapeHitSpan = hitLineSegment(ray, x1, y1, x2, y2);
+                        shapeHitSpan = hitLine(ray, makeLineSegment( x1, y1, x2, y2));
                         break;
                     case "sphericalLens":
-                        shapeHitSpan = hitSphericalLens(ray, 
+                        shapeHitSpan = hitSphericalLens(ray, makeSphericalLens(
                             cx, 
                             cy, 
                             angle, 
                             entity.shape.diameter,
                             entity.shape.centerThickness,
-                            entity.shape.edgeThickness);
+                            entity.shape.edgeThickness));
                         break;
                     default:
                         break;
                 }
-
-                
                 
                 if(sceneHitSpan && shapeHitSpan){
                     sceneHitSpan = new HitSpan(
@@ -235,7 +234,6 @@ function SVGRaytracer()
                     style: {
                         stroke: "white",
                         opacity: path.opacity
-                        // stroke: RGBToCSS(wavelengthToRGB(ray.wavelength), ray.intensity)
                     }
                 })
             )
@@ -252,8 +250,8 @@ function SVGRaytracer()
                     className: 'intersection',
                     vectorEffect: "non-scaling-stroke",
                     style: {
-                        stroke: "green"
-                        // stroke: RGBToCSS(wavelengthToRGB(ray.wavelength), ray.intensity)
+                        stroke: "green",
+                        opacity: 1.0
                     }
                 })
             )
@@ -272,16 +270,15 @@ function SVGRaytracer()
                     className: 'intersection',
                     vectorEffect: "non-scaling-stroke",
                     style: {
-                        stroke: "orange"
-                        // stroke: RGBToCSS(wavelengthToRGB(ray.wavelength), ray.intensity)
+                        stroke: "orange",
+                        opacity: 0.5
                     }
                 })
             )
         ),
 
         h("g", {className:"intersection-spans"},
-            allIntersectionSpans.filter(ispan=>ispan).map(ispan =>
-                
+            settings.display.hitSpans && allIntersectionSpans.filter(ispan=>ispan).map(ispan =>
                 h('line', {
                     x1: ispan.enter.x,
                     y1: ispan.enter.y,
@@ -291,8 +288,8 @@ function SVGRaytracer()
                     vectorEffect: "non-scaling-stroke",
                     style: {
                         stroke: "cyan",
-                        strokeWidth: 1
-                        // stroke: RGBToCSS(wavelengthToRGB(ray.wavelength), ray.intensity)
+                        strokeWidth: 3,
+                        opacity: 0.15
                     }
                 })
             )

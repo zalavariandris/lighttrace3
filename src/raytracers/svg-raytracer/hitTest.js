@@ -22,11 +22,55 @@ class HitSpan{
     }
 }
 
-
 function makeRectangle(cx, cy, angle, width, height)
 {
     return {cx,cy,angle, width, height};
 }
+
+function makeCircle(cx, cy, r){
+    return {cx, cy, r};
+}
+
+function makeLineSegment(x1, y1, x2, y2){
+    return {x1, y1, x2, y2};
+}
+
+function makeTriangle(cx, cy, angle, size){
+    return {cx, cy, angle, size};
+}
+
+function makeSphericalLens(cx,cy,angle, diameter, centerThickness, edgeThickness){
+    return {cx,cy,angle, diameter, centerThickness, edgeThickness}
+}
+
+/**
+ * Calculates the center and radius of a circle that passes through three given points.
+ * @param {number} Sx - The x-coordinate of the first point.
+ * @param {number} Sy - The y-coordinate of the first point.
+ * @param {number} Mx - The x-coordinate of the second point.
+ * @param {number} My - The y-coordinate of the second point.
+ * @param {number} Ex - The x-coordinate of the third point.
+ * @param {number} Ey - The y-coordinate of the third point.
+ * @returns {{cx: number, cy: number, r: number}} An object containing the x and y coordinates of the circle's center (cx, cy) and its radius (r).
+ */
+function makeCircleFromThreePoints([Sx, Sy], [Mx, My], [Ex, Ey])
+{
+    const a = Sx * (My - Ey) - Sy * (Mx - Ex) + Mx * Ey - Ex * My;
+    
+    const b = (Sx * Sx + Sy * Sy) * (Ey - My) 
+            + (Mx * Mx + My * My) * (Sy - Ey)
+            + (Ex * Ex + Ey * Ey) * (My - Sy);
+    
+    const c = (Sx * Sx + Sy * Sy) * (Mx - Ex) 
+          + (Mx * Mx + My * My) * (Ex - Sx) 
+          + (Ex * Ex + Ey * Ey) * (Sx - Mx);
+    
+    const cx = -b / (2.0 * a);
+    const cy = -c / (2.0 * a);
+    const r = Math.sqrt((cx - Sx) * (cx - Sx) + (cy - Sy) * (cy - Sy));
+    return {cx, cy, r};
+}
+
 
 function collapseSpan(a, b)
 {
@@ -99,7 +143,7 @@ function subtractSpan(a, b){
  * @param {number} r - The radius of the circle.
  * @returns {HitSpan} - a pair of enter/exit hitInfo
  */
-function hitCircle(ray, cx, cy, r)
+function hitCircle(ray, {cx, cy, r})
 {
     const ux = ray.x - cx;
     const uy = ray.y - cy;
@@ -166,7 +210,7 @@ function hitCircle(ray, cx, cy, r)
  * @param {number} y2 - The y-coordinate of P2
  * @returns {HitSpan} - a pair of enter/exit hitInfo
  */
-function hitLineSegment(ray, x1, y1, x2, y2){
+function hitLine(ray, {x1, y1, x2, y2}){
     const tangentX = x2-x1;
     const tangentY = y2-y1;
 
@@ -232,7 +276,7 @@ function hitLineSegment(ray, x1, y1, x2, y2){
  * @param {number} size - vertices distance from center
  * @returns {HitSpan} - a pair of enter/exit hitInfo
  */
-function hitTriangle(ray, cx, cy, angle, size){
+function hitTriangle(ray, {cx, cy, angle, size}){
     const vertices = Array.from({length:3}).map( (_,k)=>{
         let a = k/3.0*Math.PI*2.0-Math.PI/2.0 + angle;
         return {
@@ -242,9 +286,9 @@ function hitTriangle(ray, cx, cy, angle, size){
     });
 
     // intersect each side
-    const hitSpanA = hitLineSegment(ray, vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y);
-    const hitSpanB = hitLineSegment(ray, vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y);
-    const hitSpanC = hitLineSegment(ray, vertices[2].x, vertices[2].y, vertices[0].x, vertices[0].y);
+    const hitSpanA = hitLine(ray, makeLineSegment(vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y));
+    const hitSpanB = hitLine(ray, makeLineSegment(vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y));
+    const hitSpanC = hitLine(ray, makeLineSegment(vertices[2].x, vertices[2].y, vertices[0].x, vertices[0].y));
 
     // return span intersecionts
     return intersectSpan(intersectSpan(hitSpanA, hitSpanB), hitSpanC)
@@ -260,7 +304,7 @@ function hitTriangle(ray, cx, cy, angle, size){
  * @param {number} height - rectangle height
  * @returns {[HitInfo, HitInfo]} - a pair of enter/exit hitInfo
  */
-function hitRectangle(ray, cx, cy, angle, width, height)
+function hitRectangle(ray, {cx, cy, angle, width, height})
 {
     const [rayX, rayY] = vec2.rotate([ray.x, ray.y], -angle, [cx, cy]);
     const [dirX, dirY] = vec2.rotate([ray.dx, ray.dy], -angle);
@@ -338,34 +382,6 @@ function hitRectangle(ray, cx, cy, angle, width, height)
         return new HitSpan(enter, exit);
     }
     return null;
-}
-
-/**
- * Calculates the center and radius of a circle that passes through three given points.
- * @param {number} Sx - The x-coordinate of the first point.
- * @param {number} Sy - The y-coordinate of the first point.
- * @param {number} Mx - The x-coordinate of the second point.
- * @param {number} My - The y-coordinate of the second point.
- * @param {number} Ex - The x-coordinate of the third point.
- * @param {number} Ey - The y-coordinate of the third point.
- * @returns {{cx: number, cy: number, r: number}} An object containing the x and y coordinates of the circle's center (cx, cy) and its radius (r).
- */
-function makeCircleFromThreePoints([Sx, Sy], [Mx, My], [Ex, Ey])
-{
-    const a = Sx * (My - Ey) - Sy * (Mx - Ex) + Mx * Ey - Ex * My;
-    
-    const b = (Sx * Sx + Sy * Sy) * (Ey - My) 
-            + (Mx * Mx + My * My) * (Sy - Ey)
-            + (Ex * Ex + Ey * Ey) * (My - Sy);
-    
-    const c = (Sx * Sx + Sy * Sy) * (Mx - Ex) 
-          + (Mx * Mx + My * My) * (Ex - Sx) 
-          + (Ex * Ex + Ey * Ey) * (Sx - Mx);
-    
-    const cx = -b / (2.0 * a);
-    const cy = -c / (2.0 * a);
-    const r = Math.sqrt((cx - Sx) * (cx - Sx) + (cy - Sy) * (cy - Sy));
-    return {cx, cy, r};
 }
 
 /**
@@ -491,7 +507,7 @@ function hitSphericalLens_old(ray, cx, cy, angle, diameter, centerThickness, edg
     return result;
 }
 
-function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThickness)
+function hitSphericalLens(ray, {cx, cy, angle, diameter, centerThickness, edgeThickness})
 {
     // make circles
     const top =         cy + diameter/2.0;
@@ -517,15 +533,15 @@ function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThi
     const IsConvex = centerThickness>edgeThickness;
     if(IsConvex){
         // hitspans
-        const leftHitSpan = hitCircle(ray, leftCircle.cx, leftCircle.cy, leftCircle.r);
-        const rightHitSpan = hitCircle(ray, rightCircle.cx, rightCircle.cy, rightCircle.r);
-        const boundingSpan = hitRectangle(ray, cx, cy, angle, Math.max(centerThickness, edgeThickness), diameter);
+        const leftHitSpan = hitCircle(ray, leftCircle);
+        const rightHitSpan = hitCircle(ray, rightCircle);
+        const boundingSpan = hitRectangle(ray, makeRectangle(cx, cy, angle, Math.max(centerThickness, edgeThickness), diameter));
         return intersectSpan(boundingSpan, intersectSpan(leftHitSpan, rightHitSpan));
     }
     else{
-        const boundingSpan = hitRectangle(ray, cx, cy, angle, Math.max(centerThickness, edgeThickness), diameter);
-        const leftHitSpan = hitCircle(ray, leftCircle.cx, leftCircle.cy, leftCircle.r);
-        const rightHitSpan = hitCircle(ray, rightCircle.cx, rightCircle.cy, rightCircle.r);
+        const boundingSpan = hitRectangle(ray, makeRectangle(cx, cy, angle, Math.max(centerThickness, edgeThickness), diameter));
+        const leftHitSpan = hitCircle(ray, leftCircle);
+        const rightHitSpan = hitCircle(ray, rightCircle);
         
         if(!boundingSpan){
             return null;
@@ -557,5 +573,6 @@ function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThi
 }
 
 export {HitInfo, HitSpan}
-export {collapseSpan, intersectSpan, subtractSpan}
-export {hitCircle, hitLineSegment, hitTriangle, hitSphericalLens, hitRectangle}
+export {makeCircle, makeRectangle, makeTriangle, makeLineSegment, makeSphericalLens};
+export {collapseSpan, intersectSpan, subtractSpan};
+export {hitCircle, hitLine, hitTriangle, hitSphericalLens, hitRectangle};

@@ -60,7 +60,35 @@ function intersectSpan(a, b){
 }
 
 function subtractSpan(a, b){
-    
+    a = new HitSpan(
+        new HitInfo(a.enter.t, a.enter.x, a.enter.y, a.enter.nx, a.enter.ny, a.enter.material),
+        new HitInfo(a.exit.t, a.exit.x, a.exit.y, a.exit.nx, a.exit.ny, a.exit.material)
+    );
+    if(b && a){
+        if(b.enter.t < a.enter.t && b.exit.t > a.exit.t){
+            // fully covers original span (   ---   )
+            a = null;
+        }
+        else if(b.exit.t<a.enter.t || /* --- ()   */
+                b.enter.t>a.exit.t    /* ()  ---  */
+        ){
+            a = a;
+        }
+        else if(b.enter.t<a.enter.t && b.exit.t<a.exit.t){
+            //coverse enter side  (  ---)---
+            a.enter = b.exit
+        }
+        else if(b.enter.t>a.enter.t && b.enter.t<a.exit.t){
+            //covers exit side   ---(---   )
+            a.exit = b.enter
+
+        }
+        else if(b.enter.t>a.enter.t && b.exit.t<a.exit.t){
+                // inside /* ---(---)--- */
+                a.exit = b.enter;
+        }
+    }
+    return a;
 }
 
 /**
@@ -217,30 +245,9 @@ function hitTriangle(ray, cx, cy, angle, size){
     const hitSpanA = hitLineSegment(ray, vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y);
     const hitSpanB = hitLineSegment(ray, vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y);
     const hitSpanC = hitLineSegment(ray, vertices[2].x, vertices[2].y, vertices[0].x, vertices[0].y);
-    // return hitSpanC;
-    // return hitSpanB;
-    // return hitSpanC;
-    // return intersectSpan(hitSpanA, hitSpanB)
 
+    // return span intersecionts
     return intersectSpan(intersectSpan(hitSpanA, hitSpanB), hitSpanC)
-
-    //     if(!hitSpanA || !hitSpanB || !hitSpanC){
-//         return null;
-//     }
-//     const hitA = hitSpanA.enter;
-//     const hitB = hitSpanB.enter;
-//     const hitC = hitSpanC.enter;
-//     // find closest intersection
-//     let hitEnter = hitA;
-//     if(hitB.t < hitEnter.t) hitEnter = hitB;
-//     if(hitC.t < hitEnter.t) hitEnter = hitC;
-
-//     // find farthest intersection
-//     let hitExit = hitA;
-//     if(hitB.t > hitExit.t) hitExit = hitB;
-//     if(hitC.t > hitExit.t) hitExit = hitC;
-
-//     return new HitSpan(hitEnter, hitExit);
 }
 
 /**
@@ -343,7 +350,7 @@ function hitRectangle(ray, cx, cy, angle, width, height)
  * @param {number} Ey - The y-coordinate of the third point.
  * @returns {{cx: number, cy: number, r: number}} An object containing the x and y coordinates of the circle's center (cx, cy) and its radius (r).
  */
-function makeCircleFromThreePoints(Sx, Sy, Mx, My, Ex, Ey)
+function makeCircleFromThreePoints([Sx, Sy], [Mx, My], [Ex, Ey])
 {
     const a = Sx * (My - Ey) - Sy * (Mx - Ex) + Mx * Ey - Ex * My;
     
@@ -420,8 +427,8 @@ function hitSphericalLens_old(ray, cx, cy, angle, diameter, centerThickness, edg
     const centerLeft =  cx - centerThickness/2.0
     const centerRight = cx +   centerThickness/2.0
 
-    const leftCircle = makeCircleFromThreePoints(edgeLeft, top, centerLeft, cy, edgeLeft, bottom);
-    const rightCircle = makeCircleFromThreePoints(edgeRight, top, centerRight, cy, edgeRight, bottom);
+    const leftCircle = makeCircleFromThreePoints([edgeLeft, top], [centerLeft, cy], [edgeLeft, bottom]);
+    const rightCircle = makeCircleFromThreePoints([edgeRight, top], [centerRight, cy], [edgeRight, bottom]);
 
     // intersect circles
     const leftHitSpan = hitCircle(ray, leftCircle.cx, leftCircle.cy, leftCircle.r);
@@ -495,17 +502,57 @@ function hitSphericalLens(ray, cx, cy, angle, diameter, centerThickness, edgeThi
     const centerRight = cx + centerThickness/2.0
 
     // subshapes
-    const leftCircle = makeCircleFromThreePoints(edgeLeft, top, centerLeft, cy, edgeLeft, bottom);
-    const rightCircle = makeCircleFromThreePoints(edgeRight, top, centerRight, cy, edgeRight, bottom);
+    const leftCircle =  makeCircleFromThreePoints(
+        vec2.rotate([edgeLeft,  top], angle, [cx,cy]), 
+        vec2.rotate([centerLeft,  cy],  angle, [cx,cy]), 
+        vec2.rotate([edgeLeft, bottom], angle, [cx,cy])
+    );
+    const rightCircle = makeCircleFromThreePoints(
+        vec2.rotate([edgeRight, top],  angle, [cx,cy]), 
+        vec2.rotate([centerRight, cy],  angle, [cx,cy]), 
+        vec2.rotate([edgeRight, bottom], angle, [cx,cy])
+    );
     const boundingBox = makeRectangle(cx, cy, angle, Math.max(centerThickness, edgeThickness), diameter);
 
-    // hitspans
-    const leftHitSpan = hitCircle(ray, leftCircle.cx, leftCircle.cy, leftCircle.r);
-    const rightHitSpan = hitCircle(ray, rightCircle.cx, rightCircle.cy, rightCircle.r);
-    const boundingSpan = hitRectangle(ray, boundingBox.cx, boundingBox.cy, angle, boundingBox.width, boundingBox.height);
-    console.log("bboxspan:", boundingSpan)
-    // return bboxSpan;
-    return intersectSpan(boundingSpan, intersectSpan(leftHitSpan, rightHitSpan));
+    const IsConvex = centerThickness>edgeThickness;
+    if(IsConvex){
+        // hitspans
+        const leftHitSpan = hitCircle(ray, leftCircle.cx, leftCircle.cy, leftCircle.r);
+        const rightHitSpan = hitCircle(ray, rightCircle.cx, rightCircle.cy, rightCircle.r);
+        const boundingSpan = hitRectangle(ray, cx, cy, angle, Math.max(centerThickness, edgeThickness), diameter);
+        return intersectSpan(boundingSpan, intersectSpan(leftHitSpan, rightHitSpan));
+    }
+    else{
+        const boundingSpan = hitRectangle(ray, cx, cy, angle, Math.max(centerThickness, edgeThickness), diameter);
+        const leftHitSpan = hitCircle(ray, leftCircle.cx, leftCircle.cy, leftCircle.r);
+        const rightHitSpan = hitCircle(ray, rightCircle.cx, rightCircle.cy, rightCircle.r);
+        
+        if(!boundingSpan){
+            return null;
+        }
+
+        let span = boundingSpan;
+        
+
+
+
+        span = subtractSpan(span, rightHitSpan);
+        span = subtractSpan(span, leftHitSpan);
+        
+        if(span.enter.t>span.exit.t){
+            return null;
+        }
+
+        return span;
+
+
+        span = subtractSpan(span, leftHitSpan)
+
+        // const rightHitSpan = hitCircle(ray, rightCircle.cx, rightCircle.cy, rightCircle.r);
+        // span = subtractSpan(span, rightHitSpan)
+
+        return span;
+    }
     
 }
 

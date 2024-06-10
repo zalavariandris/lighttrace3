@@ -74,6 +74,8 @@ function makeCircleFromThreePoints([Sx, Sy], [Mx, My], [Ex, Ey])
 
 function collapseSpan(a, b)
 {
+    // be carefull. this is not equal to span union.
+    // this will result with the closest enter and the farthest exit.
     if(a && b){
         const enter = a.enter.t < b.enter.t ? a.enter : b.enter;
         const exit =  a.exit.t  > b.exit.t ?  a.exit  : b.exit;
@@ -89,7 +91,9 @@ function collapseSpan(a, b)
 }
 
 function intersectSpan(a, b){
-    // find the closest overlapping ranges
+    // find the closest overlapping span
+    // Warning!: Be carefull. intersecting two spans could result in two seperate spans.
+    // here we only return the closest one
 
     if(a && b){
         const enter = a.enter.t > b.enter.t ? a.enter : b.enter;
@@ -103,7 +107,12 @@ function intersectSpan(a, b){
     }
 }
 
-function subtractSpan(a, b){
+function subtractSpan(a, b)
+{
+    // find the closest span after subtraction span
+    // Warning!: Be carefull. intersecting two spans could result in two seperate spans.
+    // here we only return the closest one
+
     a = new HitSpan(
         new HitInfo(a.enter.t, a.enter.x, a.enter.y, a.enter.nx, a.enter.ny, a.enter.material),
         new HitInfo(a.exit.t, a.exit.x, a.exit.y, a.exit.nx, a.exit.ny, a.exit.material)
@@ -210,23 +219,28 @@ function hitCircle(ray, {cx, cy, r})
  * @param {number} y2 - The y-coordinate of P2
  * @returns {HitSpan} - a pair of enter/exit hitInfo
  */
-function hitLine(ray, {x1, y1, x2, y2}){
+function hitLine(ray, {x1, y1, x2, y2})
+{
+
     const tangentX = x2-x1;
     const tangentY = y2-y1;
 
     // Calculate the determinant
     const determinant = ray.dx * tangentY - ray.dy * tangentX;
 
-    if (Math.abs(determinant) < EPSILON){
+    if (Math.abs(determinant) < 0){
         return null;
     }
 
     // Calculate the intersection along the ray
-    const tNear = Math.max(0,((x1 - ray.x) * tangentY - (y1 - ray.y) * tangentX) / determinant);
+    const tNear = ((x1 - ray.x) * tangentY - (y1 - ray.y) * tangentX) / determinant;
 
     // Calculate intersection along the line
     const tLine = ((x1 - ray.x) * ray.dy - (y1 - ray.y) * ray.dx) / determinant;
     
+    if(tNear<0){
+        return null;
+    }
     /* check if intersections are in boundary */
     // const IntersectionWithinRay = tNear>EPSILON;
     // const IntersectionWithinLinesegment = tLine>EPSILON && tLine<(1.0+EPSILON);

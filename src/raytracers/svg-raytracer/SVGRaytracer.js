@@ -79,6 +79,7 @@ function SVGRaytracer()
                             cx, 
                             cy, 
                             entity.shape.radius));
+
                         break;
                     case "rectangle":
                         shapeHitSpan = hitRectangle(ray, makeRectangle(
@@ -114,29 +115,43 @@ function SVGRaytracer()
                     default:
                         break;
                 }
-                
-                if(sceneHitSpan && shapeHitSpan){
-                    sceneHitSpan = new HitSpan(
-                        sceneHitSpan.enter.t < shapeHitSpan.enter.t ? sceneHitSpan.enter : shapeHitSpan.enter,
-                        sceneHitSpan.exit.t < shapeHitSpan.exit.t ? sceneHitSpan.exit : shapeHitSpan.exit
-                    );
 
-                    // sceneHitSpan = collapseSpan(sceneHitSpan, shapeHitSpan);
-                    sceneHitSpan.material = entity.material;
-                }else if(shapeHitSpan){
-                    sceneHitSpan = shapeHitSpan;
-                    sceneHitSpan.material = entity.material;
-                    
-                }else{
-                    return null;
+                sceneHitSpan = collapseSpan(sceneHitSpan, shapeHitSpan);
+                if(shapeHitSpan){
+                    sceneHitSpan.material = shapeHitSpan.enter.material
                 }
+                
+                // if(sceneHitSpan && shapeHitSpan)
+                // {
+                //     // sceneHitSpan = new HitSpan(
+                //     //     sceneHitSpan.enter.t < shapeHitSpan.enter.t ? sceneHitSpan.enter : shapeHitSpan.enter,
+                //     //     sceneHitSpan.exit.t > shapeHitSpan.exit.t ? sceneHitSpan.exit : shapeHitSpan.exit
+                //     // );
+                    
+
+                //     // sceneHitSpan = collapseSpan(sceneHitSpan, shapeHitSpan);
+                //     sceneHitSpan.material = entity.material;
+                // }else if(shapeHitSpan){
+                //     sceneHitSpan = shapeHitSpan;
+                //     sceneHitSpan.material = entity.material;
+                // }else{
+                //     return null;
+                // }
                 
             });
             allIntersectionSpans.push(sceneHitSpan);
-            const hitInfo = sceneHitSpan ? (sceneHitSpan.enter.t>EPSILON ? sceneHitSpan.enter : sceneHitSpan.exit) : null;
+            if(sceneHitSpan){
+                const hitInfo = sceneHitSpan.enter.t>EPSILON ? sceneHitSpan.enter : sceneHitSpan.exit;
+                hitInfo.material = sceneHitSpan.material;
+                return hitInfo;
+            }else{
+                return null;
+            }
+            //  = sceneHitSpan ? (sceneHitSpan.enter.t>EPSILON ? sceneHitSpan.enter : sceneHitSpan.exit) : null;
+            // hitInfo.material = sceneHitSpan.material;
 
             
-            return hitInfo;
+            // return hitInfo;
         });
 
         /* add lines to SVG */

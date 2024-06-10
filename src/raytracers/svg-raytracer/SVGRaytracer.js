@@ -220,9 +220,6 @@ function SVGRaytracer()
         settings.display.paths && rayLines.map(path =>
             h('g', {
                 className: 'lightpaths',
-                style: {
-                    opacity: settings.display.rays?1.0:0.0
-                }
             },
                 h('line', {
                     x1: path.x1,

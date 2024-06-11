@@ -224,7 +224,7 @@ function SVGRaytracer()
 
         rays = secondary;
     }
-
+    
     return h('g', {
         className: 'svg-raytracer',
         style: {

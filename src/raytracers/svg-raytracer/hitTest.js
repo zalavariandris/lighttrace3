@@ -251,15 +251,23 @@ function hitLine(ray, {x1, y1, x2, y2})
     let Ny = tangentX;
     [Nx, Ny] = vec2.normalize(-Nx, -Ny);
 
+    return new HitSpan(
+        new HitInfo(tNear, Ix, Iy, Nx, Ny, -1),
+        new HitInfo(tNear+EPSILON, Ix, Iy, Nx, Ny, -1)
+    );
+
+    //
     if (determinant < 0){ // from outside
+        const enter = new HitInfo(tNear, Ix, Iy, Nx, Ny, -1);
+        const exit  = new HitInfo(LARGE_NUMBER, ray.x+ray.dx*LARGE_NUMBER, ray.y+ray.dy*LARGE_NUMBER, 0,0, -1);
         return new HitSpan(
-            new HitInfo(tNear, Ix, Iy, Nx, Ny, -1), 
-            new HitInfo(LARGE_NUMBER, ray.x+ray.dx*LARGE_NUMBER, ray.y+ray.dy*LARGE_NUMBER, 0,0, -1)
+            enter,enter
         );
     }else{ // from inside
+        const enter = new HitInfo(0, ray.x, ray.y, 0, 0, -1);
+        const exit  = new HitInfo(tNear, Ix, Iy, Nx, Ny, -1);
         return new HitSpan(
-            new HitInfo(0, ray.x, ray.y, 0, 0, -1), 
-            new HitInfo(tNear, Ix, Iy, Nx, Ny, -1)
+            exit, exit
         );
     }
 }

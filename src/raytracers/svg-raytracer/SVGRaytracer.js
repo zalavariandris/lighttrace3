@@ -118,7 +118,7 @@ function SVGRaytracer()
 
                 sceneHitSpan = collapseSpan(sceneHitSpan, shapeHitSpan);
                 if(shapeHitSpan){
-                    sceneHitSpan.material = shapeHitSpan.enter.material
+                    sceneHitSpan.material = entity.material;
                 }
                 
                 // if(sceneHitSpan && shapeHitSpan)
@@ -200,7 +200,7 @@ function SVGRaytracer()
                     [woX, woY] =  sampleDiffuse(wiX, wiY, RandomNumber);
                     break;
                 case "glass":
-                    [woX, woY] =  sampleDielectric(wiX, wiY, 1.44, RandomNumber);
+                    [woX, woY] =  sampleDielectric(wiX, wiY, 1/1.44, RandomNumber);
                     break;
                 default:
                     [woX, woY] =  sampleMirror(wiX, wiY);
@@ -224,7 +224,7 @@ function SVGRaytracer()
 
         rays = secondary;
     }
-    console.log(allIntersectionSpans)
+
     return h('g', {
         className: 'svg-raytracer',
         style: {

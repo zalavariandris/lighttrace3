@@ -1,5 +1,7 @@
 import * as vec2 from "../../vec2.js"
-const EPSILON = 0.001;
+const EPSILON = Number.EPSILON;
+const LARGE_NUMBER = 9999;//.EPSILON;
+
 class HitInfo
 {
      constructor(t, x, y, nx=0, ny=0, material=-1)
@@ -161,7 +163,7 @@ function hitCircle(ray, {cx, cy, r})
     const C = vec2.dot([ux, uy], [ux, uy]) - r*r;
     const detSq = B*B - C;
 
-    if (detSq >= 0.0)
+    if (detSq >= 0)
     {
         const det = Math.sqrt(detSq);
         const tNear = -B - det;
@@ -184,7 +186,7 @@ function hitCircle(ray, {cx, cy, r})
 
             if(tNear<0){
                 return new HitSpan(
-                    new HitInfo(0, ray.x,ray.y), 
+                    new HitInfo(0, ray.x, ray.y), 
                     exit
                 );
             }
@@ -238,21 +240,9 @@ function hitLine(ray, {x1, y1, x2, y2})
     // Calculate intersection along the line
     const tLine = ((x1 - ray.x) * ray.dy - (y1 - ray.y) * ray.dx) / determinant;
     
-    if(tNear<0){
+    if(tNear<=0 || tLine<=0 || tLine>=1){
         return null;
     }
-    /* check if intersections are in boundary */
-    // const IntersectionWithinRay = tNear>EPSILON;
-    // const IntersectionWithinLinesegment = tLine>EPSILON && tLine<(1.0+EPSILON);
-    // if(!IntersectionWithinLinesegment){
-    //     return null;
-    // }
-
-    // if(!IntersectionWithinRay)
-    // {
-    //     // return null
-    //     tNear=0.0;
-    // }
 
     const Ix = ray.x+ray.dx*tNear;
     const Iy = ray.y+ray.dy*tNear;
@@ -261,17 +251,10 @@ function hitLine(ray, {x1, y1, x2, y2})
     let Ny = tangentX;
     [Nx, Ny] = vec2.normalize(-Nx, -Ny);
 
-    // return new HitSpan(
-    //     new HitInfo(tNear, Ix, Iy, Nx, Ny, -1), 
-    //     new HitInfo(tNear, Ix, Iy, Nx, Ny, -1), 
-    // );
-
-    // return null;
-
     if (determinant < 0){ // from outside
         return new HitSpan(
             new HitInfo(tNear, Ix, Iy, Nx, Ny, -1), 
-            new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0,0, -1)
+            new HitInfo(LARGE_NUMBER, ray.x+ray.dx*LARGE_NUMBER, ray.y+ray.dy*LARGE_NUMBER, 0,0, -1)
         );
     }else{ // from inside
         return new HitSpan(
@@ -290,6 +273,7 @@ function hitLine(ray, {x1, y1, x2, y2})
  * @param {number} size - vertices distance from center
  * @returns {HitSpan} - a pair of enter/exit hitInfo
  */
+
 function hitTriangle(ray, {cx, cy, angle, size}){
     const vertices = Array.from({length:3}).map( (_,k)=>{
         let a = k/3.0*Math.PI*2.0-Math.PI/2.0 + angle;
@@ -304,8 +288,33 @@ function hitTriangle(ray, {cx, cy, angle, size}){
     const hitSpanB = hitLine(ray, makeLineSegment(vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y));
     const hitSpanC = hitLine(ray, makeLineSegment(vertices[2].x, vertices[2].y, vertices[0].x, vertices[0].y));
 
-    // return span intersecionts
-    return intersectSpan(intersectSpan(hitSpanA, hitSpanB), hitSpanC)
+    // find closest entry intersection
+    const enterSpan = [hitSpanA, hitSpanB, hitSpanC].reduce((a, b)=>{
+        if(a && b && a.enter.t>0 && b.enter.t>0){
+            return a.enter.t<b.enter.t ? a : b;
+        }else if(a && a.enter.t>0){
+            return a;
+        }else{
+            return b;
+        }        
+    });
+
+    // find farthest exit intersection
+    const exitSpan = [hitSpanA, hitSpanB, hitSpanC].reduce((a, b)=>{
+        if(a && b && a.exit.t<LARGE_NUMBER && b.exit.t<LARGE_NUMBER){
+            return a.exit.t>b.exit.t ? a : b;
+        }else if(a && a.exit.t<LARGE_NUMBER){
+            return a;
+        }else{
+            return b;
+        }        
+    });
+
+    if(!enterSpan || !exitSpan){
+        return null;
+    }
+
+    return new HitSpan(enterSpan.enter, exitSpan.exit);
 }
 
 /**
@@ -444,7 +453,7 @@ function rectangleContainsPoint(rect, px, py){
  */
 function hitSphericalLens_old(ray, cx, cy, angle, diameter, centerThickness, edgeThickness)
 {
-    let result = new HitSpan(new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1), null);
+    let result = new HitSpan(new HitInfo(LARGE_NUMBER, ray.x+ray.dx*LARGE_NUMBER, ray.y+ray.dy*LARGE_NUMBER, 0, 0, -1), null);
 
     const [rayX, rayY] = vec2.rotate([ray.x, ray.y], -angle, [cx, cy]);
     const [dirX, dirY] = vec2.rotate([ray.dx, ray.dy], -angle);

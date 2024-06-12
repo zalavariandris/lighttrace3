@@ -114,8 +114,8 @@ void main()
         vec3 b = vec3(1.03961212, 0.231792344, 1.01046945);
         vec3 c = vec3(0.00600069867, 0.0200179144, 103.560653);
         float sellmeierIor =  sellmeierEquation(b, c, wavelength*1e-3);
-        float cauchyIor =  cauchyEquation(1.5046, 0.00420, wavelength*1e-3);
-        woLocal = sampleDielectric(wiLocal, sellmeierIor);
+        float cauchyIor =  cauchyEquation(1.44, 0.02, wavelength*1e-3);
+        woLocal = sampleDielectric(wiLocal, cauchyIor);
     }
     else if(hitMaterial<2.5)
     {

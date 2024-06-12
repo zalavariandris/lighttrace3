@@ -93,8 +93,6 @@ function SVGRaytracer()
                             entity.transform.translate.y, 
                             entity.transform.rotate, 
                             entity.shape.size));
-                        shapeHitSpan.enter.material = entity.material;
-                        shapeHitSpan.exit.material = entity.material;
                         break;
                     case "line":
                         const x1 = cx - Math.cos(angle)*entity.shape.length/2;
@@ -205,9 +203,9 @@ function SVGRaytracer()
                         [0.00600069867, 0.0200179144, 103.560653],
                         ray.wavelength*1e-3
                     );
-                    const cauchyIor =  cauchyEquation(1.5046, 0.00420, ray.wavelength*1e-3);
+                    const cauchyIor =  cauchyEquation(1.44, 0.02, ray.wavelength*1e-3);
                     // console.log("ior", sellmeierIor);
-                    [woX, woY] =  sampleDielectric(wiX, wiY, sellmeierIor, RandomNumber);
+                    [woX, woY] =  sampleDielectric(wiX, wiY, cauchyIor, RandomNumber);
                     break;
                 default:
                     [woX, woY] =  sampleMirror(wiX, wiY);

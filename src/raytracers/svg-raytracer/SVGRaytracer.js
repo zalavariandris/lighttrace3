@@ -173,7 +173,6 @@ function SVGRaytracer()
             };
         }).filter(line=>line)]
 
-        
 
         /* BOUNCE RAYS */
         const secondary = _.zip(rays, hits).map( ([ray, hit], i)=>{
@@ -294,6 +293,7 @@ function SVGRaytracer()
             )
         ),
 
+        // draw hitsopans
         h("g", {className:"intersection-spans"},
             settings.display.hitSpans && allIntersectionSpans.filter(ispan=>ispan).map(ispan =>
                 h('line', {
@@ -303,11 +303,14 @@ function SVGRaytracer()
                     y2: ispan.exit.y,
                     className: 'intersection',
                     vectorEffect: "non-scaling-stroke",
-                    style: {
-                        stroke: "cyan",
-                        strokeWidth: 3,
-                        opacity: 0.15
-                    }
+                    markerEnd:"url(#arrow)",
+                    stroke:"cyan",
+                    strokeWidth: 5
+                    // style: {
+                    //     stroke: "cyan",
+                    //     strokeWidth: 5,
+                    //     opacity: 0.5
+                    // }
                 })
             )
         )

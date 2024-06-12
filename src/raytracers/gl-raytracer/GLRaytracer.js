@@ -73,7 +73,8 @@ class GLRaytracer{
             lightSamples: Math.pow(4,5),//128*128; //Math.pow(4,4);
             debug: true,
             maxBounce: 7,
-            downres: 1      
+            downres: 1,
+            showNormals:true
         };
 
         this.animate();
@@ -321,13 +322,17 @@ class GLRaytracer{
 
     renderPass(scene, viewBox)
     {
+        const regl = this.regl;
+        /* CLEAR THE CANVAS */
+        regl.clear({framebuffer: this.sceneFbo, color: [0,0,0,1.0]});
         if(!scene || !viewBox)
         {
+
             return;
         }
 
 
-        const regl = this.regl;
+        
 
         const lights = Object.entries(scene)
         .filter( ([key, entity])=>entity.hasOwnProperty("light") && entity.hasOwnProperty("transform"));
@@ -451,9 +456,6 @@ class GLRaytracer{
                     break;
             }
         });
-
-        /* CLEAR THE CANVAS */
-        regl.clear({framebuffer: this.sceneFbo, color: [0,0,0,1.0]});
 
         /*
          * Trace Rays

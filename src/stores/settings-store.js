@@ -6,11 +6,11 @@ const defaultSettings = {
     "display": {
         shapes: true,
         lights: true,
-        rays: true,
-        hitSpans: true,
-        normals: true,
+        rays: false,
+        hitSpans: false,
+        normals: false,
         paths: true,
-        render: false
+        render: true
     },
     "raytrace": {
         lightSamples: Math.pow(4,5),//128*128; //Math.pow(4,4);
@@ -49,6 +49,11 @@ export default {
             settings=updatedSettings;
             emitChange();
         }
+    },
+
+    reset(){
+        settings = defaultSettings
+        emitChange()
     },
 
     subscribe(listener) 

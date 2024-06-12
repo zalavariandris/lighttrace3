@@ -155,7 +155,10 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
             },
                 h("path", {
                     d: "M 0 0 L 5 5 L 0 10 z", // This path represents an arrow
-                    fill: "white"
+                    fill: "context-stroke",
+                    style:{
+                        stroke: "context-stroke"
+                    }
                 })
             )
         ),

@@ -145,32 +145,62 @@ function subtractSpan(a, b)
     // Warning!: Be carefull. intersecting two spans could result in two seperate spans.
     // here we only return the closest one
 
-    a = new HitSpan(
-        new HitInfo(a.enter.t, a.enter.x, a.enter.y, a.enter.nx, a.enter.ny, a.enter.material),
-        new HitInfo(a.exit.t, a.exit.x, a.exit.y, a.exit.nx, a.exit.ny, a.exit.material)
-    );
-    if(b && a){
-        if(b.enter.t < a.enter.t && b.exit.t > a.exit.t){
-            // fully covers original span (   ---   )
-            a = null;
-        }
-        else if(b.exit.t<a.enter.t || /* --- ()   */
-                b.enter.t>a.exit.t    /* ()  ---  */
-        ){
-            a = a;
-        }
-        else if(b.enter.t<a.enter.t && b.exit.t<a.exit.t){
-            //coverse enter side  (  ---)---
-            a.enter = b.exit
-        }
-        else if(b.enter.t>a.enter.t && b.enter.t<a.exit.t){
-            //covers exit side   ---(---   )
-            a.exit = b.enter
+    let enter = new HitInfo(a.enter.t, a.enter.x, a.enter.y, a.enter.nx, a.enter.ny, a.enter.material);
+    let exit = new HitInfo(a.exit.t, a.exit.x, a.exit.y, a.exit.nx, a.exit.ny, a.exit.material);
 
+
+    if(a && b)
+    {
+        if(b.enter.t<a.enter.t && b.exit.t>a.exit.t){
+            // b covers a (   ---   )
+            //   aaa
+            // bbbbbbb
+            return null
         }
-        else if(b.enter.t>a.enter.t && b.exit.t<a.exit.t){
-                // inside /* ---(---)--- */
-                a.exit = b.enter;
+
+        //           AAAAAAAAA
+        //  1.    bb ---------
+        //  2.    bbbbbbbbbb--
+        //  3.    bbbbbbbbbbbbbbbbbb
+        //  4.       ----bb
+        //  5.       ------bbbbbbbbb
+        //  6.       --------   bb
+
+        //1.
+        if( b.enter.t < a.enter.t && 
+            b.exit.t  < a.enter.t){
+            return a;
+        }
+
+        //2.
+        if( b.enter.t < a.enter.t &&
+            b.exit.t  > a.enter.t && 
+            b.exit.t  < a.exit.t){
+            return new HitSpan(b.exit, a.exit)
+        }
+
+        //3.
+        if( b.enter.t < a.enter.t &&
+            b.exit.t  > a.exit.t ){
+            return null
+        }
+
+        //4.
+        if( b.enter.t > a.enter.t &&
+            b.exit.t < a.exit.t){
+            return new HitSpan(a.enter, b.enter)
+        }
+
+        //5.
+        if( b.enter.t > a.enter.t &&
+            b.enter.t < a.exit.t &&
+            b.exit.t  > a.exit.t ){
+            return new HitSpan(a.enter, b.enter)
+        }
+
+        //6.
+        if( b.enter.t>a.enter.t){
+            return a;
         }
     }
     return a;
@@ -478,96 +508,6 @@ function rectangleContainsPoint(rect, px, py){
            cy-height/2.0 < py && py < cy+height/2.0;
 }
 
-/**
- * Calculates the closest intersection of a ray with a spherical lens.
- * @param {Ray} ray - The ray object with properties origin and direction.
- * @param {number} cx - center of lens
- * @param {number} cy - center of lens
- * @param {number} angle - lens rotation
- * @param {number} diameter
- * @param {number} centerThickness
- * @param {number} edgeThickness
- * @returns {HitInfo} - 
- */
-function hitSphericalLens_old(ray, cx, cy, angle, diameter, centerThickness, edgeThickness)
-{
-    let result = new HitSpan(new HitInfo(LARGE_NUMBER, ray.x+ray.dx*LARGE_NUMBER, ray.y+ray.dy*LARGE_NUMBER, 0, 0, -1), null);
-
-    const [rayX, rayY] = vec2.rotate([ray.x, ray.y], -angle, [cx, cy]);
-    const [dirX, dirY] = vec2.rotate([ray.dx, ray.dy], -angle);
-
-    // make circles
-    const top =         cy + diameter/2.0;
-    const bottom =      cy - diameter/2.0;
-    const edgeLeft =    cx -   edgeThickness/2.0;
-    const edgeRight =   cx + edgeThickness/2.0;
-    const centerLeft =  cx - centerThickness/2.0
-    const centerRight = cx +   centerThickness/2.0
-
-    const leftCircle = makeCircleFromThreePoints([edgeLeft, top], [centerLeft, cy], [edgeLeft, bottom]);
-    const rightCircle = makeCircleFromThreePoints([edgeRight, top], [centerRight, cy], [edgeRight, bottom]);
-
-    // intersect circles
-    const leftHitSpan = hitCircle(ray, leftCircle.cx, leftCircle.cy, leftCircle.r);
-    const leftHit = leftHitSpan.enter;
-    const rightHitSpan = hitCircle(ray, rightCircle.cx, rightCircle.cy, rightCircle.r);
-    const rightHit = rightHitSpan.enter;
-    
-    const IsConvex = centerThickness>edgeThickness;
-
-    if(IsConvex)
-    {
-        const LeftCircleContains_LeftIntersection   = circleConainsPoint(leftCircle,   leftHit.x, leftHit.y);
-        const LeftCircleContains_RightIntersection  = circleConainsPoint(leftCircle,   rightHit.x, rightHit.y);
-        const RightCircleContains_LeftIntersection  = circleConainsPoint(rightCircle,  leftHit.x, leftHit.y);
-        const RightCircleContains_RightIntersection = circleConainsPoint(rightCircle,  rightHit.x, rightHit.y);
-        if (LeftCircleContains_RightIntersection && 
-           RightCircleContains_LeftIntersection)
-        {
-            // Return closest hitpoint that is inside the circles intersection
-            if(leftHit.t<result.enter.t) result = new HitSpan(leftHit, null);
-            if(rightHit.t<result.enter.t) result = new HitSpan(rightHit, null);
-            
-        }
-        else if (LeftCircleContains_RightIntersection)
-        {
-            result = new HitSpan(rightHit, null);
-        }
-        else if (RightCircleContains_LeftIntersection)
-        {
-            result = new HitSpan(leftHit, null);
-        }
-    }
-    else //Concave
-    {
-
-        leftHit.nx  *= -1.0;
-        leftHit.ny  *= -1.0;
-        rightHit.nx *= -1.0;
-        rightHit.ny *= -1.0;
-
-        const bbox = {cx: cx, cy: cy, width: Math.max(edgeThickness, centerThickness), height: diameter};
-        if(rectangleContainsPoint(bbox, leftHit.x, leftHit.y) && 
-           rectangleContainsPoint(bbox, leftHit.x, leftHit.y))
-        {
-            if(leftHit.t < rightHit.t)
-                {
-                result = new HitSpan(leftHit, null);
-            }
-            else
-            {
-                result = new HitSpan(rightHit, null);
-            };
-        }
-        else if(rectangleContainsPoint(bbox, leftHit.x, leftHit.y))
-        {
-            result = new HitSpan(leftHit, null);
-        }
-    }
-
-    return result;
-}
-
 function hitSphericalLens(ray, {cx, cy, angle, diameter, centerThickness, edgeThickness})
 {
     // make circles
@@ -608,14 +548,17 @@ function hitSphericalLens(ray, {cx, cy, angle, diameter, centerThickness, edgeTh
             return null;
         }
 
+
+        // return boundingSpan
+        
+
         let span = boundingSpan;
-        
-
-
-
-        span = subtractSpan(span, rightHitSpan);
         span = subtractSpan(span, leftHitSpan);
+        span = subtractSpan(span, rightHitSpan);
         
+        
+        return span
+
         if(span.enter.t>span.exit.t){
             return null;
         }

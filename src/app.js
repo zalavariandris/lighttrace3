@@ -154,7 +154,10 @@ function App({})
                         }),
                         `show ${something}`
                     )
-                })
+                }),
+                h("button", {
+                    onMouseDown: e=>settingsStore.reset()
+                }, "reset settings")
 
             )
         ):null,

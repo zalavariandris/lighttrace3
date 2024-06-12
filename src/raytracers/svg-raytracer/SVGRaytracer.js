@@ -7,8 +7,8 @@ import * as vec2 from "../../vec2.js"
 
 import { makeCircle, makeTriangle, makeLineSegment, makeRectangle, makeSphericalLens } from "./hitTest.js";
 import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../sampleLights.js";
-import { HitInfo, HitSpan, collapseSpan, hitCircle, hitLine, hitTriangle, hitSphericalLens, hitRectangle } from "./hitTest.js"
-import { sampleMirror, sampleDiffuse, sampleDielectric } from "./sampleMaterials.js";
+import { HitInfo, HitSpan, collapseSpan, firstUnion, hitCircle, hitLine, hitTriangle, hitSphericalLens, hitRectangle } from "./hitTest.js"
+import { sampleMirror, sampleDiffuse, sampleDielectric, sellmeierEquation, cauchyEquation } from "./sampleMaterials.js";
 
 const EPSILON = 0.001;
 
@@ -25,7 +25,7 @@ function SVGRaytracer()
 
     /* prepare svg visualization objects */
     let allRays = [];
-    const allIntersectionSpans = []
+    let allIntersectionSpans = []
 
     let rayLines = [];
     let hitLines = [];
@@ -59,16 +59,15 @@ function SVGRaytracer()
     for(let i=0; i<settings.raytrace.maxBounce; i++)
     {
         /* intersect scene */
-        const hits = rays.map(ray=>{
+        const hitSpans = rays.map(ray=>{
             if(ray==null){return null;}
+
+            // adjust ray to avoud zero distance collisions
             ray.x+=ray.dx*EPSILON;
             ray.y+=ray.dy*EPSILON;
-            
     
-            /* intersect rays with CSG */
-            // let hitInfo = new HitInfo(9999, ray.x+ray.dx*9999, ray.y+ray.dy*9999, 0, 0, -1);
-            let sceneHitSpan = null;
-            shapeEntities.forEach(entity=>{
+            /* intersect rays with CSG scene */
+            return shapeEntities.reduce((sceneHitSpan, entity)=>{
                 const cx = entity.transform.translate.x;
                 const cy = entity.transform.translate.y;
                 const angle = entity.transform.rotate;
@@ -79,7 +78,8 @@ function SVGRaytracer()
                             cx, 
                             cy, 
                             entity.shape.radius));
-
+                        shapeHitSpan.enter.material = entity.material;
+                        shapeHitSpan.exit.material = entity.material;
                         break;
                     case "rectangle":
                         shapeHitSpan = hitRectangle(ray, makeRectangle(
@@ -88,6 +88,8 @@ function SVGRaytracer()
                             angle, 
                             entity.shape.width, 
                             entity.shape.height));
+                        shapeHitSpan.enter.material = entity.material;
+                        shapeHitSpan.exit.material = entity.material;
                         break;
                     case "triangle":
                         shapeHitSpan = hitTriangle(ray, makeTriangle(
@@ -95,6 +97,8 @@ function SVGRaytracer()
                             entity.transform.translate.y, 
                             entity.transform.rotate, 
                             entity.shape.size));
+                        shapeHitSpan.enter.material = entity.material;
+                        shapeHitSpan.exit.material = entity.material;
                         break;
                     case "line":
                         const x1 = cx - Math.cos(angle)*entity.shape.length/2;
@@ -102,6 +106,8 @@ function SVGRaytracer()
                         const x2 = cx + Math.cos(angle)*entity.shape.length/2;
                         const y2 = cy + Math.sin(angle)*entity.shape.length/2;
                         shapeHitSpan = hitLine(ray, makeLineSegment( x1, y1, x2, y2));
+                        shapeHitSpan.enter.material = entity.material;
+                        shapeHitSpan.exit.material = entity.material;
                         break;
                     case "sphericalLens":
                         shapeHitSpan = hitSphericalLens(ray, makeSphericalLens(
@@ -111,50 +117,39 @@ function SVGRaytracer()
                             entity.shape.diameter,
                             entity.shape.centerThickness,
                             entity.shape.edgeThickness));
+                        shapeHitSpan.enter.material = entity.material;
+                        shapeHitSpan.exit.material = entity.material;
                         break;
                     default:
                         break;
                 }
+                
 
-                sceneHitSpan = collapseSpan(sceneHitSpan, shapeHitSpan);
-                if(shapeHitSpan){
-                    sceneHitSpan.material = entity.material;
+                if(shapeHitSpan && sceneHitSpan)
+                {
+                    sceneHitSpan = new HitSpan(
+                        shapeHitSpan.enter.t < sceneHitSpan.enter.t ? shapeHitSpan.enter : sceneHitSpan.enter,
+                        shapeHitSpan.exit.t < sceneHitSpan.exit.t ? shapeHitSpan.exit : sceneHitSpan.exit,
+                    )
+                }else if(shapeHitSpan){
+                    sceneHitSpan = shapeHitSpan;
                 }
-                
-                // if(sceneHitSpan && shapeHitSpan)
-                // {
-                //     // sceneHitSpan = new HitSpan(
-                //     //     sceneHitSpan.enter.t < shapeHitSpan.enter.t ? sceneHitSpan.enter : shapeHitSpan.enter,
-                //     //     sceneHitSpan.exit.t > shapeHitSpan.exit.t ? sceneHitSpan.exit : shapeHitSpan.exit
-                //     // );
-                    
 
-                //     // sceneHitSpan = collapseSpan(sceneHitSpan, shapeHitSpan);
-                //     sceneHitSpan.material = entity.material;
-                // }else if(shapeHitSpan){
-                //     sceneHitSpan = shapeHitSpan;
-                //     sceneHitSpan.material = entity.material;
-                // }else{
-                //     return null;
-                // }
-                
-            });
-            allIntersectionSpans.push(sceneHitSpan);
-            if(sceneHitSpan){
-                const hitInfo = sceneHitSpan.enter.t>EPSILON ? sceneHitSpan.enter : sceneHitSpan.exit;
-                hitInfo.material = sceneHitSpan.material;
-                return hitInfo;
+                return sceneHitSpan;
+            }, null);
+        });
+
+        // closest intersection point of sceneHitSpanPerRay
+        const hits = hitSpans.map(hitSpan=>{
+            if(hitSpan){
+                return hitSpan.enter.t>EPSILON ? hitSpan.enter : hitSpan.exit;
             }else{
                 return null;
             }
-            //  = sceneHitSpan ? (sceneHitSpan.enter.t>EPSILON ? sceneHitSpan.enter : sceneHitSpan.exit) : null;
-            // hitInfo.material = sceneHitSpan.material;
-
-            
-            // return hitInfo;
-        });
+        })
 
         /* add lines to SVG */
+        allIntersectionSpans = [...allIntersectionSpans, ...hitSpans];
         allRays = [...allRays, ...rays].filter(ray=>ray);
         rayLines = [...rayLines, ..._.zip(rays, hits).map(([ray, hit])=>{
             if(ray==null) {return null;}
@@ -176,6 +171,8 @@ function SVGRaytracer()
                 y2: hit.y+hit.ny*20
             };
         }).filter(line=>line)]
+
+        
 
         /* BOUNCE RAYS */
         const secondary = _.zip(rays, hits).map( ([ray, hit], i)=>{
@@ -200,7 +197,14 @@ function SVGRaytracer()
                     [woX, woY] =  sampleDiffuse(wiX, wiY, RandomNumber);
                     break;
                 case "glass":
-                    [woX, woY] =  sampleDielectric(wiX, wiY, 1/1.44, RandomNumber);
+                    const sellmeierIor =  sellmeierEquation(
+                        [1.03961212, 0.231792344, 1.01046945], 
+                        [0.00600069867, 0.0200179144, 103.560653],
+                        ray.wavelength*1e-3
+                    );
+                    const cauchyIor =  cauchyEquation(1.5046, 0.00420, ray.wavelength*1e-3);
+                    // console.log("ior", sellmeierIor);
+                    [woX, woY] =  sampleDielectric(wiX, wiY, sellmeierIor, RandomNumber);
                     break;
                 default:
                     [woX, woY] =  sampleMirror(wiX, wiY);

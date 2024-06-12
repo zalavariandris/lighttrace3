@@ -30,19 +30,23 @@ vec2 sampleMirror(vec2 wi){
     return vec2(-wi.x, wi.y); 
 }
 
-float sellmeierIor(vec3 b, vec3 c, float lambda)
+float cauchyEquation(float A, float B, float lambda) {
+    return A + (B / (lambda * lambda));
+}
+
+float sellmeierEquation(vec3 b, vec3 c, float lambda)
 {
     // Calculate the square of the wavelength
-    float lSq = (lambda * 1e-3) * (lambda * 1e-3);
+    float lambdaSq = lambda * lambda;
 
-    // Calculate the contribution of each Sellmeier term and sum them up
-    float sum = 0.0;
-    sum += (b.x * lSq) / (lSq - c.x);
-    sum += (b.y * lSq) / (lSq - c.y);
-    sum += (b.z * lSq) / (lSq - c.z);
+    // Calculate the refractive index using the Sellmeier equation
+    float nSq = 1.0;
+    nSq += (b[0] * lambdaSq) / (lambdaSq - c[0]);
+    nSq += (b[1] * lambdaSq) / (lambdaSq - c[1]);
+    nSq += (b[2] * lambdaSq) / (lambdaSq - c[2]);
 
-    // Add 1.0 to the sum to get the refractive index squared
-    return 1.0 + sum;
+    // Return the square root of the refractive index squared
+    return sqrt(nSq);
 }
 
 vec2 sampleDiffuse(vec2 wi)
@@ -53,33 +57,37 @@ vec2 sampleDiffuse(vec2 wi)
     return vec2(x, y*sign(wi.y));
 }
 
-float dielectricReflectance(float eta, float cosThetaI, out float cosThetaT) {
-    float sinThetaTSq = eta*eta*(1.0 - cosThetaI*cosThetaI);
-    if (sinThetaTSq > 1.0) {
-        cosThetaT = 0.0;
-        return 1.0;
-    }
-    cosThetaT = sqrt(1.0 - sinThetaTSq);
-
-    float Rs = (eta*cosThetaI - cosThetaT)/(eta*cosThetaI + cosThetaT);
-    float Rp = (eta*cosThetaT - cosThetaI)/(eta*cosThetaT + cosThetaI);
-
-    return (Rs*Rs + Rp*Rp)*0.5;
-}
-
 vec2 sampleDielectric(vec2 wi, float ior) 
 {
-    float randomNumber = gold_noise(gl_FragCoord.xy, SEED);
+    float eta = wi.y < 0.0 ? ior : 1.0 / ior;
+    float sinThetaTSq = eta * eta * (1.0 - abs(wi.y) * abs(wi.y));
+
     float cosThetaT;
-    float eta = wi.y < 0.0 ? ior : 1.0/ior;
-    float Fr = dielectricReflectance(eta, abs(wi.y), cosThetaT);
-    if (randomNumber < Fr)
+    float fresnell;
+    if (sinThetaTSq > 1.0) 
+    {
+        cosThetaT = 0.0;
+        fresnell = 1.0;
+    } 
+    else 
+    {
+        float cosThetaI = abs(wi.y);
+        cosThetaT = sqrt(1.0 - sinThetaTSq);
+        
+        float Rs = (eta * cosThetaI - cosThetaT) / (eta * cosThetaI + cosThetaT);
+        float Rp = (eta * cosThetaT - cosThetaI) / (eta * cosThetaT + cosThetaI);
+    
+        fresnell = (Rs * Rs + Rp * Rp) * 0.5;
+    }
+
+    float randomNumber = gold_noise(gl_FragCoord.xy, SEED);
+    if (1.0 < fresnell) 
     {
         return vec2(-wi.x, wi.y);
     }
-    else
+    else 
     {
-        return vec2(-wi.x*eta, -cosThetaT*sign(wi.y));
+        return vec2(-wi.x * eta, -cosThetaT * sign(wi.y));
     }
 }
 
@@ -103,12 +111,11 @@ void main()
     }
     else if(hitMaterial < 1.5)
     {
-        vec3 b = vec3(1.6215, 0.2563, 1.6445);
-        vec3 c = vec3(0.0122, 0.0596, 147.4688);
-        float dispersiveIor =  sellmeierIor(b, c, wavelength*9.0);
-        woLocal = sampleDielectric(wiLocal, dispersiveIor);
-        // vec2 secondaryDir = sampleTransparent(rayDir, hitNormal, dispersiveIor);
-        // gl_FragData[0] = vec4(hitPos, secondaryDir);
+        vec3 b = vec3(1.03961212, 0.231792344, 1.01046945);
+        vec3 c = vec3(0.00600069867, 0.0200179144, 103.560653);
+        float sellmeierIor =  sellmeierEquation(b, c, wavelength*1e-3);
+        float cauchyIor =  cauchyEquation(1.5046, 0.00420, wavelength*1e-3);
+        woLocal = sampleDielectric(wiLocal, sellmeierIor);
     }
     else if(hitMaterial<2.5)
     {

@@ -92,6 +92,36 @@ function collapseSpan(a, b)
     }
 }
 
+function firstUnion(...hitSpans){
+        // find closest entry intersection
+        const enterSpan = hitSpans.reduce((a, b)=>{
+            if(a && b && a.enter.t>0 && b.enter.t>0){
+                return a.enter.t<b.enter.t ? a : b;
+            }else if(a && a.enter.t>0){
+                return a;
+            }else{
+                return b;
+            }        
+        });
+    
+        // find farthest exit intersection
+        const exitSpan = hitSpans.reduce((a, b)=>{
+            if(a && b && a.exit.t<LARGE_NUMBER && b.exit.t<LARGE_NUMBER){
+                return a.exit.t>b.exit.t ? a : b;
+            }else if(a && a.exit.t<LARGE_NUMBER){
+                return a;
+            }else{
+                return b;
+            }        
+        });
+    
+        if(!enterSpan || !exitSpan){
+            return null;
+        }
+    
+        return new HitSpan(enterSpan.enter, exitSpan.exit);
+}
+
 function intersectSpan(a, b){
     // find the closest overlapping span
     // Warning!: Be carefull. intersecting two spans could result in two seperate spans.
@@ -605,5 +635,5 @@ function hitSphericalLens(ray, {cx, cy, angle, diameter, centerThickness, edgeTh
 
 export {HitInfo, HitSpan}
 export {makeCircle, makeRectangle, makeTriangle, makeLineSegment, makeSphericalLens};
-export {collapseSpan, intersectSpan, subtractSpan};
+export {collapseSpan, intersectSpan, subtractSpan, firstUnion};
 export {hitCircle, hitLine, hitTriangle, hitSphericalLens, hitRectangle};

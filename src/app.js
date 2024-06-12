@@ -11,6 +11,12 @@ import settingsStore from "./stores/settings-store.js";
 import statsStore from "./stores/stats-store.js";
 const h = React.createElement;
 
+const calcZoom = ([clientWidth, clientHeight], viewBox)=>{
+    const clientSize = {w: clientWidth, h: clientHeight}
+    return clientSize.w/viewBox.w;
+
+}
+
 
 function fitViewboxInSize(viewBox, size)
 {
@@ -48,11 +54,13 @@ function Viewport(props)
     const [viewBox, setViewBox] = React.useState( JSON.parse(localStorage.getItem("viewBox")) || {x:0, y:0, w:512, h:512});
     const settings = React.useSyncExternalStore(settingsStore.subscribe, settingsStore.getSnapshot);
 
+    // [resistend viewbox]
     React.useEffect(()=>{
         localStorage.setItem("viewBox", JSON.stringify(viewBox));
     }, [viewBox]);
     const ref = React.useRef(null);
 
+    // adjust viewbox on window resize
     React.useEffect( ()=>{
         function resizeHandler(e)
         {
@@ -67,10 +75,23 @@ function Viewport(props)
         }
     }, []);
 
+    // display zoom level
+    const svgRef = React.useRef(null)
+    const zoom = calcZoom([window.innerWidth, window.innerHeight], viewBox);
+
     return h("div", {
         ref: ref, 
         ...props
     },
+        h("div", {
+            style:{
+                position: "fixed",
+                top: "0px", 
+                right: "0px"
+            }
+        }, 
+            `zoom: ${(zoom*100).toFixed()}%`
+        ),
         h(ErrorBoundary, {
             fallback:h("div", null, "GLViewport error")
         },
@@ -89,6 +110,7 @@ function Viewport(props)
             fallback:h("div", null, "SVGViewport error")
         },
             h(SVGViewport, {
+                ref:svgRef,
                 viewBox: viewBox,
                 preserveAspectRatio: "none",
                 onViewBoxChange: viewBox=>setViewBox(viewBox),

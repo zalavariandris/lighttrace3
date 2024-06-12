@@ -29,18 +29,6 @@ function viewboxString(viewBox)
 {
     return viewBox.x+" "+viewBox.y+" "+viewBox.w+" "+viewBox.h;
 }
-    
-const calcScale = (svg, viewBox)=>{
-    // const svg = svgRef.current;
-    if(svg)
-    {
-        const clientSize = {w: svg.clientWidth, h: svg.clientHeight}
-        return viewBox.w/clientSize.w;
-    }else{
-        return 1.0;
-    }
-}
-
 function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...props})
 {
     const scene = React.useSyncExternalStore(entityStore.subscribe, entityStore.getSnapshot);
@@ -136,6 +124,8 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
         }
         
     }
+
+
 
     return h("svg", {
         width, 

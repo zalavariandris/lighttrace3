@@ -56,8 +56,8 @@
 - [ ] review tonemapping. support multiple colorspaces
 - [ ] refactor glviewport to map entities to its internal data (eg initialrays array, transformArray, shapes Array materialsArray...)
 
-- [ ] fix svg raytracer.
-- [ ] fix SVGRaytracer interacting with a rectangle.
+- [x] fix svg raytracer.
+- [x] fix SVGRaytracer interacting with a rectangle.
 - [ ] support dispersion in svg-raytracer?
 
 - [ ] direction light width manip is a bit strange. should act on the axis only not by distance

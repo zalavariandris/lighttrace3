@@ -78,8 +78,6 @@ function SVGRaytracer()
                             cx, 
                             cy, 
                             entity.shape.radius));
-                        shapeHitSpan.enter.material = entity.material;
-                        shapeHitSpan.exit.material = entity.material;
                         break;
                     case "rectangle":
                         shapeHitSpan = hitRectangle(ray, makeRectangle(
@@ -88,8 +86,6 @@ function SVGRaytracer()
                             angle, 
                             entity.shape.width, 
                             entity.shape.height));
-                        shapeHitSpan.enter.material = entity.material;
-                        shapeHitSpan.exit.material = entity.material;
                         break;
                     case "triangle":
                         shapeHitSpan = hitTriangle(ray, makeTriangle(
@@ -106,8 +102,6 @@ function SVGRaytracer()
                         const x2 = cx + Math.cos(angle)*entity.shape.length/2;
                         const y2 = cy + Math.sin(angle)*entity.shape.length/2;
                         shapeHitSpan = hitLine(ray, makeLineSegment( x1, y1, x2, y2));
-                        shapeHitSpan.enter.material = entity.material;
-                        shapeHitSpan.exit.material = entity.material;
                         break;
                     case "sphericalLens":
                         shapeHitSpan = hitSphericalLens(ray, makeSphericalLens(
@@ -117,21 +111,30 @@ function SVGRaytracer()
                             entity.shape.diameter,
                             entity.shape.centerThickness,
                             entity.shape.edgeThickness));
-                        shapeHitSpan.enter.material = entity.material;
-                        shapeHitSpan.exit.material = entity.material;
                         break;
                     default:
                         break;
                 }
                 
+                if(shapeHitSpan){
+                    shapeHitSpan.enter.material = entity.material;
+                    shapeHitSpan.exit.material = entity.material;
+                }
 
                 if(shapeHitSpan && sceneHitSpan)
                 {
-                    sceneHitSpan = new HitSpan(
-                        shapeHitSpan.enter.t < sceneHitSpan.enter.t ? shapeHitSpan.enter : sceneHitSpan.enter,
-                        shapeHitSpan.exit.t < sceneHitSpan.exit.t ? shapeHitSpan.exit : sceneHitSpan.exit,
-                    )
-                }else if(shapeHitSpan){
+                    // find the first and the second cosest hitPoint
+                    const sortedIntersections = [shapeHitSpan.enter, shapeHitSpan.exit, sceneHitSpan.enter, sceneHitSpan.exit]
+                        .filter(hit => hit && hit.t > 0) // Filter out null and non-positive intersections
+                        .sort((a, b) => a.t - b.t); // Sort by the intersection time
+
+                    const enter = sortedIntersections[0];
+                    const exit = sortedIntersections.find(hit => hit.t > enter.t);
+
+                    sceneHitSpan = new HitSpan(enter, exit);
+                }
+                else if(shapeHitSpan)
+                {
                     sceneHitSpan = shapeHitSpan;
                 }
 

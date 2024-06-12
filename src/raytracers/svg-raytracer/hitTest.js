@@ -1,5 +1,5 @@
 import * as vec2 from "../../vec2.js"
-const EPSILON = Number.EPSILON;
+const EPSILON = 0.001;
 const LARGE_NUMBER = 9999;//.EPSILON;
 
 class HitInfo
@@ -414,7 +414,7 @@ function hitRectangle(ray, {cx, cy, angle, width, height})
             );
         }
 
-        //exenterit point
+        //enter point
         let Ix1 = rayX+dirX*tNear;
         let Iy1 = rayY+dirY*tNear;
 

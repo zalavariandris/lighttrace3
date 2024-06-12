@@ -92,6 +92,7 @@ function Viewport(props)
         }, 
             `zoom: ${(zoom*100).toFixed()}%`
         ),
+
         h(ErrorBoundary, {
             fallback:h("div", null, "GLViewport error")
         },

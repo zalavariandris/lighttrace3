@@ -144,20 +144,8 @@ function subtractSpan(a, b)
     // find the closest span after subtraction span
     // Warning!: Be carefull. intersecting two spans could result in two seperate spans.
     // here we only return the closest one
-
-    let enter = new HitInfo(a.enter.t, a.enter.x, a.enter.y, a.enter.nx, a.enter.ny, a.enter.material);
-    let exit = new HitInfo(a.exit.t, a.exit.x, a.exit.y, a.exit.nx, a.exit.ny, a.exit.material);
-
-
     if(a && b)
     {
-        if(b.enter.t<a.enter.t && b.exit.t>a.exit.t){
-            // b covers a (   ---   )
-            //   aaa
-            // bbbbbbb
-            return null
-        }
-
         //           AAAAAAAAA
         //  1.    bb ---------
         //  2.    bbbbbbbbbb--
@@ -165,9 +153,14 @@ function subtractSpan(a, b)
         //  4.       ----bb
         //  5.       ------bbbbbbbbb
         //  6.       --------   bb
-
         //1.
-        if( b.enter.t < a.enter.t && 
+
+        b.enter.nx*=-1;
+        b.enter.ny*=-1;
+        b.exit.nx*=-1;
+        b.exit.ny*=-1;
+
+        if( b.enter.t <= a.enter.t && 
             b.exit.t  < a.enter.t){
             return a;
         }
@@ -186,20 +179,22 @@ function subtractSpan(a, b)
         }
 
         //4.
-        if( b.enter.t > a.enter.t &&
+        if( b.enter.t >= a.enter.t &&
             b.exit.t < a.exit.t){
             return new HitSpan(a.enter, b.enter)
         }
 
         //5.
-        if( b.enter.t > a.enter.t &&
+        if( b.enter.t >= a.enter.t &&
             b.enter.t < a.exit.t &&
             b.exit.t  > a.exit.t ){
             return new HitSpan(a.enter, b.enter)
         }
 
         //6.
-        if( b.enter.t>a.enter.t){
+        if( b.enter.t > a.enter.t &&
+            b.exit.t  > a.exit.t
+        ){
             return a;
         }
     }

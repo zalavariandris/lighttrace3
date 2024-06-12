@@ -128,6 +128,7 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
 
 
     return h("svg", {
+        xmlns:"http://www.w3.org/2000/svg",
         width, 
         height, 
         className,
@@ -143,25 +144,9 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
         }
     }, 
 
-        h("defs", null,
-            h("marker", {
-                id:"arrow",
-                viewBox:"0 0 10 10",
-                refX:"1",
-                refY:"5",
-                markerWidth:"3",
-                markerHeight:"3",
-                orient:"auto-start-reverse"
-            },
-                h("path", {
-                    d: "M 0 0 L 5 5 L 0 10 z", // This path represents an arrow
-                    fill: "context-stroke",
-                    style:{
-                        stroke: "context-stroke"
-                    }
-                })
-            )
-        ),
+        // h("defs", null,
+
+        // ),
 
         // SHAPES
         h("g", {
@@ -368,7 +353,24 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                         break;
                 }
 
-            })
+            }),
+
+            h("marker", {
+                id:"arrow",
+                viewBox:"0 0 10 10",
+                refX:"1",
+                refY:"5",
+                markerWidth:"6",
+                markerHeight:"6",
+                orient:"auto-start-reverse"
+            },
+                h("path", {
+                    d: "M 0 0 L 5 5 L 0 10 z", // This path represents an arrow
+                    fill: "white",
+                    fill: "context-stroke",
+                    stroke: "none",
+                })
+            )
         ),
 
         // RAYS

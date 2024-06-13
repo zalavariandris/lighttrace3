@@ -189,7 +189,7 @@ function SVGRaytracer()
     {
         /* intersect scene */
         const raytraceInfo = rays.map(ray=>{
-            if(ray==null){return [null,null];}
+            if(ray==null){return [null,null, null];}
 
             // adjust ray to avoud zero distance collisions   
             ray = makeRay(
@@ -222,7 +222,8 @@ function SVGRaytracer()
 
 
         // /* BOUNCE RAYS */
-        const secondaries = _.zip(rays, hits).map( ([ray, hit])=>sampleScene(ray, hit));
+        let secondaries = _.zip(rays, hits).map( ([ray, hit])=>sampleScene(ray, hit));
+        // secondaries = S;
 
         /* add lines to SVG */
         allIntersectionSpans = [...allIntersectionSpans, ...hitSpans];

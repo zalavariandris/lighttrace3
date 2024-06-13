@@ -271,28 +271,94 @@ class GLRaytracer{
             format: "rgba",
             type: "float"
         };
-        this.texturesBack.rayTransform({...common_raytrace_textures_settings,
+        this.texturesFront.rayTransform({...common_raytrace_textures_settings,
             data: rays.map(ray=>
                 [ray.x, ray.y, ray.dx, ray.dy]
             ).extend([0,0,0,0], dataTextureRadius**2)
         });
-        this.texturesBack.rayProperties({...common_raytrace_textures_settings,
+        this.texturesFront.rayProperties({...common_raytrace_textures_settings,
             data: rays.map(ray=>
                 [ray.wavelength, ray.wavelength, ray.wavelength, ray.intensity]
             ).extend([0,0,0,0], dataTextureRadius**2)
         });
 
+        /* Prepare Scene data for GPU */
+        const shapeEntities = Object.values(scene).filter(entity=>
+            entity.hasOwnProperty("shape") && 
+            entity.hasOwnProperty("transform") && 
+            entity.hasOwnProperty("material")
+        );
+
+        const transformData = shapeEntities.map(entity=>
+            [entity.transform.translate.x, entity.transform.translate.y, entity.transform.rotate || 0.0]
+        );
+
+        const shapeData = shapeEntities.map(entity=>{
+            switch (entity.shape.type) {
+                case "circle":
+                    return [0, entity.shape.radius,0,0];
+                case "rectangle":
+                    return [1, entity.shape.width, entity.shape.height, 0];
+                case "sphericalLens":
+                    return [2, entity.shape.diameter, entity.shape.edgeThickness, entity.shape.centerThickness];
+                case "triangle":
+                    return [3, entity.shape.size, 0,0];
+                case "line":
+                    return [4, entity.shape.length, 0,0];
+                default:
+                    return [0, 10,0,0];
+            }
+        });
+
+        const materialData = shapeEntities.map(entity=>{
+            switch (entity.material.type) {
+                case "mirror":
+                    return [0, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
+                case "glass":
+                    return [1, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
+                case "diffuse":
+                    return [2, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
+                default:
+                    return [0,0,0,0];
+            }
+        });
+
         /************ *
          * TRACE RAYS *
          * ********** */
+        regl({...QUAD, vert:PASS_THROUGH_VERTEX_SHADER,
+            framebuffer: this.raytraceBackFBO,
+            uniforms: {
+                resolution: [this.raytraceBackFBO.width, this.raytraceBackFBO.height],
+                rayTransformTexture: this.texturesFront.rayTransform,
+                rayPropertiesTexture: this.texturesFront.rayProperties,
+                shapesCount: shapeData.length,
+                ...shapeEntities.length>0 && { // include shape info in uniforms only if they exist. otherwise regl throws an error. TODO: review this
+                    CSGTransformData: transformData.flat(),
+                    CSGShapeData: shapeData.flat(),
+                    CSGMaterialData: materialData.flat()
+                }
+            },
+            frag: raytracePassShader
+        })();
 
         /* draw rays */
         regl.clear({color: [0,0.0,0,1]});
         drawRays(regl, {
             raysCount: rays.length,
-            raysTexture: this.texturesBack.rayTransform,
+            raysTexture: this.texturesFront.rayTransform,
             raysLength: 50.0,
             raysColor: [0.7,0.3,0,0.3],
+            outputResolution: this.outputResolution,
+            viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+            framebuffer: null
+        });
+        /* draw hitpoints */
+        drawRays(regl, {
+            raysCount: rays.length,
+            raysTexture: this.texturesBack.hitPoint,
+            raysLength: 20.0,
+            raysColor: [0.0,0.9,0,0.1],
             outputResolution: this.outputResolution,
             viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
             framebuffer: null

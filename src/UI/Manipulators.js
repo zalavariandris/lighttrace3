@@ -1,3 +1,4 @@
+import _ from "lodash";
 import React, {useState} from "react"
 
 
@@ -136,6 +137,7 @@ function Manipulator({
         ref:ref,
         style: {
             cursor: active?"grabbing":"grab",
+            transform: "scale(--zoom)",
             ...style
         },
         onMouseDown: (e)=>handleMouseDown(e),

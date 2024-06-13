@@ -41,31 +41,43 @@
 - [x] persistent viewbox
 - [x] stop gl rendering when hidden
 - [x] circle size handler is usable even when not selected...
-- [ ] with the new SVG Ratracer hitLines has problams when oncluded in a scene
+- [x] with the new SVG Ratracer hitLines has problams when included in a scene.
+      Any objects in the back, were messing up the hitrays. did not affect raytracing
 - [ ] Since SVG raytracing uses random numbers, its flickering. Add a uniform random number to diffuse sampling, or a random number with seed.
 - [/] handle errors in components. eg.: raytracing errors in SVGRaytracer component
-- [ ] distrubute lightSamples among all lights (based on intensity)
 
-- [x] rasterize bias: fix ray energy uniform in all direction
-- [ ] fix convex lens rayrtacing in webgl raytracer
-- [ ] lens intersect outside of diemeter, when edge thickness is greater then zero
-- [ ] physically accurate wavelength to color wavelength->XYZ->linearRGB->sRGB
+- SVG Raytracer
+  - [x] fix svg raytracer.
+  - [x] fix SVGRaytracer interacting with a rectangle.
+  - [x] support dispersion in svg-raytracer?
+  - [ ] support colored lines
 
-- [ ] review data texture types. eg.: dont use alpha for light color. some texture a
+- WebGL raytracer
+  - [x] rasterize bias: fix ray energy uniform in all direction
+  - [ ] fix convex lens rayrtacing in webgl raytracer
+  - [ ] lens intersect outside of diemeter, when edge thickness is greater then zero
+  - [ ] random rays seem to be on the same place. Review generating random numbers
+  - [ ] physically accurate wavelength to color wavelength->XYZ->linearRGB->sRGB
+  - [ ] review data texture types. eg.: dont use alpha for light color. some texture a
+  - [ ] review tonemapping. support multiple colorspaces
+  - [ ] refactor glviewport to map entities to its internal data (eg initialrays array, transformArray, shapes Array materialsArray...)
+  - [ ] check if GLRaytracer leaks memory?
+  - [ ] mobile support
+  - [ ] distrubute lightSamples among all lights (based on intensity)
 
-- [ ] review tonemapping. support multiple colorspaces
-- [ ] refactor glviewport to map entities to its internal data (eg initialrays array, transformArray, shapes Array materialsArray...)
 
-- [x] fix svg raytracer.
-- [x] fix SVGRaytracer interacting with a rectangle.
-- [ ] support dispersion in svg-raytracer?
 
-- [ ] direction light width manip is a bit strange. should act on the axis only not by distance
-- [ ] refactor mousetools (eg. react component)
+- Interaction
+  - [ ] scaling a circle or a rectangle jumps to mouse.
+  - [x] direction light width manip is a bit strange. should act on the axis only not by distance
+  - [ ] refactor mousetools (eg. react component)
+  - [ ] mobile support
+  - [ ] review manipulators
+    - manupilator size should be independent of the zoom level
+    - corner and rotation manips should work on the cornsers or edges as well. Keep tha manipulators for new users.
 
-- [ ] check if GLRaytracer leaks memory?
-
-- [ ] mobile support
+- UI
+  - [ ] when window is narrow, the bottom bar buttons are not visible. break lines at categories if necessary
 
 
 # The code

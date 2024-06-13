@@ -93,7 +93,7 @@ function waveRandom(seed) {
 }
 
 function myrandom(seed=1){
-    // return Math.random()
+    return Math.random()
     return waveRandom(seed)
 }
 

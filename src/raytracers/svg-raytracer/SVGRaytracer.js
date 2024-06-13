@@ -89,7 +89,7 @@ function hitScene(ray, shapeEntities)
         {
             // find the first and the second cosest hitPoint
             const sortedIntersections = [shapeHitSpan.enter, shapeHitSpan.exit, sceneHitSpan.enter, sceneHitSpan.exit]
-                .filter(hit => hit && hit.t > 0) // Filter out null and non-positive intersections
+                .filter(hit => hit && hit.t >= 0) // Filter out null and non-positive intersections
                 .sort((a, b) => a.t - b.t); // Sort by the intersection time
 
             const enter = sortedIntersections[0];
@@ -108,11 +108,10 @@ function hitScene(ray, shapeEntities)
     return hitSpanResult;
 }
 
-const sampleScene = (ray, hit)=>{
+const sampleScene = (ray, hit, random_number)=>{
     let secondary;
     if(hit)
     {
-        const RandomNumber = myrandom();
         const [tangentX, tangentY] = [-hit.ny, hit.nx];
 
         // incident ray to tangent space
@@ -127,7 +126,7 @@ const sampleScene = (ray, hit)=>{
                 [woX, woY] =  sampleMirror(wiX, wiY);
                 break;
             case "diffuse":
-                [woX, woY] =  sampleDiffuse(wiX, wiY, RandomNumber);
+                [woX, woY] =  sampleDiffuse(wiX, wiY, myrandom(random_number*500+1));
                 break;
             case "glass":
                 const sellmeierIor =  sellmeierEquation(
@@ -136,7 +135,7 @@ const sampleScene = (ray, hit)=>{
                     ray.wavelength*1e-3
                 );
                 const cauchyIor =  cauchyEquation(1.44, 0.02, ray.wavelength*1e-3);
-                [woX, woY] =  sampleDielectric(wiX, wiY, cauchyIor, RandomNumber);
+                [woX, woY] =  sampleDielectric(wiX, wiY, cauchyIor, myrandom(random_number*100+1));
                 break;
             default:
                 [woX, woY] =  sampleMirror(wiX, wiY);
@@ -212,7 +211,7 @@ function SVGRaytracer()
             }
 
             /* secondary ray */
-            const secondary = sampleScene(ray, hit);
+            const secondary = sampleScene(ray, hit, myrandom(i+1));
 
             // return raytrace results
             return [hitSpan, hit, secondary];

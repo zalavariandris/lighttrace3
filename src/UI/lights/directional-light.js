@@ -1,6 +1,7 @@
 import React from "react";
 import Manipulator, {RotateManip} from "../Manipulators.js";
 const h = React.createElement;
+import * as vec2 from "../../vec2.js"
 
 function DirectionalLight({
     cx,cy,angle, width,
@@ -77,9 +78,11 @@ function DirectionalLight({
                 referenceX: cx+Math.cos(angle)*50,
                 referenceY: cy+Math.sin(angle)*50,
                 onDrag: e=>{
+                    const [localX, localY] = vec2.rotate([e.sceneX-cx, e.sceneY-cy], -angle);
+                    
                     e.value = {
                         cx,cy,angle,
-                        width: Math.hypot(e.sceneY-cy, e.sceneX-cx)*2
+                        width: Math.max(0, (localY-cx)*2+10)
                     }
                     onChange(e);
                 }

@@ -18,6 +18,8 @@ const wavelengthToColorShader = await loadShader("./src/raytracers//gl-raytracer
 
 import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../sampleLights.js";
 
+import { myrandom } from "../../utils.js";
+
 function sampleLight(entity, lightSamples)
 {
     switch (entity.light.type) {
@@ -451,6 +453,10 @@ class GLRaytracer{
                     break;
             }
         });
+        console.log(scene)
+        console.log(shapeEntities)
+        console.log(shapeData)
+        console.log(materialData)
 
         /*
          * Trace Rays
@@ -492,7 +498,7 @@ class GLRaytracer{
                     incidentLightsTexture: this.lightDataTexture,
                     hitDataTexture: this.hitDataTexture,
                     hitMaterialTexture: this.hitMaterialTexture,
-                    SEED: myrandom()
+                    SEED: myrandom(Math.random())
                 },
                 frag:bounceRaysShader
             })()

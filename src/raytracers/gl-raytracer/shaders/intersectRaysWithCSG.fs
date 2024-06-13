@@ -12,7 +12,7 @@ uniform vec2 rayDataResolution;
 uniform float shapesCount;
 uniform vec3 transformData[MAX_SHAPES];
 uniform vec4 shapeData[MAX_SHAPES];
-uniform vec2 materialData[MAX_SHAPES];
+uniform vec4 materialData[MAX_SHAPES];
 
 
 struct Ray{
@@ -94,81 +94,9 @@ float smallestPositive(float a, float b, float value)
 }
 
 /* ray circle intersections*/
-struct HitSpan{
-    float tEnter;
-    float tExit;
-};
-
-HitSpan Union(HitSpan A, HitSpan B)
-{
-    // closest enter
-    float tEnter = A.tEnter;
-    if(B.tEnter>0.0 && B.tEnter<tEnter) {tEnter = B.tEnter;}
-
-    //farthest exit
-    float tExit = A.tExit;
-    if(B.tExit>0.0 && B.tExit<tExit){tExit = B.tExit;}
-
-    return HitSpan(tEnter, tExit);
-}
-
-HitSpan Intersection(HitSpan A, HitSpan B){
-    //farthest enter
-    float tEnter = A.tEnter;
-    if(B.tEnter>0.0 && B.tEnter>tEnter) {tEnter = B.tEnter;}
-
-    // closest exit
-    float tExit = A.tExit;
-    if(B.tExit>0.0 && B.tExit>tExit){tExit = B.tExit;}
-
-    return HitSpan(tEnter, tExit);
-}
-
-HitSpan Difference(HitSpan A, HitSpan B)
-{
-    // closest enter
-    float tEnter = A.tEnter;
-    if(B.tExit>0.0 && B.tExit<tEnter) {tEnter = B.tExit;}
-
-    //farthest exit
-    float tExit = A.tExit;
-    if(B.tEnter>0.0 && B.tEnter<tExit){tExit = B.tEnter;}
-
-    return HitSpan(tEnter, tExit);
-}
-
-HitSpan intersect(Ray ray, Circle circle)
-{
-    vec2 p = ray.origin - circle.center;
-    float B = dot(p, ray.direction);
-    float C = dot(p, p) - circle.radius*circle.radius;
-    float detSq = B*B - C;
-    if (detSq >= 0.0)
-    {
-        float det = sqrt(detSq);
-        float tNear = max(0.0, -B - det);
-        float tFar  = max(0.0, -B + det);
-        return HitSpan(tNear, tFar);
-    }
-}
-
-HitSpan intersect(Ray incidentRay, Rectangle rectangle)
-{
-    Ray ray = Ray(rotate(incidentRay.origin, -rectangle.angle, rectangle.center), rotate(incidentRay.direction, -rectangle.angle));
-
-    float tNearX = (rectangle.center.x - rectangle.width  / 2.0 - ray.origin.x) / ray.direction.x;
-    float tNearY = (rectangle.center.y - rectangle.height / 2.0 - ray.origin.y) / ray.direction.y;
-    float tFarX =  (rectangle.center.x + rectangle.width  / 2.0 - ray.origin.x) / ray.direction.x;
-    float tFarY =  (rectangle.center.y + rectangle.height / 2.0 - ray.origin.y) / ray.direction.y;
-
-    float tNear = max(min(tNearX, tFarX), min(tNearY, tFarY));
-    float tFar = min(max(tNearX, tFarX), max(tNearY, tFarY));
-
-    return HitSpan(tNear, tFar);
-}
-/*return closest intersection along the ray*/
 HitInfo hitTest(Ray ray, Circle circle)//vec2 center, float radius)
 {
+    /*return closest intersection along the ray*/
     vec2 p = ray.origin - circle.center;
     float B = dot(p, ray.direction);
     float C = dot(p, p) - circle.radius*circle.radius;
@@ -469,6 +397,7 @@ Ray sampleCurrentRay()
 
     return Ray(rayPos, rayDir);
 }
+
 void main()
 {
     // unpack ray from data texture

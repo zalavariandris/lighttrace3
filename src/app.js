@@ -54,7 +54,7 @@ function Viewport(props)
     const [viewBox, setViewBox] = React.useState( JSON.parse(localStorage.getItem("viewBox")) || {x:0, y:0, w:512, h:512});
     const settings = React.useSyncExternalStore(settingsStore.subscribe, settingsStore.getSnapshot);
 
-    // [resistend viewbox]
+    // presistent viewbox
     React.useEffect(()=>{
         localStorage.setItem("viewBox", JSON.stringify(viewBox));
     }, [viewBox]);
@@ -78,6 +78,13 @@ function Viewport(props)
     // display zoom level
     const svgRef = React.useRef(null)
     const zoom = calcZoom([window.innerWidth, window.innerHeight], viewBox);
+    document.documentElement.style.setProperty("--zoom", `${zoom}`);
+
+    // set css zoomlevel variable
+    React.useEffect(()=>{
+        const zoom = calcZoom([window.innerWidth, window.innerHeight], viewBox);
+        document.documentElement.style.setProperty("--zoom", `${zoom}`);
+    }, viewBox)
 
     return h("div", {
         ref: ref, 

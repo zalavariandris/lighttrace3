@@ -23,12 +23,11 @@ import PointLight from "../UI/lights/point-light.js"
 import DirectionalLight from "../UI/lights/directional-light.js"
 
 // UTILS
-
-
 function viewboxString(viewBox)
 {
     return viewBox.x+" "+viewBox.y+" "+viewBox.w+" "+viewBox.h;
 }
+
 function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...props})
 {
     const scene = React.useSyncExternalStore(entityStore.subscribe, entityStore.getSnapshot);

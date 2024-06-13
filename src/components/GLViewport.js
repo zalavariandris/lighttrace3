@@ -40,7 +40,6 @@ function GLViewport({
         }
     }, []);
 
-
     // Progressive Raytrace on AnimationFRame
     const requestId = React.useRef();
     const render = (timestamp) => {

@@ -14,7 +14,23 @@ const EPSILON = 0.001;
 
 const h = React.createElement;
 
-function hitScene(ray, shapeEntities){
+function makeRay(x,y,dx,dy,intensity, wavelength){
+    return {x,y,dx,dy,intensity, wavelength};
+}
+
+
+function hitScene(ray, shapeEntities)
+{
+    // adjust ray to avoud zero distance collisions   
+    const adjustedRay = ray ? Object.freeze(makeRay(
+        ray.x+ray.dx*EPSILON, 
+        ray.y+ray.dy*EPSILON,
+        ray.dx,
+        ray.dy, 
+        ray.intensity, 
+        ray.material
+    )):null;
+
     /* intersect rays with CSG scene */
     const hitSpanResult = shapeEntities.reduce((sceneHitSpan, entity)=>{
         const cx = entity.transform.translate.x;
@@ -23,13 +39,13 @@ function hitScene(ray, shapeEntities){
         let shapeHitSpan;
         switch (entity.shape.type) {
             case "circle":
-                shapeHitSpan = hitCircle(ray, makeCircle(
+                shapeHitSpan = hitCircle(adjustedRay, makeCircle(
                     cx, 
                     cy, 
                     entity.shape.radius));
                 break;
             case "rectangle":
-                shapeHitSpan = hitRectangle(ray, makeRectangle(
+                shapeHitSpan = hitRectangle(adjustedRay, makeRectangle(
                     cx, 
                     cy, 
                     angle, 
@@ -37,7 +53,7 @@ function hitScene(ray, shapeEntities){
                     entity.shape.height));
                 break;
             case "triangle":
-                shapeHitSpan = hitTriangle(ray, makeTriangle(
+                shapeHitSpan = hitTriangle(adjustedRay, makeTriangle(
                     entity.transform.translate.x, 
                     entity.transform.translate.y, 
                     entity.transform.rotate, 
@@ -51,7 +67,7 @@ function hitScene(ray, shapeEntities){
                 shapeHitSpan = hitLine(ray, makeLineSegment( x1, y1, x2, y2));
                 break;
             case "sphericalLens":
-                shapeHitSpan = hitSphericalLens(ray, makeSphericalLens(
+                shapeHitSpan = hitSphericalLens(adjustedRay, makeSphericalLens(
                     cx, 
                     cy, 
                     angle, 
@@ -119,7 +135,6 @@ const sampleScene = (ray, hit)=>{
                     ray.wavelength*1e-3
                 );
                 const cauchyIor =  cauchyEquation(1.44, 0.02, ray.wavelength*1e-3);
-                // console.log("ior", sellmeierIor);
                 [woX, woY] =  sampleDielectric(wiX, wiY, cauchyIor, RandomNumber);
                 break;
             default:
@@ -145,11 +160,6 @@ const sampleScene = (ray, hit)=>{
     return secondary;
 }
 
-
-function makeRay(x,y,dx,dy,intensity, wavelength){
-    return {x,y,dx,dy,intensity, wavelength};
-}
-
 function SVGRaytracer()
 {
     const scene = React.useSyncExternalStore(entityStore.subscribe, entityStore.getSnapshot);
@@ -162,9 +172,8 @@ function SVGRaytracer()
     /* prepare svg visualization objects */
     let allRays = [];
     let allIntersectionSpans = []
-
+    let allHits = []
     let rayLines = [];
-    let hitLines = [];
 
     /* CAST INITIAL RAYS */
     let rays = Object.entries(scene)
@@ -182,72 +191,39 @@ function SVGRaytracer()
             }
         }).flat(1);
 
-    /* BOUNCE RAYS AROUND SCENE */
-    
+    /* RAYTRACE */
     const shapeEntities = Object.values(scene).filter(entity=>entity.hasOwnProperty("shape"));
     for(let i=0; i<settings.raytrace.maxBounce; i++)
     {
-        /* intersect scene */
+        /* Raytrace Scene */
         const raytraceInfo = rays.map(ray=>{
             if(ray==null){return [null,null, null];}
 
-            // adjust ray to avoud zero distance collisions   
-            ray = makeRay(
-                ray.x+ray.dx*EPSILON, 
-                ray.y+ray.dx*EPSILON,
-                ray.dx,ray.dy, 
-                ray.intensity, 
-                ray.material
-            );
-
             // calc ray hitspans with scene
-            const hitSpan = hitScene(ray, shapeEntities);
+            const hitSpan = Object.freeze(hitScene(ray, shapeEntities));
 
             // closest intersection point of sceneHitSpanPerRay
             let hit;
             if(hitSpan){
-                hit = hitSpan.enter.t>EPSILON ? hitSpan.enter : hitSpan.exit;
+                hit = Object.freeze(hitSpan.enter.t>EPSILON ? hitSpan.enter : hitSpan.exit);
             }else{
                 hit = null;
             }
 
             /* secondary ray */
-            const secondary = sampleScene(ray, hit);
+            const secondary = Object.freeze(sampleScene(ray, hit));
 
             // return raytrace results
             return [hitSpan, hit, secondary];
         });
 
-        const [hitSpans, hits, S] = _.unzip(raytraceInfo);
+        const [hitSpans, hits, secondaries] = _.unzip(raytraceInfo);
 
-
-        // /* BOUNCE RAYS */
-        let secondaries = _.zip(rays, hits).map( ([ray, hit])=>sampleScene(ray, hit));
-        // secondaries = S;
-
-        /* add lines to SVG */
+        /* collect */
+        allRays = [...allRays, ...rays]
         allIntersectionSpans = [...allIntersectionSpans, ...hitSpans];
-        allRays = [...allRays, ...rays].filter(ray=>ray);
-        rayLines = [...rayLines, ..._.zip(rays, hits).map(([ray, hit])=>{
-            if(ray==null) {return null;}
-            return {
-                x1: ray.x,
-                y1: ray.y,
-                x2: hit?hit.x:ray.x+ray.dx*9999,
-                y2: hit?hit.y:ray.y+ray.dy*9999,
-                opacity: ray.intensity
-            }
-        }).filter(line=>line)];
+        allHits = [...allHits, ...hits];
 
-        hitLines = [...hitLines, ...hits.map(hit=>{
-            if(hit==null) {return null;}
-            return {
-                x1: hit.x,
-                y1: hit.y,
-                x2: hit.x+hit.nx*20,
-                y2: hit.y+hit.ny*20
-            };
-        }).filter(line=>line)]
         rays = secondaries;
     }
     
@@ -257,34 +233,35 @@ function SVGRaytracer()
             pointerEvents: "none"
         }
     },
-        // draw rayArrows
-        settings.display.paths && rayLines.map(path =>
-            h('g', {
-                className: 'lightpaths',
-            },
+        h('g', {
+            className: 'lightpaths',
+        },
+            settings.display.paths && _.zip(allRays, allHits).filter(([ray, hit])=>ray).map(([ray, hit])=>
                 h('line', {
-                    x1: path.x1,
-                    y1: path.y1,
-                    x2: path.x2,
-                    y2: path.y2,
+                    x1: ray.x,
+                    y1: ray.y,
+                    x2: hit?hit.x:ray.x+ray.dx*9999,
+                    y2: hit?hit.y:ray.y+ray.dy*9999,
                     className: 'lightray',
                     vectorEffect: "non-scaling-stroke",
                     style: {
                         stroke: "white",
-                        opacity: path.opacity
+                        opacity: ray.intensity
                     }
                 })
             )
         ),
 
         // draw hit normals
-        h('g', {className: 'hitNormals'},
-        settings.display.normals && hitLines.map(path =>
-            h('line', {
-                    x1: path.x1,
-                    y1: path.y1,
-                    x2: path.x2,
-                    y2: path.y2,
+        h('g', {
+            className: 'hitNormals'
+        },
+            settings.display.normals && allHits.filter(hit=>hit).map(hit=>
+                h('line', {
+                    x1: hit.x,
+                    y1: hit.y,
+                    x2: hit.x+hit.nx*20,
+                    y2: hit.y+hit.ny*20,
                     className: 'intersection',
                     vectorEffect: "non-scaling-stroke",
                     style: {
@@ -295,11 +272,11 @@ function SVGRaytracer()
             )
         ),
 
-        // draw ray paths
+        // draw rays
         h('g', {
             className: 'rays'
         },
-            settings.display.rays && allRays.map(ray =>
+            settings.display.rays && allRays.filter(ray=>ray).map(ray =>
                 h('line', {
                     x1: ray.x,
                     y1: ray.y,
@@ -315,8 +292,10 @@ function SVGRaytracer()
             )
         ),
 
-        // draw hitsopans
-        h("g", {className:"intersection-spans"},
+        // draw hitSpans
+        h("g", {
+            className:"intersection-spans"
+        },
             settings.display.hitSpans && allIntersectionSpans.filter(ispan=>ispan).map(ispan =>
                 h('line', {
                     x1: ispan.enter.x,

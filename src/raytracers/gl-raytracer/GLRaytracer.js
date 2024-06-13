@@ -420,8 +420,7 @@ class GLRaytracer{
             entity.transform.rotate || 0.0
         ]);
 
-        const shapeData = shapeEntities
-        .map(entity=>{
+        const shapeData = shapeEntities.map(entity=>{
             switch (entity.shape.type) {
                 case "circle":
                     return [0, entity.shape.radius,0,0];
@@ -440,15 +439,14 @@ class GLRaytracer{
             return []
         });
 
-        const materialData = shapeEntities
-        .map(entity=>{
+        const materialData = shapeEntities.map(entity=>{
             switch (entity.material.type) {
                 case "mirror":
-                    return [0, entity.material.roughness || 0.0];
+                    return [0, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
                 case "glass":
-                    return [1, entity.material.roughness || 0.0];
+                    return [1, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
                 case "diffuse":
-                    return [2, entity.material.roughness || 0.0];
+                    return [2, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
                 default:
                     break;
             }

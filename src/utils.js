@@ -71,4 +71,30 @@ function makePathFromLens({cx,cy,diameter,edgeThickness, centerThickness})
     `L ${cx-edgeThickness/2} ${cy-diameter/2}` // this should work with close path 'Z'
 }
 
-export {rotatePoint, makeCircleFromThreePoints, arcFromThreePoints, makePathFromLens};
+function xoshiro128ss(a, b, c, d) {
+    return function() {
+        let t = b << 9, r = b * 5;
+        r = (r << 7 | r >>> 25) * 9;
+        c ^= a;
+        d ^= b;
+        b ^= c;
+        a ^= d;
+        c ^= t;
+        d = d << 11 | d >>> 21;
+        return (r >>> 0) / 4294967296;
+    }
+}
+
+
+
+function waveRandom(seed) {
+    var x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+}
+
+function myrandom(seed=1){
+    // return Math.random()
+    return waveRandom(seed)
+}
+
+export {rotatePoint, makeCircleFromThreePoints, arcFromThreePoints, makePathFromLens, myrandom};

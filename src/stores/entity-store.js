@@ -1,6 +1,6 @@
 import {produce} from "immer";
 import _ from "lodash"
-
+import { myrandom } from "../utils.js";
 const defaultScene = {
     // "light": {
     //     transform:{
@@ -419,7 +419,7 @@ function emitChange() {
 };
 
 const generateId = ()=>{
-    return Math.random().toString(32).substring(2, 9);
+    return myrandom().toString(32).substring(2, 9);
 };
 
 export default {

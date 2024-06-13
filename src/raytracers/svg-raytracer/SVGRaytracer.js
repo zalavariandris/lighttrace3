@@ -9,6 +9,7 @@ import { makeCircle, makeTriangle, makeLineSegment, makeRectangle, makeSpherical
 import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../sampleLights.js";
 import { HitInfo, HitSpan, collapseSpan, firstUnion, hitCircle, hitLine, hitTriangle, hitSphericalLens, hitRectangle } from "./hitTest.js"
 import { sampleMirror, sampleDiffuse, sampleDielectric, sellmeierEquation, cauchyEquation } from "./sampleMaterials.js";
+import { myrandom} from "../../utils.js"
 
 const EPSILON = 0.001;
 
@@ -111,7 +112,7 @@ const sampleScene = (ray, hit)=>{
     let secondary;
     if(hit)
     {
-        const RandomNumber = Math.random();
+        const RandomNumber = myrandom();
         const [tangentX, tangentY] = [-hit.ny, hit.nx];
 
         // incident ray to tangent space

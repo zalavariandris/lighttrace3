@@ -8,7 +8,7 @@
  * @returns {number} The sampled wavelength in nanometers.
  */
 
-function sampleBlackbody(temperature, samplesStep=10)
+function sampleBlackbody(temperature, random_number, samplesStep=10)
 {
     // Constants for Planck's law calculation
     const h = 6.62607015e-34; // Planck constant in m^2 kg / s
@@ -56,8 +56,7 @@ function sampleBlackbody(temperature, samplesStep=10)
     }, []);
 
     // Sample a wavelength based on the cumulative probabilities
-    const random = Math.random();
-    const sampledIndex = cumulativeProbabilities.findIndex(cumProb => random < cumProb);
+    const sampledIndex = cumulativeProbabilities.findIndex(cumProb => random_number < cumProb);
     const sampledWavelength = radianceMap[sampledIndex].wavelength;
 
     return sampledWavelength;

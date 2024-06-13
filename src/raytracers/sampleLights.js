@@ -1,5 +1,5 @@
 import {sampleBlackbody} from "./blackbody.js"
-
+import {myrandom} from "../utils.js"
 
 function samplePointLight(entity, lightSamples)
 {
@@ -11,7 +11,7 @@ function samplePointLight(entity, lightSamples)
             dx:Math.cos(angle), 
             dy:Math.sin(angle),
             intensity: entity.light.intensity/lightSamples,
-            wavelength: sampleBlackbody(entity.light.temperature)
+            wavelength: sampleBlackbody(entity.light.temperature, myrandom(k+1))
         };
     });
 };
@@ -26,7 +26,7 @@ function sampleLaserLight(entity, lightSamples)
             dx:Math.cos(angle), 
             dy:Math.sin(angle),
             intensity: entity.light.intensity/lightSamples,
-            wavelength: sampleBlackbody(entity.light.temperature)
+            wavelength: sampleBlackbody(entity.light.temperature, myrandom(k+1))
         };
     });
 };
@@ -39,7 +39,7 @@ function sampleDirectionalLight(entity, lightSamples, uniform=false)
     const centerY = entity.transform.translate.y;
 
     return Array.from({length: lightSamples}).map((_, i)=>{
-        const randomRayOffset = entity.light.width*Math.random()-entity.light.width/2;
+        const randomRayOffset = entity.light.width*myrandom()-entity.light.width/2;
         const uniformOffset = entity.light.width*(i/(lightSamples-1))-entity.light.width/2;
         const rayOffset = uniform ? uniformOffset : randomRayOffset; 
         return {
@@ -48,7 +48,7 @@ function sampleDirectionalLight(entity, lightSamples, uniform=false)
             dx: Math.cos(entity.transform.rotate),
             dy: Math.sin(entity.transform.rotate),
             intensity: entity.light.intensity/lightSamples,
-            wavelength: sampleBlackbody(entity.light.temperature)
+            wavelength: sampleBlackbody(entity.light.temperature, myrandom(i+1))
         };
     });
 }

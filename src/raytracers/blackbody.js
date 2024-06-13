@@ -1,6 +1,6 @@
 import React, {Children, useState} from "react"
 import _ from "lodash"
-
+import {myrandom} from "../utils.js"
 const h = React.createElement;
 
 function blackbodyIntensity(wavelength, temperature) {
@@ -44,11 +44,8 @@ function blackbodyRadiationAtAllFrequencies(temperature, frequencyMin, frequency
     return totalRadiance;
 }
 
-function sample(discrete_probability_distributions)
-{
-    // Generate a random number between 0 and 1
-    const random_number = Math.random();
-    
+function sample(discrete_probability_distributions, random_number)
+{    
     // Initialize cumulative probability
     let cumulative_probability = 0;
     
@@ -141,7 +138,7 @@ function Plot({
  * @param {number} samplesStep - The step size for sampling wavelengths within the visible spectrum. Default is 10 nm.
  * @returns {number} The sampled wavelength in nanometers.
  */
-function sampleBlackbody(temperature, samplesStep=10)
+function sampleBlackbody(temperature, random_number, samplesStep=10)
 {
     // Constants for Planck's law calculation
     const h = 6.62607015e-34; // Planck constant in m^2 kg / s
@@ -189,8 +186,7 @@ function sampleBlackbody(temperature, samplesStep=10)
     }, []);
 
     // Sample a wavelength based on the cumulative probabilities
-    const random = Math.random();
-    const sampledIndex = cumulativeProbabilities.findIndex(cumProb => random < cumProb);
+    const sampledIndex = cumulativeProbabilities.findIndex(cumProb => random_number < cumProb);
     const sampledWavelength = radianceMap[sampledIndex].wavelength;
 
     return sampledWavelength;
@@ -222,7 +218,7 @@ function BlackBody()
     const probabilities = visibleIntensities.map(intensity=>intensity/sumIntensity);
     for(let i=0;i<100000;i++)
     {
-        const sampled_wavelength_index = sample(probabilities);
+        const sampled_wavelength_index = sample(probabilities, myrandom(i+1));
         selectedCount[sampled_wavelength_index]+=1;
     }
 

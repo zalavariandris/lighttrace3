@@ -492,7 +492,7 @@ class GLRaytracer{
                     incidentLightsTexture: this.lightDataTexture,
                     hitDataTexture: this.hitDataTexture,
                     hitMaterialTexture: this.hitMaterialTexture,
-                    SEED: Math.random()
+                    SEED: myrandom()
                 },
                 frag:bounceRaysShader
             })()

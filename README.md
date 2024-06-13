@@ -41,8 +41,8 @@
 - [x] persistent viewbox
 - [x] stop gl rendering when hidden
 - [x] circle size handler is usable even when not selected...
-
-
+- [ ] with the new SVG Ratracer hitLines has problams when oncluded in a scene
+- [ ] Since SVG raytracing uses random numbers, its flickering. Add a uniform random number to diffuse sampling, or a random number with seed.
 - [/] handle errors in components. eg.: raytracing errors in SVGRaytracer component
 - [ ] distrubute lightSamples among all lights (based on intensity)
 

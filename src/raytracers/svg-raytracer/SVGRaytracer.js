@@ -64,7 +64,7 @@ function hitScene(ray, shapeEntities)
                 const y1 = cy - Math.sin(angle)*entity.shape.length/2;
                 const x2 = cx + Math.cos(angle)*entity.shape.length/2;
                 const y2 = cy + Math.sin(angle)*entity.shape.length/2;
-                shapeHitSpan = hitLine(ray, makeLineSegment( x1, y1, x2, y2));
+                shapeHitSpan = hitLine(adjustedRay, makeLineSegment( x1, y1, x2, y2));
                 break;
             case "sphericalLens":
                 shapeHitSpan = hitSphericalLens(adjustedRay, makeSphericalLens(
@@ -211,7 +211,7 @@ function SVGRaytracer()
             }
 
             /* secondary ray */
-            const secondary = Object.freeze(sampleScene(ray, hit));
+            const secondary = sampleScene(ray, hit);
 
             // return raytrace results
             return [hitSpan, hit, secondary];
@@ -306,12 +306,8 @@ function SVGRaytracer()
                     vectorEffect: "non-scaling-stroke",
                     markerEnd:"url(#arrow)",
                     stroke:"cyan",
-                    strokeWidth: 5
-                    // style: {
-                    //     stroke: "cyan",
-                    //     strokeWidth: 5,
-                    //     opacity: 0.5
-                    // }
+                    strokeWidth: 3,
+                    opacity: 0.3
                 })
             )
         )

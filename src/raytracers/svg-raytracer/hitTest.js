@@ -293,8 +293,14 @@ function hitLine(ray, {x1, y1, x2, y2})
     // Calculate the determinant
     const determinant = ray.dx * tangentY - ray.dy * tangentX;
 
-    if (Math.abs(determinant) < 0){
+    if (Math.abs(determinant) < EPSILON){
         return null;
+    }
+
+    if(determinant>0){ // from outside
+
+    }else{ // from inside
+
     }
 
     // Calculate the intersection along the ray
@@ -316,7 +322,7 @@ function hitLine(ray, {x1, y1, x2, y2})
 
     return new HitSpan(
         new HitInfo(tNear, Ix, Iy, Nx, Ny, -1),
-        new HitInfo(tNear+EPSILON, Ix, Iy, Nx, Ny, -1)
+        new HitInfo(tNear+1, Ix, Iy, -Nx, -Ny, -1)
     );
 
     //

@@ -146,6 +146,7 @@ function subtractSpan(a, b)
     // here we only return the closest one
     if(a && b)
     {
+        // Possible cases
         //           AAAAAAAAA
         //  1.    bb ---------
         //  2.    bbbbbbbbbb--
@@ -153,51 +154,58 @@ function subtractSpan(a, b)
         //  4.       ----bb
         //  5.       ------bbbbbbbbb
         //  6.       --------   bb
-        //1.
 
-        b.enter.nx*=-1;
-        b.enter.ny*=-1;
-        b.exit.nx*=-1;
-        b.exit.ny*=-1;
+        // Invert normals of span b
+        b = new HitSpan(
+            new HitInfo(b.enter.t,b.enter.x,b.enter.y,-b.enter.nx,-b.enter.ny, b.enter.material),
+            new HitInfo(b.exit.t,b.exit.x,b.exit.y,-b.exit.nx,-b.exit.ny, b.enter.material),
+        )
 
+        // Case 1: Span b is completely before span a
+        // no overlapp, return span a
         if( b.enter.t <= a.enter.t && 
             b.exit.t  < a.enter.t){
             return a;
         }
 
-        //2.
-        if( b.enter.t < a.enter.t &&
-            b.exit.t  > a.enter.t && 
-            b.exit.t  < a.exit.t){
+        // Case 2: Span b starts before span a and ends within span a
+        if( b.enter.t <= a.enter.t &&
+            b.exit.t  >  a.enter.t && 
+            b.exit.t  <  a.exit.t){
             return new HitSpan(b.exit, a.exit)
         }
 
-        //3.
-        if( b.enter.t < a.enter.t &&
-            b.exit.t  > a.exit.t ){
+        // Case 3: Span b completely covers span a
+        // no span remains
+        if( b.enter.t <= a.enter.t &&
+            b.exit.t  >  a.exit.t ){
             return null
         }
 
-        //4.
+        // Case 4: Span b is completely within span a
+        // keep the first part of span a
         if( b.enter.t >= a.enter.t &&
-            b.exit.t < a.exit.t){
+            b.exit.t  <  a.exit.t){
             return new HitSpan(a.enter, b.enter)
         }
 
-        //5.
+        // Case 5: Span b starts within span a and ends after span a
         if( b.enter.t >= a.enter.t &&
-            b.enter.t < a.exit.t &&
-            b.exit.t  > a.exit.t ){
+            b.enter.t <  a.exit.t &&
+            b.exit.t  >  a.exit.t ){
             return new HitSpan(a.enter, b.enter)
         }
 
-        //6.
-        if( b.enter.t > a.enter.t &&
-            b.exit.t  > a.exit.t
+        // Case 6: Span b starts after span a
+        // no overlapp, return span a
+        if( b.enter.t >= a.enter.t &&
+            b.exit.t  >  a.exit.t
         ){
             return a;
         }
     }
+
+    // Default return if no conditions are met
     return a;
 }
 

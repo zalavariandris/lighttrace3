@@ -9,10 +9,11 @@ precision mediump float;
 uniform sampler2D rayDataTexture;
 uniform vec2 rayDataResolution;
 
+uniform float shapesCount;
 uniform vec3 transformData[MAX_SHAPES];
 uniform vec4 shapeData[MAX_SHAPES];
 uniform vec2 materialData[MAX_SHAPES];
-uniform float shapesCount;
+
 
 struct Ray{
     vec2 origin;

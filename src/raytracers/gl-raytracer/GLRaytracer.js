@@ -74,7 +74,6 @@ class GLRaytracer{
             debug: true,
             maxBounce: 7,
             downres: 1,
-            showNormals:true
         };
 
         this.animate();
@@ -324,15 +323,14 @@ class GLRaytracer{
     {
         const regl = this.regl;
         /* CLEAR THE CANVAS */
-        regl.clear({framebuffer: this.sceneFbo, color: [0,0,0,1.0]});
+        
         if(!scene || !viewBox)
         {
-
+            regl.clear({framebuffer: null, color: [0,0,0,1.0]});
             return;
         }
 
 
-        
 
         const lights = Object.entries(scene)
         .filter( ([key, entity])=>entity.hasOwnProperty("light") && entity.hasOwnProperty("transform"));
@@ -345,7 +343,6 @@ class GLRaytracer{
         this.totalPasses+=1;
         
 
-        
         const backgroundLightness = 0.03;
 
         /*
@@ -413,16 +410,17 @@ class GLRaytracer{
         })()
 
         /* prepare scene data for GPU */
-        const transformData = Object.values(scene)
+        const shapeEntities = Object.values(scene)
         .filter(entity=>entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform") && entity.hasOwnProperty("material"))
+
+        const transformData = shapeEntities
         .map(entity=>[
             entity.transform.translate.x, 
             entity.transform.translate.y, 
             entity.transform.rotate || 0.0
         ]);
 
-        const shapeData = Object.values(scene)
-        .filter(entity=>entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform") && entity.hasOwnProperty("material"))
+        const shapeData = shapeEntities
         .map(entity=>{
             switch (entity.shape.type) {
                 case "circle":
@@ -442,8 +440,7 @@ class GLRaytracer{
             return []
         });
 
-        const materialData = Object.values(scene)
-        .filter(entity=>entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform") && entity.hasOwnProperty("material"))
+        const materialData = shapeEntities
         .map(entity=>{
             switch (entity.material.type) {
                 case "mirror":
@@ -460,6 +457,7 @@ class GLRaytracer{
         /*
          * Trace Rays
          */
+        regl.clear({framebuffer: this.sceneFbo, color: [0,0,0,1.0]});
         /* resize output framebuffers */
         if(this.sceneFbo.width!=this.outputResolution[0] || this.sceneFbo.height!=this.outputResolution[1])
         {
@@ -471,15 +469,18 @@ class GLRaytracer{
         for(let i=0; i<this.settings.maxBounce; i++)
         {
             /* INTERSECT RAYS WITH CSG */
+
             regl({...QUAD, vert:PASS_THROUGH_VERTEX_SHADER,
                 framebuffer: this.hitDataFbo,
                 uniforms: {
                     rayDataTexture: this.rayDataTexture,
                     rayDataResolution: [this.rayDataTexture.width, this.rayDataTexture.height],
-                    transformData: transformData.flat(),
-                    shapeData: shapeData.flat(),
-                    materialData: materialData.flat(),
-                    shapesCount: shapeData.length
+                    shapesCount: shapeData.length,
+                    ...shapeEntities.length>0? { // include shape info in uniforms only if they exist. otherwise regl throws an error. TODO: review this
+                        transformData: transformData.flat(),
+                        shapeData: shapeData.flat(),
+                        materialData: materialData.flat()
+                    }:{}
                 },
                 frag: intersectRaysWithCSGShader
             })();

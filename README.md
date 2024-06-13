@@ -66,3 +66,11 @@
 - [ ] check if GLRaytracer leaks memory?
 
 - [ ] mobile support
+
+
+# The code
+## gl-raytracer
+
+- rayDataTexture:
+  XY: ray.origin
+  ZW: ray direction (normalized)

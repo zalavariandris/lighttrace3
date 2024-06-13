@@ -20,18 +20,6 @@ import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../s
 
 import { myrandom } from "../../utils.js";
 
-function sampleLight(entity, lightSamples)
-{
-    switch (entity.light.type) {
-        case "point":
-            return samplePointLight(entity, lightSamples);
-        case "laser":
-            return sampleLaserLight(entity, lightSamples);
-        case "directional":
-            return sampleDirectionalLight(entity, lightSamples);
-    }
-}
-
 function loadImageData(imagePath){
     return new Promise(resolve => {
         const im = new Image();
@@ -67,7 +55,6 @@ class GLRaytracer{
         this.canvas = canvas;
         this.outputResolution = [16, 16];
         this.listeners = []
-        this.totalSamples = 0;
         this.totalPasses = 0;
 
         // settings
@@ -77,17 +64,6 @@ class GLRaytracer{
             maxBounce: 7,
             downres: 1,
         };
-
-        this.animate();
-
-    }
-
-    animate()
-    {
-        this.animationHandler = requestAnimationFrame(()=>this.animate());
-        if(this.passesRendered<this.settings.targetPasses){
-            this.renderPass();
-        }
     }
 
     initGL()
@@ -251,7 +227,7 @@ class GLRaytracer{
     initFramebuffers()
     {
         const regl = this.regl;
-        /* Framebuffers for raytracing */
+
         this.rayDataFbo = regl.framebuffer({
             color: [
                 this.rayDataTexture,
@@ -318,7 +294,6 @@ class GLRaytracer{
             color: [0,0,0,1.0]
         });
         this.totalPasses=0;
-        this.totalSamples=0;
     }
 
     renderPass(scene, viewBox)
@@ -332,13 +307,10 @@ class GLRaytracer{
             return;
         }
 
-
-
         const lights = Object.entries(scene)
-        .filter( ([key, entity])=>entity.hasOwnProperty("light") && entity.hasOwnProperty("transform"));
+            .filter( ([key, entity])=>entity.hasOwnProperty("light") && entity.hasOwnProperty("transform"));
         
-        if(lights.length<1)
-            {
+        if(lights.length<1){
             regl.clear({framebuffer: null, color: [0,0,0,1.0]});
             return;
         }
@@ -347,12 +319,57 @@ class GLRaytracer{
 
         const backgroundLightness = 0.03;
 
+
+        /* prepare scene data for GPU */
+        const shapeEntities = Object.values(scene).filter(entity=>
+            entity.hasOwnProperty("shape") && 
+            entity.hasOwnProperty("transform") && 
+            entity.hasOwnProperty("material")
+        );
+
+        const transformData = shapeEntities.map(entity=>
+            [entity.transform.translate.x, entity.transform.translate.y, entity.transform.rotate || 0.0]
+        );
+
+        const shapeData = shapeEntities.map(entity=>{
+            switch (entity.shape.type) {
+                case "circle":
+                    return [0, entity.shape.radius,0,0];
+                case "rectangle":
+                    return [1, entity.shape.width, entity.shape.height, 0];
+                case "sphericalLens":
+                    return [2, entity.shape.diameter, entity.shape.edgeThickness, entity.shape.centerThickness];
+                case "triangle":
+                    return [3, entity.shape.size, 0,0];
+                case "line":
+                    return [4, entity.shape.length, 0,0];
+                default:
+                    return [0, 10,0,0];
+            }
+        });
+
+        const materialData = shapeEntities.map(entity=>{
+            switch (entity.material.type) {
+                case "mirror":
+                    return [0, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
+                case "glass":
+                    return [1, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
+                case "diffuse":
+                    return [2, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
+                default:
+                    return [0,0,0,0];
+            }
+        });
+
         /*
          * CAST INITIAL RAYS
          */
         /* filter entities to lights */
         const rays = Object.entries(scene)
-            .filter( ([key, entity])=>entity.hasOwnProperty("light") && entity.hasOwnProperty("transform") )
+            .filter( ([key, entity])=>
+                entity.hasOwnProperty("light") && 
+                entity.hasOwnProperty("transform")
+            )
             .map( ([key, entity])=>{
                 switch (entity.light.type) {
                     case "point":
@@ -362,18 +379,14 @@ class GLRaytracer{
                     case "directional":
                         return sampleDirectionalLight(entity, this.settings.lightSamples);
                     default:
-                        return {
-                            x:0, 
-                            y:0, 
-                            dx:0, 
-                            dy:0,
-                            intensity: 0,
-                            wavelength: 0
-                        }
+                        return makeRay(0,0,0,0,0,0);
                 }
             }).flat(1);
 
-        // calc output texture resolution to hold rays data
+        /* =========== *
+         * GL PIPELINE *
+         * =========== */
+        // calc output texture resolution to hold rays data on the GPU
         const dataTextureRadius = Math.ceil(Math.sqrt(rays.length));
     
         // upload data to an RGBA float texture  
@@ -382,7 +395,9 @@ class GLRaytracer{
             height: dataTextureRadius,
             format: "rgba",
             type: "float",
-            data: rays.map(ray=>[ray.x, ray.y, ray.dx, ray.dy]).extend([0,0,0,0], dataTextureRadius**2)
+            data: rays.map(ray=>
+                [ray.x, ray.y, ray.dx, ray.dy]
+            ).extend([0,0,0,0], dataTextureRadius**2)
         });
     
         this.lightDataTexture({
@@ -390,7 +405,9 @@ class GLRaytracer{
             height: dataTextureRadius,
             format: "rgba",
             type: "float",
-            data: rays.map(ray=>[ray.wavelength, ray.wavelength, ray.wavelength, ray.intensity]).extend([0,0,0,0], dataTextureRadius**2)
+            data: rays.map(ray=>
+                [ray.wavelength, ray.wavelength, ray.wavelength, ray.intensity]
+            ).extend([0,0,0,0], dataTextureRadius**2)
         });
 
         /* resize compute FBO to contain all rays */
@@ -411,56 +428,7 @@ class GLRaytracer{
             frag: wavelengthToColorShader
         })()
 
-        /* prepare scene data for GPU */
-        const shapeEntities = Object.values(scene)
-        .filter(entity=>entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform") && entity.hasOwnProperty("material"))
-
-        const transformData = shapeEntities
-        .map(entity=>[
-            entity.transform.translate.x, 
-            entity.transform.translate.y, 
-            entity.transform.rotate || 0.0
-        ]);
-
-        const shapeData = shapeEntities.map(entity=>{
-            switch (entity.shape.type) {
-                case "circle":
-                    return [0, entity.shape.radius,0,0];
-                case "rectangle":
-                    return [1, entity.shape.width, entity.shape.height, 0];
-                case "sphericalLens":
-                    return [2, entity.shape.diameter, entity.shape.edgeThickness, entity.shape.centerThickness];
-                case "triangle":
-                    return [3, entity.shape.size, 0,0];
-                case "line":
-                    return [4, entity.shape.length, 0,0];
-                default:
-                    return [0, 10,0,0];
-                    break;
-            }
-            return []
-        });
-
-        const materialData = shapeEntities.map(entity=>{
-            switch (entity.material.type) {
-                case "mirror":
-                    return [0, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
-                case "glass":
-                    return [1, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
-                case "diffuse":
-                    return [2, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
-                default:
-                    break;
-            }
-        });
-        console.log(scene)
-        console.log(shapeEntities)
-        console.log(shapeData)
-        console.log(materialData)
-
-        /*
-         * Trace Rays
-         */
+        /* clear main FBO */
         regl.clear({framebuffer: this.sceneFbo, color: [0,0,0,1.0]});
         /* resize output framebuffers */
         if(this.sceneFbo.width!=this.outputResolution[0] || this.sceneFbo.height!=this.outputResolution[1])
@@ -470,21 +438,23 @@ class GLRaytracer{
             this.postFbo2.resize(this.outputResolution[0], this.outputResolution[1]);
         }
 
+        /*
+         * Trace Rays
+         */
         for(let i=0; i<this.settings.maxBounce; i++)
         {
             /* INTERSECT RAYS WITH CSG */
-
             regl({...QUAD, vert:PASS_THROUGH_VERTEX_SHADER,
                 framebuffer: this.hitDataFbo,
                 uniforms: {
                     rayDataTexture: this.rayDataTexture,
                     rayDataResolution: [this.rayDataTexture.width, this.rayDataTexture.height],
                     shapesCount: shapeData.length,
-                    ...shapeEntities.length>0? { // include shape info in uniforms only if they exist. otherwise regl throws an error. TODO: review this
+                    ...shapeEntities.length>0 && { // include shape info in uniforms only if they exist. otherwise regl throws an error. TODO: review this
                         transformData: transformData.flat(),
                         shapeData: shapeData.flat(),
                         materialData: materialData.flat()
-                    }:{}
+                    }
                 },
                 frag: intersectRaysWithCSGShader
             })();
@@ -529,16 +499,12 @@ class GLRaytracer{
             });
 
             /* Swap Buffers */
-            [this.rayDataFbo, this.secondaryRayDataFbo] = [this.secondaryRayDataFbo, this.rayDataFbo];
-            [this.rayDataTexture, this.secondaryRayDataTexture] = [this.secondaryRayDataTexture, this.rayDataTexture];
+            [this.rayDataFbo, this.secondaryRayDataFbo]             = [this.secondaryRayDataFbo, this.rayDataFbo];
+            [this.rayDataTexture, this.secondaryRayDataTexture]     = [this.secondaryRayDataTexture, this.rayDataTexture];
             [this.lightDataTexture, this.secondaryLightDataTexture] = [this.secondaryLightDataTexture, this.lightDataTexture];
         }
 
-        this.totalSamples+=rays.length;
-        // this.emitChange()
-
         /* POST PROCESSING */
-
         /* accumulate */
         regl({...QUAD,
             framebuffer: this.postFbo1,

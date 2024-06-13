@@ -243,8 +243,67 @@ class GLRaytracer{
     {
         const regl = this.regl;
 
+        /* Cast initial rays */
+        /* filter entities to lights */
+        const rays = Object.entries(scene).filter( ([key, entity])=>
+            entity.hasOwnProperty("light") && 
+            entity.hasOwnProperty("transform")
+        )
+        .map( ([key, entity])=>{
+            switch (entity.light.type) {
+                case "point":
+                    return samplePointLight(entity, this.settings.lightSamples);
+                case "laser":
+                    return sampleLaserLight(entity, this.settings.lightSamples);
+                case "directional":
+                    return sampleDirectionalLight(entity, this.settings.lightSamples);
+                default:
+                    return makeRay(0,0,0,0,0,0);
+            }
+        }).flat(1);
+
+        /* Upload rays the textures */
+        // calc output texture resolution to hold rays data on the GPU
+        const dataTextureRadius = Math.ceil(Math.sqrt(rays.length));
+        const common_raytrace_textures_settings = {
+            width: dataTextureRadius,
+            height: dataTextureRadius,
+            format: "rgba",
+            type: "float"
+        };
+        this.texturesBack.rayTransform({...common_raytrace_textures_settings,
+            data: rays.map(ray=>
+                [ray.x, ray.y, ray.dx, ray.dy]
+            ).extend([0,0,0,0], dataTextureRadius**2)
+        });
+        this.texturesBack.rayProperties({...common_raytrace_textures_settings,
+            data: rays.map(ray=>
+                [ray.wavelength, ray.wavelength, ray.wavelength, ray.intensity]
+            ).extend([0,0,0,0], dataTextureRadius**2)
+        });
+
+        /************ *
+         * TRACE RAYS *
+         * ********** */
+
+        /* draw rays */
+        regl.clear({color: [0,0.0,0,1]});
+        drawRays(regl, {
+            raysCount: rays.length,
+            raysTexture: this.texturesBack.rayTransform,
+            raysLength: 50.0,
+            raysColor: [0.7,0.3,0,0.3],
+            outputResolution: this.outputResolution,
+            viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+            framebuffer: null
+        });
+
+        /* *************** *
+         * POST PROCESSING *
+         * *************** *
+
         /* draw to screen */
-        regl.clear({color: [0,0.3,.2,1]});
+        
     }
 }
 

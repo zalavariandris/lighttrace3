@@ -96,7 +96,7 @@ function drawRays(regl, {
             uniform vec4 raysColor;
             void main()
             {
-                gl_FragColor = vec4(raysColor.rgb, 1.0);
+                gl_FragColor = vec4(raysColor.rgb, raysColor.a);
             }`
     })();
 }

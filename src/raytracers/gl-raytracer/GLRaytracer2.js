@@ -148,6 +148,10 @@ class GLRaytracer{
                 format: "rgba",
                 type: "float",
             }),
+            hitSpan: regl.texture({...common_settings,
+                format: "rgba",
+                type: "float",
+            })
         };
 
         this.texturesBack = {
@@ -167,6 +171,10 @@ class GLRaytracer{
                 format: "rgba",
                 type: "float",
             }),
+            hitSpan: regl.texture({...common_settings,
+                format: "rgba",
+                type: "float",
+            })
         };
 
         /* Framebuffers for raytracing */
@@ -175,7 +183,8 @@ class GLRaytracer{
                 this.texturesFront.rayTransform,
                 this.texturesFront.rayProperties,
                 this.texturesFront.rayColor,
-                this.texturesFront.hitPoint
+                this.texturesFront.hitPoint,
+                this.texturesFront.hitSpan
             ],
             depth: false
         });
@@ -185,7 +194,8 @@ class GLRaytracer{
                 this.texturesBack.rayTransform,
                 this.texturesBack.rayProperties,
                 this.texturesBack.rayColor,
-                this.texturesBack.hitPoint
+                this.texturesBack.hitPoint,
+                this.texturesFront.hitSpan
             ],
             depth: false
         });

@@ -25,6 +25,18 @@ struct Ray{
     float wavelength;
 };
 
+Ray getCurrentRay()
+{
+    vec2 texCoord = gl_FragCoord.xy / resolution;
+    vec4 rayTransform = texture2D(rayTransformTexture, texCoord);
+    vec2 rayPos = rayTransform.xy;
+    vec2 rayDir = rayTransform.zw;
+    vec4 rayProperties = texture2D(rayPropertiesTexture, texCoord);
+    float intensity = rayProperties.x;
+    float wavelength = rayProperties.y;
+    return Ray(rayPos, rayDir, intensity, wavelength);
+}
+
 struct HitInfo{
     float t;
     vec2 pos;
@@ -116,19 +128,10 @@ bool hitScene(Ray ray, inout HitSpan ispan)
     return false;
 }
 
-Ray getCurrentRay()
-{
-    vec2 texCoord = gl_FragCoord.xy / resolution;
-    vec4 rayTransform = texture2D(rayTransformTexture, texCoord);
-    vec2 rayPos = rayTransform.xy;
-    vec2 rayDir = rayTransform.zw;
-    vec4 rayProperties = texture2D(rayPropertiesTexture, texCoord);
-    float intensity = rayProperties.x;
-    float wavelength = rayProperties.y;
-    return Ray(rayPos, rayDir, intensity, wavelength);
-}
 
-Ray sampleScene(Ray ray, HitInfo hitInfo){
+
+Ray sampleScene(Ray ray, HitInfo hitInfo)
+{
     return ray;
 }
 

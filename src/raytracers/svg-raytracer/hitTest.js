@@ -64,8 +64,8 @@ function makeCircleFromThreePoints([Sx, Sy], [Mx, My], [Ex, Ey])
             + (Ex * Ex + Ey * Ey) * (My - Sy);
     
     const c = (Sx * Sx + Sy * Sy) * (Mx - Ex) 
-          + (Mx * Mx + My * My) * (Ex - Sx) 
-          + (Ex * Ex + Ey * Ey) * (Sx - Mx);
+            + (Mx * Mx + My * My) * (Ex - Sx) 
+            + (Ex * Ex + Ey * Ey) * (Sx - Mx);
     
     const cx = -b / (2.0 * a);
     const cy = -c / (2.0 * a);
@@ -297,7 +297,7 @@ function hitLine(ray, {x1, y1, x2, y2})
         return null;
     }
 
-    if(determinant>0){ // from outside
+    if(determinant>0.0){ // from outside
 
     }else{ // from inside
 
@@ -309,7 +309,7 @@ function hitLine(ray, {x1, y1, x2, y2})
     // Calculate intersection along the line
     const tLine = ((x1 - ray.x) * ray.dy - (y1 - ray.y) * ray.dx) / determinant;
     
-    if(tNear<=0 || tLine<=0 || tLine>=1){
+    if(tNear<=0.0 || tLine<=0.0 || tLine>=1.0){
         return null;
     }
 
@@ -322,7 +322,7 @@ function hitLine(ray, {x1, y1, x2, y2})
 
     return new HitSpan(
         new HitInfo(tNear, Ix, Iy, Nx, Ny, -1),
-        new HitInfo(tNear+1, Ix, Iy, -Nx, -Ny, -1)
+        new HitInfo(tNear+1.0, Ix, Iy, -Nx, -Ny, -1)
     );
 
     //
@@ -524,8 +524,8 @@ function hitSphericalLens(ray, {cx, cy, angle, diameter, centerThickness, edgeTh
     const bottom =      cy - diameter/2.0;
     const edgeLeft =    cx - edgeThickness/2.0;
     const edgeRight =   cx + edgeThickness/2.0;
-    const centerLeft =  cx - centerThickness/2.0
-    const centerRight = cx + centerThickness/2.0
+    const centerLeft =  cx - centerThickness/2.0;
+    const centerRight = cx + centerThickness/2.0;
 
     // subshapes
     const leftCircle =  makeCircleFromThreePoints(
@@ -556,33 +556,7 @@ function hitSphericalLens(ray, {cx, cy, angle, diameter, centerThickness, edgeTh
         if(!boundingSpan){
             return null;
         }
-
-
-        // return boundingSpan
-        
-
-        let span = boundingSpan;
-        span = subtractSpan(span, leftHitSpan);
-        span = subtractSpan(span, rightHitSpan);
-        
-        
-        return span
-
-        if(span.enter.t>span.exit.t){
-            return null;
-        }
-
-        return span;
-
-
-        span = subtractSpan(span, leftHitSpan)
-
-        // const rightHitSpan = hitCircle(ray, rightCircle.cx, rightCircle.cy, rightCircle.r);
-        // span = subtractSpan(span, rightHitSpan)
-
-        return span;
     }
-    
 }
 
 export {HitInfo, HitSpan}

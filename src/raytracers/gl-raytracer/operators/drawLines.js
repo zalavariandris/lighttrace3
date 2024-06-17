@@ -104,7 +104,7 @@ function drawLinesBetweenPoints(regl, {
                 // float bias = length(V) / max(abs(V.x),abs(V.y));
 
                 // set vertex colors
-                vColor = texelFetchByIdx(colorsTexture, colorsResolution, lineIdx).rgba * vec4(biasCorrection,biasCorrection,biasCorrection,1);
+                vColor = vec4(1,1,1,1);//texelFetchByIdx(colorsTexture, colorsResolution, lineIdx).rgba * vec4(biasCorrection,biasCorrection,biasCorrection,1);
             }`,
 
         frag:`precision mediump float;

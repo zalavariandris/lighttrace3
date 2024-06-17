@@ -29,7 +29,7 @@ function hitScene(ray, shapeEntities)
         ray.dx,
         ray.dy, 
         ray.intensity, 
-        ray.material
+        ray.wavelength
     )):null;
 
     /* intersect rays with CSG scene */

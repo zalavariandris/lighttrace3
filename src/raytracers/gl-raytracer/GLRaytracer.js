@@ -6,7 +6,7 @@ import createREGL from "regl"
 import { drawTexture } from "./operators/drawTexture.js";
 import { drawCSGToSDF } from "./operators/drawCSGToSDF.js";
 import { intersectRaysWithSDF } from "./operators/intersectRaysWithSDF.js";
-import { drawLines} from "./operators/drawLines.js";
+import { drawLinesBetweenPoints} from "./operators/drawLines.js";
 import { drawRays} from "./operators/drawRays.js"
 
 import QUAD from "./QUAD.js"
@@ -488,7 +488,7 @@ class GLRaytracer{
             });
 
             /* draw rays */
-            drawLines(regl, {
+            drawLinesBetweenPoints(regl, {
                 linesCount: rays.length,
                 startpoints: this.rayDataTexture,
                 endpoints: this.hitDataTexture,

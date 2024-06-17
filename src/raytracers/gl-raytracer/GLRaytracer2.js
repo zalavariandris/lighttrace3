@@ -151,6 +151,10 @@ class GLRaytracer{
             hitSpan: regl.texture({...common_settings,
                 format: "rgba",
                 type: "float",
+            }),
+            rayPath: regl.texture({...common_settings,
+                format: "rgba",
+                type: "float",
             })
         };
 
@@ -174,6 +178,10 @@ class GLRaytracer{
             hitSpan: regl.texture({...common_settings,
                 format: "rgba",
                 type: "float",
+            }),
+            rayPath: regl.texture({...common_settings,
+                format: "rgba",
+                type: "float",
             })
         };
 
@@ -184,7 +192,8 @@ class GLRaytracer{
                 this.texturesFront.rayProperties,
                 this.texturesFront.rayColor,
                 this.texturesFront.hitPoint,
-                this.texturesFront.hitSpan
+                this.texturesFront.hitSpan,
+                this.texturesFront.rayPath
             ],
             depth: false
         });
@@ -195,7 +204,8 @@ class GLRaytracer{
                 this.texturesBack.rayProperties,
                 this.texturesBack.rayColor,
                 this.texturesBack.hitPoint,
-                this.texturesBack.hitSpan
+                this.texturesBack.hitSpan,
+                this.texturesBack.rayPath
             ],
             depth: false
         });
@@ -384,6 +394,16 @@ class GLRaytracer{
             viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
             framebuffer: null
         });
+
+        /* draw light paths */
+        drawLineSegments(regl, {
+            linesCount: rays.length,
+            lineSegments: this.texturesBack.rayPath,
+            color: [1,1,1,0.1],
+            outputResolution: this.outputResolution,
+            viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+            framebuffer: null
+        })
 
         /* *************** *
          * POST PROCESSING *

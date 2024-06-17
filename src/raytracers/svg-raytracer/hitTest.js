@@ -552,10 +552,12 @@ function hitSphericalLens(ray, {cx, cy, angle, diameter, centerThickness, edgeTh
         const boundingSpan = hitRectangle(ray, makeRectangle(cx, cy, angle, Math.max(centerThickness, edgeThickness), diameter));
         const leftHitSpan = hitCircle(ray, leftCircle);
         const rightHitSpan = hitCircle(ray, rightCircle);
+
+        let ispan = boundingSpan;
+        ispan = subtractSpan(ispan, leftHitSpan);
+        ispan = subtractSpan(ispan, rightHitSpan);
         
-        if(!boundingSpan){
-            return null;
-        }
+        return ispan;
     }
 }
 

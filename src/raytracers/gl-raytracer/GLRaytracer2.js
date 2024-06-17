@@ -265,26 +265,31 @@ class GLRaytracer{
 
         /* Cast initial rays */
         /* filter entities to lights */
-        const rays = Object.entries(scene).filter( ([key, entity])=>
-            entity.hasOwnProperty("light") && 
-            entity.hasOwnProperty("transform")
-        )
-        .map( ([key, entity])=>{
-            switch (entity.light.type) {
-                case "point":
-                    return samplePointLight(entity, this.settings.lightSamples);
-                case "laser":
-                    return sampleLaserLight(entity, this.settings.lightSamples);
-                case "directional":
-                    return sampleDirectionalLight(entity, this.settings.lightSamples);
-                default:
-                    return makeRay(0,0,0,0,0,0);
-            }
-        }).flat(1);
+        const rays = Object.entries(scene)
+            .filter( ([key, entity])=>
+                entity.hasOwnProperty("light") && 
+                entity.hasOwnProperty("transform")
+            )
+            .map( ([key, entity])=>{
+                switch (entity.light.type) {
+                    case "point":
+                        return samplePointLight(entity, this.settings.lightSamples);
+                    case "laser":
+                        return sampleLaserLight(entity, this.settings.lightSamples);
+                    case "directional":
+                        return sampleDirectionalLight(entity, this.settings.lightSamples);
+                    default:
+                        return makeRay(0,0,0,0,0,0);
+                }
+            }).flat(1);
+
 
         /* Upload rays the textures */
         // calc output texture resolution to hold rays data on the GPU
         const dataTextureRadius = Math.ceil(Math.sqrt(rays.length));
+        this.raytraceFrontFBO.resize(dataTextureRadius);
+        this.raytraceBackFBO.resize(dataTextureRadius);
+
         const common_raytrace_textures_settings = {
             width: dataTextureRadius,
             height: dataTextureRadius,
@@ -346,72 +351,91 @@ class GLRaytracer{
         /************ *
          * TRACE RAYS *
          * ********** */
-        regl({...QUAD, vert:PASS_THROUGH_VERTEX_SHADER,
-            framebuffer: this.raytraceBackFBO,
-            uniforms: {
-                resolution: [this.raytraceBackFBO.width, this.raytraceBackFBO.height],
-                rayTransformTexture: this.texturesFront.rayTransform,
-                rayPropertiesTexture: this.texturesFront.rayProperties,
-                shapesCount: shapeData.length,
-                ...shapeEntities.length>0 && { // include shape info in uniforms only if they exist. otherwise regl throws an error. TODO: review this
-                    CSGTransformData: transformData.flat(),
-                    CSGShapeData: shapeData.flat(),
-                    CSGMaterialData: materialData.flat()
-                }
-            },
-            frag: raytracePassShader
-        })();
-
-        /* draw rays */
         regl.clear({color: [0,0.0,0,1]});
-        drawRays(regl, {
-            raysCount: rays.length,
-            raysTexture: this.texturesFront.rayTransform,
-            raysLength: 50.0,
-            raysColor: [0.7,0.3,0,0.3],
-            outputResolution: this.outputResolution,
-            viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-            framebuffer: null
-        });
+        for(let i=0;i<3; i++){
+            regl({...QUAD, vert:PASS_THROUGH_VERTEX_SHADER,
+                framebuffer: this.raytraceBackFBO,
+                uniforms: {
+                    SEED: Math.random()*500,
+                    resolution: [this.raytraceBackFBO.width, this.raytraceBackFBO.height],
+                    rayTransformTexture: this.texturesFront.rayTransform,
+                    rayPropertiesTexture: this.texturesFront.rayProperties,
+                    shapesCount: shapeData.length,
+                    ...shapeEntities.length>0 && { // include shape info in uniforms only if they exist. otherwise regl throws an error. TODO: review this
+                        CSGTransformData: transformData.flat(),
+                        CSGShapeData: shapeData.flat(),
+                        CSGMaterialData: materialData.flat()
+                    }
+                },
+                frag: raytracePassShader
+            })();
 
-        /* draw intersection spans */
-        drawLineSegments(regl, {
-            linesCount: rays.length,
-            lineSegments: this.texturesBack.hitSpan,
-            color: [0,1,1,1],
-            outputResolution: this.outputResolution,
-            viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-            framebuffer: null
-        });
+            /* draw rays */
+            drawRays(regl, {
+                raysCount: rays.length,
+                raysTexture: this.texturesFront.rayTransform,
+                raysLength: 50.0,
+                raysColor: [0.7,0.3,0,0.3],
+                outputResolution: this.outputResolution,
+                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+                framebuffer: null
+            });
 
-        /* draw hitpoints */
-        drawRays(regl, {
-            raysCount: rays.length,
-            raysTexture: this.texturesBack.hitPoint,
-            raysLength: 20.0,
-            raysColor: [0.0,0.9,0,0.1],
-            outputResolution: this.outputResolution,
-            viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-            framebuffer: null
-        });
+            // /* draw intersection spans */
+            // drawLineSegments(regl, {
+            //     linesCount: rays.length,
+            //     lineSegments: this.texturesBack.hitSpan,
+            //     color: [0,1,1,1],
+            //     outputResolution: this.outputResolution,
+            //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+            //     framebuffer: null
+            // });
 
-        /* draw light paths */
-        drawLineSegments(regl, {
-            linesCount: rays.length,
-            lineSegments: this.texturesBack.rayPath,
-            color: [1,1,1,0.1],
-            outputResolution: this.outputResolution,
-            viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-            framebuffer: null
-        })
+            // /* draw hitpoints */
+            // drawRays(regl, {
+            //     raysCount: rays.length,
+            //     raysTexture: this.texturesBack.hitPoint,
+            //     raysLength: 20.0,
+            //     raysColor: [0.0,0.9,0,0.1],
+            //     outputResolution: this.outputResolution,
+            //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+            //     framebuffer: null
+            // });
+
+            // /* draw light paths */
+            // drawLineSegments(regl, {
+            //     linesCount: rays.length,
+            //     lineSegments: this.texturesBack.rayPath,
+            //     color: [1,1,1,0.1],
+            //     outputResolution: this.outputResolution,
+            //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+            //     framebuffer: null
+            // });
+
+            /* swap buffers */
+            
+
+
+            [this.texturesFront.rayTransform, this.texturesBack.rayTransform] = [this.texturesBack.rayTransform, this.texturesFront.rayTransform];
+            [this.texturesFront.rayProperties, this.texturesBack.rayProperties] = [this.texturesBack.rayProperties, this.texturesFront.rayProperties];
+            [this.texturesFront.rayColor, this.texturesBack.rayColor] = [this.texturesBack.rayColor, this.texturesFront.rayColor];
+            [this.texturesFront.hitPoint, this.texturesBack.hitPoint] = [this.texturesBack.hitPoint, this.texturesFront.hitPoint];
+            [this.texturesFront.hitSpan, this.texturesBack.hitSpan] = [this.texturesBack.hitSpan, this.texturesFront.hitSpan];
+            [this.texturesFront.rayPath, this.texturesBack.rayPath] = [this.texturesBack.rayPath, this.texturesFront.rayPath];
+            
+            [this.raytraceFrontFBO, this.raytraceBackFBO] = [this.raytraceBackFBO, this.raytraceFrontFBO];
+        }
 
         /* *************** *
          * POST PROCESSING *
          * *************** *
 
         /* draw to screen */
+
         
     }
 }
+
+
 
 export default GLRaytracer;

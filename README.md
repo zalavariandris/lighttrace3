@@ -56,6 +56,7 @@
   - [x] rasterize bias: fix ray energy uniform in all direction
   - [ ] fix convex lens rayrtacing in webgl raytracer
   - [ ] lens intersect outside of diemeter, when edge thickness is greater then zero
+  - [ ] HOW TO REPRESENT No HitInfo and No Intersection SPAN? eg.: valid field, or tNear> tFar. The later could be automatic in several situation, but less readable.
   - [ ] random rays seem to be on the same place. Review generating random numbers
   - [ ] physically accurate wavelength to color wavelength->XYZ->linearRGB->sRGB
   - [ ] review data texture types. eg.: dont use alpha for light color. some texture a

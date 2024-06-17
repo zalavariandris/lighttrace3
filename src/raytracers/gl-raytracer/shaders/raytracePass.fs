@@ -5,14 +5,37 @@ precision mediump float;
 #define MAX_CIRCLES 10
 #define MAX_SHAPES 10
 #define EPSILON 0.001
+#define LARGE_NUMBER 9999.0
 
+uniform float SEED;
 uniform vec2 resolution;
 uniform sampler2D rayTransformTexture;
 uniform sampler2D rayPropertiesTexture;
 uniform float shapesCount;
 uniform vec3 CSGTransformData[MAX_SHAPES];
 uniform vec4 CSGShapeData[MAX_SHAPES];
-uniform vec4 CSGMmaterialData[MAX_SHAPES];
+uniform vec4 CSGMaterialData[MAX_SHAPES];
+
+vec2 rotate(vec2 pos, float radAngle, vec2 pivot)
+{
+    vec2 translatedPos = pos - pivot;
+    float cosAngle = cos(radAngle);
+    float sinAngle = sin(radAngle);
+    vec2 rotatedPos = vec2(
+        translatedPos.x * cosAngle - translatedPos.y * sinAngle,
+        translatedPos.x * sinAngle + translatedPos.y * cosAngle
+    );
+    return rotatedPos + pivot;
+}
+
+vec2 rotate(vec2 pos, float radAngle){
+    return rotate(pos, radAngle, vec2(0,0));
+}
+
+float PHI = 1.61803398874989484820459;  // Φ = Golden Ratio
+float gold_noise(vec2 xy, float seed){
+       return fract(tan(distance(xy*PHI, xy)*seed));
+}
 
 int MIRROR = 1;
 int GLASS = 2;
@@ -54,6 +77,15 @@ struct HitSpan{
     HitInfo enter;
     HitInfo exit;
 };
+
+HitSpan InvalidHitSpan = HitSpan(
+    HitInfo(LARGE_NUMBER, vec2(0,0), vec2(0,0), -1), 
+    HitInfo(-LARGE_NUMBER, vec2(0,0), vec2(0,0), -1)
+);
+
+bool IsValidSpan(HitSpan ispan){
+    return ispan.enter.t < ispan.exit.t;
+}
 
 struct Circle{
     vec2 pos;
@@ -99,23 +131,7 @@ struct SphericalLens{
     float edgeThickness;
 };
 
-vec2 rotate(vec2 pos, float radAngle, vec2 pivot)
-{
-    vec2 translatedPos = pos - pivot;
-    float cosAngle = cos(radAngle);
-    float sinAngle = sin(radAngle);
-    vec2 rotatedPos = vec2(
-        translatedPos.x * cosAngle - translatedPos.y * sinAngle,
-        translatedPos.x * sinAngle + translatedPos.y * cosAngle
-    );
-    return rotatedPos + pivot;
-}
-
-vec2 rotate(vec2 pos, float radAngle){
-    return rotate(pos, radAngle, vec2(0,0));
-}
-
-bool hitCircle(Ray ray, Circle circle, out HitSpan ispan)
+HitSpan hitCircle(Ray ray, Circle circle)
 {
     vec2 u = ray.pos-circle.pos;
 
@@ -145,11 +161,10 @@ bool hitCircle(Ray ray, Circle circle, out HitSpan ispan)
 
             if(tNear<0.0)
             {
-                ispan = HitSpan(
+                return HitSpan(
                     HitInfo(0.0, ray.pos, vec2(0.0), -1), 
                     exit
                 );
-                return true;
             }
 
             // enter point
@@ -162,15 +177,14 @@ bool hitCircle(Ray ray, Circle circle, out HitSpan ispan)
             HitInfo enter = HitInfo(tNear, I1, N1, -1);
 
             // intersection span
-            ispan = HitSpan(enter, exit);
-            return true;
+            return HitSpan(enter, exit);
         }
     }
 
-    return false;
+    return InvalidHitSpan;
 }
 
-bool hitRectangle(Ray ray, Rectangle rect, out HitSpan ispan)
+HitSpan hitRectangle(Ray ray, Rectangle rect)
 {
     vec2 rayPos = rotate(ray.pos, -rect.angle, rect.center);
     vec2 rayDir = rotate(ray.dir, -rect.angle);
@@ -184,7 +198,7 @@ bool hitRectangle(Ray ray, Rectangle rect, out HitSpan ispan)
     float tFar =  min(max(tNearX, tFarX), max(tNearY, tFarY));
     
     if(tNear>tFar){
-        return false;
+        return InvalidHitSpan;
     }
     
     // find closest
@@ -216,8 +230,7 @@ bool hitRectangle(Ray ray, Rectangle rect, out HitSpan ispan)
             // when the enter point is behind the ray's origin, 
             // then intersection span will begin at the rays origin
             HitInfo enter = HitInfo(0.0, ray.pos, vec2(0,0), -1);
-            ispan = HitSpan(enter,exit);
-            return true;
+            return HitSpan(enter,exit);
         }
 
         //enter point
@@ -245,10 +258,9 @@ bool hitRectangle(Ray ray, Rectangle rect, out HitSpan ispan)
         HitInfo enter = HitInfo(tNear, I1, N1, -1);
 
         // return intersection span between the enter- and exit point
-        ispan = HitSpan(enter, exit);
-        return true;
+        return HitSpan(enter, exit);
     }
-    return false;
+    return InvalidHitSpan;
 }
 
 struct Line{
@@ -256,7 +268,7 @@ struct Line{
     vec2 end;
 };
 
-bool hitLine(Ray ray, Line line, out HitSpan ispan){
+HitSpan hitLine(Ray ray, Line line){
     float tangentX = line.end.x-line.begin.x;
     float tangentY = line.end.y-line.begin.y;
 
@@ -264,7 +276,7 @@ bool hitLine(Ray ray, Line line, out HitSpan ispan){
     float determinant = ray.dir.x * tangentY - ray.dir.y * tangentX;
 
     if (abs(determinant) < EPSILON){
-        return false;
+        return InvalidHitSpan;
     }
 
     if(determinant>0.0){ // from outside
@@ -280,21 +292,20 @@ bool hitLine(Ray ray, Line line, out HitSpan ispan){
     float tLine = ((line.begin.x - ray.pos.x) * ray.dir.y - (line.begin.y - ray.pos.y) * ray.dir.x) / determinant;
     
     if(tNear<=0.0 || tLine<=0.0 || tLine>=1.0){
-        return false;
+        return InvalidHitSpan;
     }
 
     vec2 I = ray.pos+ray.dir*tNear;
     vec2 N = vec2(-tangentY, tangentX);
     N = normalize(-N);
 
-    ispan = HitSpan(
+    return HitSpan(
         HitInfo(tNear, I, N, -1),
         HitInfo(tNear+1.0, I, -N, -1)
     );
-    return true;
 }
 
-bool hitTriangle(Ray ray, Triangle triangle, out HitSpan ispan){
+HitSpan hitTriangle(Ray ray, Triangle triangle){
     vec2 vertices[3];
     for(int k=0; k<3; k++){
         float a = float(k)/3.0*PI*2.0-PI/2.0 + triangle.angle;
@@ -308,82 +319,144 @@ bool hitTriangle(Ray ray, Triangle triangle, out HitSpan ispan){
     Line segmentB = Line(vertices[1], vertices[2]);
     Line segmentC = Line(vertices[2], vertices[0]);
 
-    HitSpan segmentAHitSpan;
-    HitSpan segmentBHitSpan;
-    HitSpan segmentCHitSpan;
-
-    bool IsSegmentAHit = hitLine(ray, segmentA, segmentAHitSpan);
-    bool IsSegmentBHit = hitLine(ray, segmentB, segmentBHitSpan);
-    bool IsSegmentCHit = hitLine(ray, segmentC, segmentCHitSpan);
+    HitSpan segmentAHitSpan = hitLine(ray, segmentA);
+    HitSpan segmentBHitSpan = hitLine(ray, segmentB);
+    HitSpan segmentCHitSpan = hitLine(ray, segmentC);
 
     // find closest entry intersection
-    bool IsEnterHit=false;
     HitSpan enterSpan;
     float enterT = 9999.0;
-    if(IsSegmentAHit && segmentAHitSpan.enter.t<=enterT){
+    if(IsValidSpan(segmentAHitSpan) && segmentAHitSpan.enter.t<=enterT){
         enterT = segmentAHitSpan.enter.t;
         enterSpan = segmentAHitSpan;
-        IsEnterHit = true;
     }
-    if(IsSegmentBHit && segmentBHitSpan.enter.t<=enterT){
+    if(IsValidSpan(segmentBHitSpan) && segmentBHitSpan.enter.t<=enterT){
         enterT = segmentBHitSpan.enter.t;
         enterSpan = segmentBHitSpan;
-        IsEnterHit = true;
     }
-    if(IsSegmentCHit && segmentCHitSpan.enter.t<=enterT){
+    if(IsValidSpan(segmentCHitSpan) && segmentCHitSpan.enter.t<=enterT){
         enterT = segmentCHitSpan.enter.t;
         enterSpan = segmentCHitSpan;
-        IsEnterHit = true;
     }
 
     // find farthest exit intersection
     bool IsExitHit = false;
     HitSpan exitSpan;
     float exitT=0.0;
-    if(IsSegmentAHit && segmentAHitSpan.exit.t>=exitT){
+    if(IsValidSpan(segmentAHitSpan) && segmentAHitSpan.exit.t>=exitT){
         exitT = segmentAHitSpan.exit.t;
         exitSpan = segmentAHitSpan;
-        IsExitHit = true;
     }
-    if(IsSegmentBHit && segmentBHitSpan.exit.t>=exitT){
+    if(IsValidSpan(segmentBHitSpan) && segmentBHitSpan.exit.t>=exitT){
         exitT = segmentBHitSpan.exit.t;
         exitSpan = segmentBHitSpan;
-        IsExitHit = true;
     }
-    if(IsSegmentCHit && segmentCHitSpan.exit.t>=exitT){
+    if(IsValidSpan(segmentCHitSpan) && segmentCHitSpan.exit.t>=exitT){
         exitT = segmentCHitSpan.exit.t;
         exitSpan = segmentCHitSpan;
-        IsExitHit = true;
     }
 
-    if(!IsEnterHit && !IsExitHit){
-        return false;
+    if(!IsValidSpan(enterSpan) && !IsValidSpan(exitSpan))
+    {
+        return InvalidHitSpan;
     }
 
-    ispan = HitSpan(enterSpan.enter, exitSpan.exit);
-    return true;
+    return HitSpan(enterSpan.enter, exitSpan.exit);
 }
 
-bool intersectSpan(HitSpan a, HitSpan b, out HitSpan ispan)
+HitSpan intersectSpan(HitSpan a, HitSpan b)
 {
-    HitInfo enter = a.enter;
-    if(a.enter.t<b.enter.t){
-        enter = b.enter;
-    }
+    if(IsValidSpan(a) && IsValidSpan(b)){
+        HitInfo enter = a.enter;
+        if(a.enter.t<b.enter.t){
+            enter = b.enter;
+        }
 
-    HitInfo exit = a.exit;
-    if(a.exit.t>b.exit.t){
-        exit = b.exit;
-    }
+        HitInfo exit = a.exit;
+        if(a.exit.t>b.exit.t){
+            exit = b.exit;
+        }
 
-    if(enter.t>exit.t){
-        return false;
+        if(enter.t>exit.t){
+            return InvalidHitSpan;
+        }
+        return HitSpan(enter, exit);
+    }else{
+        return InvalidHitSpan;
     }
-    ispan = HitSpan(enter, exit);
-    return true;
 }
 
-bool hitSphericalLens(Ray ray, SphericalLens lens, out HitSpan ispan){
+HitSpan subtractSpan(HitSpan a, HitSpan b){
+    // find the closest span after subtraction span
+    // Warning!: Be carefull. intersecting two spans could result in two seperate spans.
+    // here we only return the closest one
+
+    if(IsValidSpan(a) && IsValidSpan(b))
+    {
+        // Possible cases
+        //           AAAAAAAAA
+        //  1.    bb ---------
+        //  2.    bbbbbbbbbb--
+        //  3.    bbbbbbbbbbbbbbbbbb
+        //  4.       ----bb
+        //  5.       ------bbbbbbbbb
+        //  6.       --------   bb
+
+        // Invert normals of span b
+        b = HitSpan(
+            HitInfo(b.enter.t,b.enter.pos,-b.enter.normal, b.enter.material),
+            HitInfo(b.exit.t,b.exit.pos,-b.exit.normal, b.enter.material)
+        );
+
+        // Case 1: Span b is completely before span a
+        // no overlapp, return span a
+        if( b.enter.t <= a.enter.t && 
+            b.exit.t  < a.enter.t){
+                return a;
+        }
+
+        // Case 2: Span b starts before span a and ends within span a
+        if( b.enter.t <= a.enter.t &&
+            b.exit.t  >  a.enter.t && 
+            b.exit.t  <  a.exit.t){
+
+            return HitSpan(b.exit, a.exit);
+        }
+
+        // Case 3: Span b completely covers span a
+        // no span remains
+        if( b.enter.t <= a.enter.t &&
+            b.exit.t  >  a.exit.t ){
+            return InvalidHitSpan;
+        }
+
+        // Case 4: Span b is completely within span a
+        // keep the first part of span a
+        if( b.enter.t >= a.enter.t &&
+            b.exit.t  <  a.exit.t){
+            return HitSpan(a.enter, b.enter);
+        }
+
+        // Case 5: Span b starts within span a and ends after span a
+        if( b.enter.t >= a.enter.t &&
+            b.enter.t <  a.exit.t &&
+            b.exit.t  >  a.exit.t ){
+            return HitSpan(a.enter, b.enter);
+        }
+
+        // Case 6: Span b starts after span a
+        // no overlapp, return span a
+        if( b.enter.t >= a.enter.t &&
+            b.exit.t  >  a.exit.t
+        ){
+            return a;
+        }
+    }
+    // Default return if no conditions are met
+    return a;
+}
+
+HitSpan hitSphericalLens(Ray ray, SphericalLens lens){
     // make circles
     float top =         lens.center.y + lens.diameter/2.0;
     float bottom =      lens.center.y - lens.diameter/2.0;
@@ -408,42 +481,36 @@ bool hitSphericalLens(Ray ray, SphericalLens lens, out HitSpan ispan){
     bool IsConvex = lens.centerThickness>lens.edgeThickness;
     if(IsConvex){
         // hitspans
-        HitSpan leftHitSpan;
-        bool IsLeftHit = hitCircle(ray, leftCircle, leftHitSpan);
-        HitSpan rightHitSpan;
-        bool IsRightHit = hitCircle(ray, rightCircle, rightHitSpan);
-        HitSpan boundingSpan;
-        bool IsBoundingBoxHit = hitRectangle(ray, boundingBox, boundingSpan);
+        HitSpan leftHitSpan = hitCircle(ray, leftCircle);
+        HitSpan rightHitSpan = hitCircle(ray, rightCircle);
+        HitSpan boundingSpan = hitRectangle(ray, boundingBox);
 
-        if(!IsLeftHit && !IsRightHit || !IsBoundingBoxHit){
-            return false;
-        }
         // intersect cirlces with bunding box
-        // intersectSpan(leftHitSpan, rightHitSpan, ispan);
-        bool IsHit = intersectSpan(boundingSpan, rightHitSpan, ispan);
-        IsHit = IsHit && intersectSpan(leftHitSpan, ispan, ispan);
-        return IsHit;
+        return intersectSpan(boundingSpan, intersectSpan(leftHitSpan, rightHitSpan));
     }
     else
     {
-        return false;
+        // hitspans
+        HitSpan leftHitSpan = hitCircle(ray, leftCircle);
+        HitSpan rightHitSpan = hitCircle(ray, rightCircle);
+        HitSpan boundingSpan = hitRectangle(ray, boundingBox);
+
+        HitSpan ispan = boundingSpan;
+        ispan = subtractSpan(ispan, leftHitSpan);
+        ispan = subtractSpan(ispan, rightHitSpan);
+        return ispan;
     }
 }
 
-bool hitScene(Ray ray, out HitSpan sceneHitSpan)
+HitSpan hitScene(Ray ray)
 {
     Ray adjustedRay = Ray(ray.pos+ray.dir*EPSILON, ray.dir, ray.intensity, ray.wavelength);
-    bool IsSceneHit = false;
-    sceneHitSpan = HitSpan(
-                HitInfo(9999.0,vec2(0.0), vec2(0.0), -1),
-                HitInfo(9999.0,vec2(0.0), vec2(0.0), -1)
-    );
+    HitSpan sceneHitSpan = InvalidHitSpan;
             
     for(int i=0;i<MAX_SHAPES;i++)
     {
         if(i<int(shapesCount))
         {
-            bool IsShapeHit = false;
             HitSpan shapeHitSpan;
 
             if(CSGShapeData[i].x==0.0) // CIRCLE
@@ -453,7 +520,7 @@ bool hitScene(Ray ray, out HitSpan sceneHitSpan)
                     CSGTransformData[i].xy,
                     CSGShapeData[i].y
                 );
-                IsShapeHit = hitCircle(adjustedRay, circle, shapeHitSpan);
+                shapeHitSpan = hitCircle(adjustedRay, circle);
 
             }
             else if(CSGShapeData[i].x==1.0) // RECTANGLE
@@ -464,7 +531,7 @@ bool hitScene(Ray ray, out HitSpan sceneHitSpan)
                                             CSGShapeData[i].y, 
                                            CSGShapeData[i].z);
                 // intersect Rectangle
-                IsShapeHit = hitRectangle(adjustedRay , rect, shapeHitSpan);
+                shapeHitSpan = hitRectangle(adjustedRay , rect);
             }
 
             else if(CSGShapeData[i].x==2.0) // SphericalLens
@@ -474,14 +541,14 @@ bool hitScene(Ray ray, out HitSpan sceneHitSpan)
                                                  CSGShapeData[i].y, 
                                            CSGShapeData[i].w,
                                             CSGShapeData[i].z);
-                IsShapeHit = hitSphericalLens(adjustedRay, lens, shapeHitSpan);
+                shapeHitSpan = hitSphericalLens(adjustedRay, lens);
             }
             else if(CSGShapeData[i].x==3.0) // Triangle
             {
                 Triangle triangle = Triangle(CSGTransformData[i].xy, 
                                            CSGTransformData[i].z, 
                                            CSGShapeData[i].y);
-                IsShapeHit = hitTriangle(adjustedRay, triangle, shapeHitSpan);
+                shapeHitSpan = hitTriangle(adjustedRay, triangle);
             }
             else if(CSGShapeData[i].x==4.0) // LineSegment
             {
@@ -496,29 +563,23 @@ bool hitScene(Ray ray, out HitSpan sceneHitSpan)
                     vec2(x1,y1), 
                     vec2(x2,y2)
                 );
-                IsShapeHit = hitLine(adjustedRay, line, shapeHitSpan);
+                shapeHitSpan = hitLine(adjustedRay, line);
             }
             else
             {
-                IsShapeHit = false;
                 continue;
             }
 
-            // set intersection material from current shape
-
-            // IsSceneHit = IsShapeHit;
-            // sceneHitSpan = shapeHitSpan;
-            
-            if(IsShapeHit){
-                shapeHitSpan.enter.material = int(CSGMmaterialData[i]);
-                shapeHitSpan.exit.material = int(CSGMmaterialData[i]);
-                IsSceneHit = IsShapeHit;
+            /* Set intersection material from current shape */
+            if(IsValidSpan(shapeHitSpan)){
+                shapeHitSpan.enter.material = int(CSGMaterialData[i]);
+                shapeHitSpan.exit.material = int(CSGMaterialData[i]);
             }
 
-            // get closes hit
-            if(IsShapeHit && IsSceneHit)
+            // get closest hit
+            if(IsValidSpan(shapeHitSpan) && IsValidSpan(sceneHitSpan))
             {
-                /* find closest intersection enter- and exit points */
+                /* Find closest intersection enter- and exit points */
 
                 // Find the closest enter point
                 if(shapeHitSpan.enter.t>0.0 && shapeHitSpan.enter.t<sceneHitSpan.enter.t){
@@ -528,27 +589,122 @@ bool hitScene(Ray ray, out HitSpan sceneHitSpan)
                     sceneHitSpan.enter = shapeHitSpan.exit;
                 }
 
-                // find the closest exit point right after the enter point
+                // Find the closest exit point right after the enter point
                 if(shapeHitSpan.enter.t>sceneHitSpan.enter.t && shapeHitSpan.enter.t < sceneHitSpan.exit.t){
                     sceneHitSpan.exit = shapeHitSpan.enter;
                 }
-
                 if(shapeHitSpan.exit.t>sceneHitSpan.enter.t && shapeHitSpan.exit.t < sceneHitSpan.exit.t){
                     sceneHitSpan.exit = shapeHitSpan.exit;
                 }
-                IsSceneHit = IsShapeHit;
-            }else if(IsShapeHit){
+            }
+            else if(IsValidSpan(shapeHitSpan))
+            {
                 sceneHitSpan = shapeHitSpan;
-                IsSceneHit = IsShapeHit;
             }
         }
     }
-    return IsSceneHit;
+    return sceneHitSpan;
+}
+
+/* MATERIAL */
+/* sample mirror material
+ * @param wi[vec2]: incident ray direction in tangent space. x: perpendicular to surface tangent. y:parallel to surface tangent
+ */
+vec2 sampleMirror(vec2 wi){
+    return vec2(-wi.x, wi.y); 
+}
+
+float cauchyEquation(float A, float B, float lambda) {
+    return A + (B / (lambda * lambda));
+}
+
+float sellmeierEquation(vec3 b, vec3 c, float lambda)
+{
+    // Calculate the square of the wavelength
+    float lambdaSq = lambda * lambda;
+
+    // Calculate the refractive index using the Sellmeier equation
+    float nSq = 1.0;
+    nSq += (b[0] * lambdaSq) / (lambdaSq - c[0]);
+    nSq += (b[1] * lambdaSq) / (lambdaSq - c[1]);
+    nSq += (b[2] * lambdaSq) / (lambdaSq - c[2]);
+
+    // Return the square root of the refractive index squared
+    return sqrt(nSq);
+}
+
+vec2 sampleDiffuse(vec2 wi)
+{
+    float randomNumber = gold_noise(gl_FragCoord.xy, SEED);
+    float x = randomNumber*2.0 - 1.0;
+    float y = sqrt(1.0 - x*x);
+    return vec2(x, y*sign(wi.y));
+}
+
+vec2 sampleDielectric(vec2 wi, float ior) 
+{
+    float eta = wi.y < 0.0 ? ior : 1.0 / ior;
+    float sinThetaTSq = eta * eta * (1.0 - abs(wi.y) * abs(wi.y));
+
+    float cosThetaT;
+    float fresnell;
+    if (sinThetaTSq > 1.0) 
+    {
+        cosThetaT = 0.0;
+        fresnell = 1.0;
+    } 
+    else 
+    {
+        float cosThetaI = abs(wi.y);
+        cosThetaT = sqrt(1.0 - sinThetaTSq);
+        
+        float Rs = (eta * cosThetaI - cosThetaT) / (eta * cosThetaI + cosThetaT);
+        float Rp = (eta * cosThetaT - cosThetaI) / (eta * cosThetaT + cosThetaI);
+    
+        fresnell = (Rs * Rs + Rp * Rp) * 0.5;
+    }
+
+    float randomNumber = gold_noise(gl_FragCoord.xy, SEED);
+    if (1.0 < fresnell) 
+    {
+        return vec2(-wi.x, wi.y);
+    }
+    else 
+    {
+        return vec2(-wi.x * eta, -cosThetaT * sign(wi.y));
+    }
 }
 
 Ray sampleScene(Ray ray, HitInfo hitInfo)
 {
-    return ray;
+    vec2 tangent = vec2(-hitInfo.normal.y, hitInfo.normal.x); // 90deg rotation
+    vec2 wiLocal = -vec2(dot(tangent, ray.dir), dot(hitInfo.normal, ray.dir));  // tangent space exiting r\y directiuon
+    
+    // calculate exit direction in local space
+    vec2 woLocal; // tangent space exit ray direction
+    if(hitInfo.material==0)
+    {
+        woLocal = sampleMirror(wiLocal);
+    }
+    else if(hitInfo.material==1)
+    {
+        vec3 b = vec3(1.03961212, 0.231792344, 1.01046945);
+        vec3 c = vec3(0.00600069867, 0.0200179144, 103.560653);
+        float sellmeierIor =  sellmeierEquation(b, c, ray.wavelength*1e-3);
+        float cauchyIor =  cauchyEquation(1.44, 0.02, ray.wavelength*1e-3);
+        woLocal = sampleDielectric(wiLocal, cauchyIor);
+    }
+    else if(hitInfo.material==2)
+    {
+        woLocal = sampleDiffuse(wiLocal);
+    }
+    else
+    {
+        woLocal = sampleMirror(wiLocal);
+    }
+    
+    vec2 woWorld = woLocal.y*hitInfo.normal + woLocal.x*tangent; // worldSpace exiting r\y directiuon
+    return Ray(hitInfo.pos, woWorld, ray.intensity, ray.wavelength);
 }
 
 void main()
@@ -557,10 +713,9 @@ void main()
     Ray ray = getCurrentRay();
 
     // hit scene
-    HitSpan ispan;
-    bool IsSceneHit = hitScene(ray, ispan);
+    HitSpan ispan = hitScene(ray);
 
-    if(IsSceneHit)
+    if(IsValidSpan(ispan))
     {
         HitInfo hitInfo = ispan.enter;
 

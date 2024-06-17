@@ -31,7 +31,7 @@ function SettingsToolbar({
                 type: "range",
                 min:1, max:9, step:1,
                 value: settings.raytrace.maxBounce,
-                onChange: e=>settingsStore.setValue(`raytrace.maxBounce`, e.target.value)
+                onChange: e=>settingsStore.setValue(`raytrace.maxBounce`, parseInt(e.target.value))
             }),
             h("span", {style:{whiteSpace:"nowrap"}}, `bounce: ${settings.raytrace.maxBounce}`)
         ),

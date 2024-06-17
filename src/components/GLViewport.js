@@ -58,7 +58,7 @@ function GLViewport({
         renderer.current.settings = {
             lightSamples: settings.raytrace.lightSamples,
             maxBounce: settings.raytrace.maxBounce,
-            debug: settings.display.debug,
+            debug: settings.debug,
             downres: 1     
         }
         statsStore.setValue("renderedPasses", 0);

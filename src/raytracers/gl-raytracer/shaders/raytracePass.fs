@@ -34,7 +34,7 @@ vec2 rotate(vec2 pos, float radAngle){
 
 float PHI = 1.61803398874989484820459;  // Φ = Golden Ratio
 float gold_noise(vec2 xy, float seed){
-       return fract(tan(distance(xy*PHI, xy)*seed));
+    return fract(tan(distance(xy*PHI, xy)*seed));
 }
 
 int MIRROR = 1;

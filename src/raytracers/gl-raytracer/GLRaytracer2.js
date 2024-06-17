@@ -1,3 +1,4 @@
+// @flow
 /*
  * GL Renderer
  */
@@ -62,7 +63,7 @@ class GLRaytracer{
     constructor(canvas)
     {
         this.canvas = canvas;
-        this.outputResolution = [16, 16];
+        this.outputResolution/*: number */ = [16, 16];
         this.listeners = []
         this.totalPasses = 0;
 
@@ -352,7 +353,8 @@ class GLRaytracer{
          * TRACE RAYS *
          * ********** */
         regl.clear({color: [0,0.0,0,1]});
-        for(let i=0;i<3; i++){
+        console.log(this.settings)
+        for(let i=0;i<this.settings.maxBounce; i++){
             regl({...QUAD, vert:PASS_THROUGH_VERTEX_SHADER,
                 framebuffer: this.raytraceBackFBO,
                 uniforms: {
@@ -370,37 +372,40 @@ class GLRaytracer{
                 frag: raytracePassShader
             })();
 
+            if(this.settings.debug){
+
             /* draw rays */
-            // drawRays(regl, {
-            //     raysCount: rays.length,
-            //     raysTexture: this.texturesFront.rayTransform,
-            //     raysLength: 50.0,
-            //     raysColor: [0.7,0.3,0,0.3],
-            //     outputResolution: this.outputResolution,
-            //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-            //     framebuffer: null
-            // });
+            drawRays(regl, {
+                raysCount: rays.length,
+                raysTexture: this.texturesFront.rayTransform,
+                raysLength: 50.0,
+                raysColor: [0.7,0.3,0,0.3],
+                outputResolution: this.outputResolution,
+                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+                framebuffer: null
+            });
 
-            // /* draw intersection spans */
-            // drawLineSegments(regl, {
-            //     linesCount: rays.length,
-            //     lineSegments: this.texturesBack.hitSpan,
-            //     color: [0,1,1,1],
-            //     outputResolution: this.outputResolution,
-            //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-            //     framebuffer: null
-            // });
+            /* draw intersection spans */
+            drawLineSegments(regl, {
+                linesCount: rays.length,
+                lineSegments: this.texturesBack.hitSpan,
+                color: [0,1,1,0.03],
+                outputResolution: this.outputResolution,
+                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+                framebuffer: null
+            });
 
-            // /* draw hitpoints */
-            // drawRays(regl, {
-            //     raysCount: rays.length,
-            //     raysTexture: this.texturesBack.hitPoint,
-            //     raysLength: 20.0,
-            //     raysColor: [0.0,0.9,0,0.1],
-            //     outputResolution: this.outputResolution,
-            //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-            //     framebuffer: null
-            // });
+            /* draw hitpoints */
+            drawRays(regl, {
+                raysCount: rays.length,
+                raysTexture: this.texturesBack.hitPoint,
+                raysLength: 20.0,
+                raysColor: [0.0,0.9,0,0.1],
+                outputResolution: this.outputResolution,
+                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+                framebuffer: null
+            });
+            }
 
             /* draw light paths */
             drawLineSegments(regl, {
@@ -413,9 +418,6 @@ class GLRaytracer{
             });
 
             /* swap buffers */
-            
-
-
             [this.texturesFront.rayTransform, this.texturesBack.rayTransform] = [this.texturesBack.rayTransform, this.texturesFront.rayTransform];
             [this.texturesFront.rayProperties, this.texturesBack.rayProperties] = [this.texturesBack.rayProperties, this.texturesFront.rayProperties];
             [this.texturesFront.rayColor, this.texturesBack.rayColor] = [this.texturesBack.rayColor, this.texturesFront.rayColor];

@@ -1,3 +1,5 @@
+// @flow
+
 import {produce} from "immer";
 import _ from "lodash"
 import { myrandom } from "../utils.js";
@@ -214,8 +216,8 @@ const lensesScene = {
 const prismScene = {
     "pointer": {
         transform:{
-            translate: {x: 100, y: 210},
-            rotate: -0.0*Math.PI/180.0
+            translate: {x: 100, y: 230},
+            rotate: -15.0*Math.PI/180.0
         },
         light: {
             type: "laser",

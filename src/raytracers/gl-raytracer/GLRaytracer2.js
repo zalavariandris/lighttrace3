@@ -371,15 +371,15 @@ class GLRaytracer{
             })();
 
             /* draw rays */
-            drawRays(regl, {
-                raysCount: rays.length,
-                raysTexture: this.texturesFront.rayTransform,
-                raysLength: 50.0,
-                raysColor: [0.7,0.3,0,0.3],
-                outputResolution: this.outputResolution,
-                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-                framebuffer: null
-            });
+            // drawRays(regl, {
+            //     raysCount: rays.length,
+            //     raysTexture: this.texturesFront.rayTransform,
+            //     raysLength: 50.0,
+            //     raysColor: [0.7,0.3,0,0.3],
+            //     outputResolution: this.outputResolution,
+            //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+            //     framebuffer: null
+            // });
 
             // /* draw intersection spans */
             // drawLineSegments(regl, {
@@ -402,15 +402,15 @@ class GLRaytracer{
             //     framebuffer: null
             // });
 
-            // /* draw light paths */
-            // drawLineSegments(regl, {
-            //     linesCount: rays.length,
-            //     lineSegments: this.texturesBack.rayPath,
-            //     color: [1,1,1,0.1],
-            //     outputResolution: this.outputResolution,
-            //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-            //     framebuffer: null
-            // });
+            /* draw light paths */
+            drawLineSegments(regl, {
+                linesCount: rays.length,
+                lineSegments: this.texturesBack.rayPath,
+                color: [1,1,1,0.1],
+                outputResolution: this.outputResolution,
+                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+                framebuffer: null
+            });
 
             /* swap buffers */
             

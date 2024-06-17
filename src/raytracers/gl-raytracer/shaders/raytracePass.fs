@@ -152,14 +152,11 @@ void main()
         Ray secondary = sampleScene(ray, hitInfo);
 
         // pack data
-        vec4 rayTransform = vec4(secondary.pos,secondary.dir);
-        vec2 rayProperties = vec2(secondary.intensity, secondary.wavelength);
-        vec4 rayColor = vec4(1,1,1,1);
-        vec4 hitTransform = vec4(0,0,0,0);
-        gl_FragData[0] = rayTransform;
-        gl_FragData[1] = vec4(rayProperties, 0, 0);
-        gl_FragData[2] = rayColor;
-        gl_FragData[3] = hitTransform;
+        gl_FragData[0] = vec4(secondary.pos,secondary.dir);
+        gl_FragData[1] = vec4(secondary.intensity, secondary.wavelength, 0, 0);
+        gl_FragData[2] = vec4(1,1,1,1);
+        gl_FragData[3] = vec4(hitInfo.pos, hitInfo.normal);
+        gl_FragData[4] = vec4(ispan.enter.pos, ispan.exit.pos);
     }
 }
 

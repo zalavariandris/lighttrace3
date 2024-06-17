@@ -6,7 +6,7 @@ import createREGL from "regl"
 import { drawTexture } from "./operators/drawTexture.js";
 import { drawCSGToSDF } from "./operators/drawCSGToSDF.js";
 import { intersectRaysWithSDF } from "./operators/intersectRaysWithSDF.js";
-import { drawLines} from "./operators/drawLines.js";
+import { drawLineSegments, drawLinesBetweenPoints} from "./operators/drawLines.js";
 import { drawRays} from "./operators/drawRays.js"
 
 import QUAD from "./QUAD.js"
@@ -195,7 +195,7 @@ class GLRaytracer{
                 this.texturesBack.rayProperties,
                 this.texturesBack.rayColor,
                 this.texturesBack.hitPoint,
-                this.texturesFront.hitSpan
+                this.texturesBack.hitSpan
             ],
             depth: false
         });
@@ -363,6 +363,17 @@ class GLRaytracer{
             viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
             framebuffer: null
         });
+
+        /* draw intersection spans */
+        drawLineSegments(regl, {
+            linesCount: rays.length,
+            lineSegments: this.texturesBack.hitSpan,
+            color: [0,1,1,1],
+            outputResolution: this.outputResolution,
+            viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+            framebuffer: null
+        });
+
         /* draw hitpoints */
         drawRays(regl, {
             raysCount: rays.length,

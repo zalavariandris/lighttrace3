@@ -62,8 +62,10 @@
   - [ ] review tonemapping. support multiple colorspaces
   - [ ] refactor glviewport to map entities to its internal data (eg initialrays array, transformArray, shapes Array materialsArray...)
   - [ ] check if GLRaytracer leaks memory?
-  - [ ] mobile support
   - [ ] distrubute lightSamples among all lights (based on intensity)
+
+- [ ] Mobile support (ipad, iphone, android?, safari, chrome)
+  - [ ] webgl support check (eg.: gl extension)
 
 
 

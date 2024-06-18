@@ -103,7 +103,7 @@ function Viewport(props)
         h(ErrorBoundary, {
             fallback:h("div", null, "GLViewport error")
         },
-            settings.display.render?h(GLViewport, {
+            h(GLViewport, {
                 viewBox: viewBox,
                 style: {
                     position: "absolute", 
@@ -112,7 +112,7 @@ function Viewport(props)
                     pointerEvents: "none",
                     transform: "scale(1, -1) translateZ(0)"   
                 }
-            }):null
+            })
         ),
         h(ErrorBoundary, {
             fallback:h("div", null, "SVGViewport error")
@@ -165,7 +165,26 @@ function App({})
                 }),
                 h("button", {
                     onMouseDown: e=>settingsStore.reset()
-                }, "reset settings")
+                }, "reset settings"),
+
+                h("button", {
+                    onMouseDown: e=>{
+                        const new_display_settings = {
+                            rays: settings.display.glrays,
+                            hitSpans: settings.display.glhitspans,
+                            normals: settings.display.glnormals,
+                            paths: settings.display.glpaths,
+                            glrays: settings.display.rays,
+                            glhitspans: settings.display.hitSpans,
+                            glnormals: settings.display.normals,
+                            glpaths: settings.display.paths
+                        }
+                        for(let [key, value] of Object.entries(new_display_settings)){
+                            settingsStore.setValue(`display.${key}`, value);
+                        }
+                        
+                    }
+                }, "swap svg and webgl")
 
             )
         ):null,

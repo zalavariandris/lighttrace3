@@ -3,16 +3,19 @@ import _ from "lodash"
 
 const defaultSettings = {
     debug: true,
-    "display": {
+    display: {
         shapes: true,
         lights: true,
         rays: false,
         hitSpans: false,
         normals: false,
         paths: true,
-        render: true
+        glrays: false,
+        glhitspans: false,
+        glnormals: false,
+        glpaths: true
     },
-    "raytrace": {
+    raytrace: {
         lightSamples: Math.pow(4,5),//128*128; //Math.pow(4,4);
         maxBounce: 7,
         targetPasses: 10,
@@ -27,7 +30,6 @@ if(!settings)
 {
     settings = defaultSettings;
 }
-
 
 let listeners = [];
 

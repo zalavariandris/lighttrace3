@@ -270,7 +270,6 @@ function hitCircle(ray, {cx, cy, r})
     }
 
     return null;
-
 }
 
 

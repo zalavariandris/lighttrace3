@@ -84,11 +84,11 @@ HitSpan InvalidHitSpan = HitSpan(
 );
 
 bool IsValidSpan(HitSpan ispan){
-    return ispan.enter.t < ispan.exit.t;
+    return ispan.enter.t < ispan.exit.t+EPSILON;
 }
 
 struct Circle{
-    vec2 pos;
+    vec2 center;
     float r;
 };
 
@@ -133,7 +133,7 @@ struct SphericalLens{
 
 HitSpan hitCircle(Ray ray, Circle circle)
 {
-    vec2 u = ray.pos-circle.pos;
+    vec2 u = ray.pos-circle.center;
 
     float B = dot(u, ray.dir);
     float C = dot(u, u) - circle.r*circle.r;
@@ -154,13 +154,14 @@ HitSpan hitCircle(Ray ray, Circle circle)
             vec2 I2 = ray.pos+ray.dir*tFar;
 
             // exit normal
-            vec2 N2 = normalize(I2-circle.pos);
+            vec2 N2 = normalize(I2-circle.center);
 
             // exit info
             HitInfo exit = HitInfo(tFar, I2, N2, -1);
 
             if(tNear<0.0)
             {
+                // return InvalidHitSpan;
                 return HitSpan(
                     HitInfo(0.0, ray.pos, vec2(0.0), -1), 
                     exit
@@ -171,7 +172,7 @@ HitSpan hitCircle(Ray ray, Circle circle)
             vec2 I1 = ray.pos+ray.dir*tNear;
 
             // enter normal
-            vec2 N1 = normalize(I1-circle.pos);
+            vec2 N1 = normalize(I1-circle.center);
 
             //enter info
             HitInfo enter = HitInfo(tNear, I1, N1, -1);
@@ -582,10 +583,10 @@ HitSpan hitScene(Ray ray)
                 /* Find closest intersection enter- and exit points */
 
                 // Find the closest enter point
-                if(shapeHitSpan.enter.t>0.0 && shapeHitSpan.enter.t<sceneHitSpan.enter.t){
+                if(shapeHitSpan.enter.t>EPSILON && shapeHitSpan.enter.t<sceneHitSpan.enter.t){
                     sceneHitSpan.enter = shapeHitSpan.enter;
                 }
-                if(shapeHitSpan.exit.t>0.0 && shapeHitSpan.exit.t < sceneHitSpan.enter.t){
+                if(shapeHitSpan.exit.t>EPSILON && shapeHitSpan.exit.t < sceneHitSpan.enter.t){
                     sceneHitSpan.enter = shapeHitSpan.exit;
                 }
 

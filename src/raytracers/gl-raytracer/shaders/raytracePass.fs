@@ -84,7 +84,7 @@ HitSpan InvalidHitSpan = HitSpan(
 );
 
 bool IsValidSpan(HitSpan ispan){
-    return ispan.enter.t < ispan.exit.t+EPSILON;
+    return ispan.enter.t < ispan.exit.t;
 }
 
 struct Circle{
@@ -341,7 +341,6 @@ HitSpan hitTriangle(Ray ray, Triangle triangle){
     }
 
     // find farthest exit intersection
-    bool IsExitHit = false;
     HitSpan exitSpan;
     float exitT=0.0;
     if(IsValidSpan(segmentAHitSpan) && segmentAHitSpan.exit.t>=exitT){
@@ -524,7 +523,7 @@ HitSpan hitScene(Ray ray)
                 shapeHitSpan = hitCircle(adjustedRay, circle);
 
             }
-            else if(CSGShapeData[i].x==1.0) // RECTANGLE
+            if(CSGShapeData[i].x==1.0) // RECTANGLE
             {
                 // upack rectangle
                 Rectangle rect = Rectangle(CSGTransformData[i].xy, 
@@ -535,41 +534,41 @@ HitSpan hitScene(Ray ray)
                 shapeHitSpan = hitRectangle(adjustedRay , rect);
             }
 
-            else if(CSGShapeData[i].x==2.0) // SphericalLens
-            {
-                SphericalLens lens = SphericalLens(CSGTransformData[i].xy, 
-                                                    CSGTransformData[i].z, 
-                                                 CSGShapeData[i].y, 
-                                           CSGShapeData[i].w,
-                                            CSGShapeData[i].z);
-                shapeHitSpan = hitSphericalLens(adjustedRay, lens);
-            }
-            else if(CSGShapeData[i].x==3.0) // Triangle
+            // if(CSGShapeData[i].x==2.0) // SphericalLens
+            // {
+            //     SphericalLens lens = SphericalLens(CSGTransformData[i].xy, 
+            //                                         CSGTransformData[i].z, 
+            //                                      CSGShapeData[i].y, 
+            //                                CSGShapeData[i].w,
+            //                                 CSGShapeData[i].z);
+            //     shapeHitSpan = hitSphericalLens(adjustedRay, lens);
+            // }
+            if(CSGShapeData[i].x==3.0) // Triangle
             {
                 Triangle triangle = Triangle(CSGTransformData[i].xy, 
                                            CSGTransformData[i].z, 
                                            CSGShapeData[i].y);
                 shapeHitSpan = hitTriangle(adjustedRay, triangle);
             }
-            else if(CSGShapeData[i].x==4.0) // LineSegment
-            {
-                vec2 center = CSGTransformData[i].xy;
-                float angle = CSGTransformData[i].z;
-                float length = CSGShapeData[i].y;
-                float x1 = center.x - cos(angle)*length/2.0;
-                float y1 = center.y - sin(angle)*length/2.0;
-                float x2 = center.x + cos(angle)*length/2.0;
-                float y2 = center.y + sin(angle)*length/2.0;
-                Line line = Line(
-                    vec2(x1,y1), 
-                    vec2(x2,y2)
-                );
-                shapeHitSpan = hitLine(adjustedRay, line);
-            }
-            else
-            {
-                continue;
-            }
+            // else if(CSGShapeData[i].x==4.0) // LineSegment
+            // {
+            //     vec2 center = CSGTransformData[i].xy;
+            //     float angle = CSGTransformData[i].z;
+            //     float length = CSGShapeData[i].y;
+            //     float x1 = center.x - cos(angle)*length/2.0;
+            //     float y1 = center.y - sin(angle)*length/2.0;
+            //     float x2 = center.x + cos(angle)*length/2.0;
+            //     float y2 = center.y + sin(angle)*length/2.0;
+            //     Line line = Line(
+            //         vec2(x1,y1), 
+            //         vec2(x2,y2)
+            //     );
+            //     shapeHitSpan = hitLine(adjustedRay, line);
+            // }
+            // else
+            // {
+            //     continue;
+            // }
 
             /* Set intersection material from current shape */
             if(IsValidSpan(shapeHitSpan)){

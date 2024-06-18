@@ -90,7 +90,7 @@ function hitScene(ray, shapeEntities)
             // find the first and the second cosest hitPoint
             const sortedIntersections = [shapeHitSpan.enter, shapeHitSpan.exit, sceneHitSpan.enter, sceneHitSpan.exit]
                 .filter(hit => hit && hit.t >= 0) // Filter out null and non-positive intersections
-                .sort((a, b) => a.t - b.t); // Sort by the intersection time
+                .sort((a, b) => a.t - b.t); // Sort by the intersection t
 
             const enter = sortedIntersections[0];
             const exit = sortedIntersections.find(hit => hit.t > enter.t);

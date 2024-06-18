@@ -349,8 +349,37 @@ function hitLine(ray, {x1, y1, x2, y2})
  * @param {number} size - vertices distance from center
  * @returns {HitSpan} - a pair of enter/exit hitInfo
  */
+function lineIntersection(ray, {x1, y1, x2, y2})
+{
 
+    const tangentX = x2-x1;
+    const tangentY = y2-y1;
+
+    // Calculate the determinant
+    const determinant = ray.dx * tangentY - ray.dy * tangentX;
+
+    if (Math.abs(determinant) < EPSILON){
+        // ray and line are parallel
+        return null;
+    }
+
+    // Calculate the intersection along the ray
+    const tNear = ((x1 - ray.x) * tangentY - (y1 - ray.y) * tangentX) / determinant;
+    // Calculate intersection along the line
+    const tLine = ((x1 - ray.x) * ray.dy - (y1 - ray.y) * ray.dx) / determinant;
+
+    if(0.0 < tNear && 0.0 <= tLine && tLine <=1.0)
+    {
+        let Nx = -tangentY;
+        let Ny = tangentX;
+        [Nx, Ny] = vec2.normalize(-Nx, -Ny);
+        return {t: tNear, normal: [Nx, Ny]};
+    }
+
+    return null;
+}
 function hitTriangle(ray, {cx, cy, angle, size}){
+    
     const vertices = Array.from({length:3}).map( (_,k)=>{
         let a = k/3.0*Math.PI*2.0-Math.PI/2.0 + angle;
         return {
@@ -360,37 +389,59 @@ function hitTriangle(ray, {cx, cy, angle, size}){
     });
 
     // intersect each side
-    const hitSpanA = hitLine(ray, makeLineSegment(vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y));
-    const hitSpanB = hitLine(ray, makeLineSegment(vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y));
-    const hitSpanC = hitLine(ray, makeLineSegment(vertices[2].x, vertices[2].y, vertices[0].x, vertices[0].y));
-
+    const I1 = lineIntersection(ray, makeLineSegment(vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y));
+    const I2 = lineIntersection(ray, makeLineSegment(vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y));
+    const I3 = lineIntersection(ray, makeLineSegment(vertices[2].x, vertices[2].y, vertices[0].x, vertices[0].y));
     // find closest entry intersection
-    const enterSpan = [hitSpanA, hitSpanB, hitSpanC].reduce((a, b)=>{
-        if(a && b && a.enter.t>0 && b.enter.t>0){
-            return a.enter.t<b.enter.t ? a : b;
-        }else if(a && a.enter.t>0){
-            return a;
-        }else{
-            return b;
-        }        
-    });
+    let tEnter = LARGE_NUMBER;
+    let nEnter = [0.0,0.0];
+    if(I1 && I1.t<tEnter){
+        tEnter=I1.t;
+        nEnter=I1.normal;
+    }
+    if(I2 && I2.t<tEnter){
+        tEnter=I2.t;
+        nEnter=I2.normal;
+    }
+    if(I3 && I3.t<tEnter){
+        tEnter=I3.t;
+        nEnter=I3.normal;
+    }
 
     // find farthest exit intersection
-    const exitSpan = [hitSpanA, hitSpanB, hitSpanC].reduce((a, b)=>{
-        if(a && b && a.exit.t<LARGE_NUMBER && b.exit.t<LARGE_NUMBER){
-            return a.exit.t>b.exit.t ? a : b;
-        }else if(a && a.exit.t<LARGE_NUMBER){
-            return a;
-        }else{
-            return b;
-        }        
-    });
+    let tExit = tEnter;
+    let nExit = [0.0,0.0];
+    if(I1 && I1.t>tExit){
+        tExit=I1.t;
+        nExit=I1.normal;
+    }
+    if(I2 && I2.t>tExit){
+        tExit=I2.t;
+        nExit=I2.normal;
+    }
+    if(I3 && I3.t>tExit){
+        tExit=I3.t;
+        nExit=I3.normal;
+    }
 
-    if(!enterSpan || !exitSpan){
+    if(tEnter>tExit){
+        return null;
+    }
+    if(tEnter==LARGE_NUMBER){
         return null;
     }
 
-    return new HitSpan(enterSpan.enter, exitSpan.exit);
+    if(tExit==tEnter){
+        return new HitSpan(
+            new HitInfo(0.0, ray.x, ray.y, 0, 0, -1),
+            new HitInfo(tEnter,  ray.x+ray.dx*tEnter,  ray.y+ray.dy*tEnter,  nEnter[0], nEnter[1], -1)
+        );
+    }
+
+    return new HitSpan(
+        new HitInfo(tEnter, ray.x+ray.dx*tEnter, ray.y+ray.dy*tEnter, nEnter[0], nEnter[1], -1),
+        new HitInfo(tExit,  ray.x+ray.dx*tExit,  ray.y+ray.dy*tExit,  nExit[0], nExit[1], -1)
+    );
 }
 
 /**

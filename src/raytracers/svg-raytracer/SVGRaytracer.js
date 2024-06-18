@@ -55,8 +55,8 @@ function hitScene(ray, shapeEntities)
                 break;
             case "triangle":
                 shapeHitSpan = hitTriangle(adjustedRay, makeTriangle(
-                    entity.transform.translate.x, 
-                    entity.transform.translate.y, 
+                    cx, 
+                    cy, 
                     entity.transform.rotate, 
                     entity.shape.size));
                 break;

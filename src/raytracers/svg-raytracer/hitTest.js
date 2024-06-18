@@ -235,7 +235,7 @@ function hitCircle(ray, {cx, cy, r})
         // If t far is greater than 0 than ther is an exit point
         // If enter point is negative we are inside the shape, 
         // then Let the intersection span begin at the origin of ray
-        if(tFar>0)
+        if(tFar>0.0)
         {
             //exit point
             const Ix2 = ray.x+ray.dx*tFar;
@@ -245,7 +245,6 @@ function hitCircle(ray, {cx, cy, r})
 
             // exit info
             const exit = new HitInfo(tFar, Ix2, Iy2, Nx2, Ny2, -1);
-
 
             if(tNear<0){
                 return new HitSpan(
@@ -351,7 +350,6 @@ function hitLine(ray, {x1, y1, x2, y2})
  */
 function lineIntersection(ray, {x1, y1, x2, y2})
 {
-
     const tangentX = x2-x1;
     const tangentY = y2-y1;
 
@@ -392,6 +390,7 @@ function hitTriangle(ray, {cx, cy, angle, size}){
     const I1 = lineIntersection(ray, makeLineSegment(vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y));
     const I2 = lineIntersection(ray, makeLineSegment(vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y));
     const I3 = lineIntersection(ray, makeLineSegment(vertices[2].x, vertices[2].y, vertices[0].x, vertices[0].y));
+    
     // find closest entry intersection
     let tEnter = LARGE_NUMBER;
     let nEnter = [0.0,0.0];

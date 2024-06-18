@@ -92,6 +92,11 @@ struct Circle{
     float r;
 };
 
+struct Line{
+    vec2 A;
+    vec2 B;
+};
+
 Circle makeCircleFromThreePoints(vec2 S, vec2 M, vec2 E)
 {
     float a = S.x * (M.y - E.y) - S.y * (M.x - E.x) + M.x * E.y - E.x * M.y;
@@ -161,7 +166,6 @@ HitSpan hitCircle(Ray ray, Circle circle)
 
             if(tNear<0.0)
             {
-                // return InvalidHitSpan;
                 return HitSpan(
                     HitInfo(0.0, ray.pos, vec2(0.0), -1), 
                     exit
@@ -185,6 +189,111 @@ HitSpan hitCircle(Ray ray, Circle circle)
     return InvalidHitSpan;
 }
 
+struct Intersection{
+    float t;
+    vec2 normal;
+};
+bool isValidIntersection(Intersection i){
+    return i.t>=0.0;
+}
+
+Intersection lineIntersection(Ray ray, Line line)
+{
+    vec2 tangent = line.B-line.A;
+
+    // Calculate the determinant
+    float determinant = ray.dir.x * tangent.y- ray.dir.y * tangent.x;
+
+    if (abs(determinant) < EPSILON){
+        // ray and line are parallel
+        return Intersection(-1.0, vec2(0.0));
+    }
+
+    // Calculate the intersection along the ray
+    float tNear = ((line.A.x - ray.pos.x) * tangent.y - (line.A.y - ray.pos.y) * tangent.x) / determinant;
+    // Calculate intersection along the line
+    float tLine = ((line.A.x - ray.pos.x) * ray.dir.y - (line.A.y - ray.pos.y) * ray.dir.x) / determinant;
+
+    if(0.0 < tNear && 0.0 <= tLine && tLine <=1.0)
+    {
+        vec2 N = vec2(-tangent.y, tangent.x);
+        N = normalize(-N);
+        return Intersection(tNear, N);
+    }
+
+    return Intersection(-1.0, vec2(0.0));
+}
+
+HitSpan hitTriangle(Ray ray, Triangle triangle){
+    vec2 vertices[3];
+    for(int k=0; k<3; k++){
+        float a = float(k)/3.0*PI*2.0-PI/2.0 + triangle.angle;
+        vertices[k] = vec2(
+            cos(a)*triangle.size + triangle.center.x,
+            sin(a)*triangle.size + triangle.center.y
+        );
+    }
+
+    Line segmentA = Line(vertices[0], vertices[1]);
+    Line segmentB = Line(vertices[1], vertices[2]);
+    Line segmentC = Line(vertices[2], vertices[0]);
+
+    Intersection I1 = lineIntersection(ray, segmentA);
+    Intersection I2 = lineIntersection(ray, segmentB);
+    Intersection I3 = lineIntersection(ray, segmentC);
+
+    // find closest entry intersection
+    float tEnter = LARGE_NUMBER;
+    vec2 nEnter = vec2(0.0,0.0);
+    if(isValidIntersection(I1) && I1.t<tEnter){
+        tEnter=I1.t;
+        nEnter=I1.normal;
+    }
+    if(isValidIntersection(I2) && I2.t<tEnter){
+        tEnter=I2.t;
+        nEnter=I2.normal;
+    }
+    if(isValidIntersection(I3) && I3.t<tEnter){
+        tEnter=I3.t;
+        nEnter=I3.normal;
+    }
+
+        // find farthest exit intersection
+    float tExit = tEnter;
+    vec2 nExit = vec2(0.0,0.0);
+    if(isValidIntersection(I1) && I1.t>tExit){
+        tExit=I1.t;
+        nExit=I1.normal;
+    }
+    if(isValidIntersection(I2) && I2.t>tExit){
+        tExit=I2.t;
+        nExit=I2.normal;
+    }
+    if(isValidIntersection(I3) && I3.t>tExit){
+        tExit=I3.t;
+        nExit=I3.normal;
+    }
+
+    if(tEnter>tExit){
+        return InvalidHitSpan;
+    }
+    if(tEnter==LARGE_NUMBER){
+        return InvalidHitSpan;
+    }
+
+    if(tExit==tEnter){
+        return HitSpan(
+            HitInfo(0.0, ray.pos, vec2(0.0), -1),
+            HitInfo(tEnter,  ray.pos+ray.dir*tEnter, nEnter, -1)
+        );
+    }
+
+    return HitSpan(
+        HitInfo(tEnter, ray.pos+ray.dir*tEnter, nEnter, -1),
+        HitInfo(tExit,  ray.pos+ray.dir*tExit,  nExit, -1)
+    );
+}
+
 HitSpan hitRectangle(Ray ray, Rectangle rect)
 {
     vec2 rayPos = rotate(ray.pos, -rect.angle, rect.center);
@@ -201,7 +310,7 @@ HitSpan hitRectangle(Ray ray, Rectangle rect)
     if(tNear>tFar){
         return InvalidHitSpan;
     }
-    
+
     // find closest
     if(tFar>0.0)
     {
@@ -264,14 +373,9 @@ HitSpan hitRectangle(Ray ray, Rectangle rect)
     return InvalidHitSpan;
 }
 
-struct Line{
-    vec2 begin;
-    vec2 end;
-};
-
 HitSpan hitLine(Ray ray, Line line){
-    float tangentX = line.end.x-line.begin.x;
-    float tangentY = line.end.y-line.begin.y;
+    float tangentX = line.B.x-line.A.x;
+    float tangentY = line.B.y-line.A.y;
 
     // Calculate the determinant
     float determinant = ray.dir.x * tangentY - ray.dir.y * tangentX;
@@ -287,10 +391,10 @@ HitSpan hitLine(Ray ray, Line line){
     }
 
     // Calculate the intersection along the ray
-    float tNear = ((line.begin.x - ray.pos.x) * tangentY - (line.begin.y - ray.pos.y) * tangentX) / determinant;
+    float tNear = ((line.A.x - ray.pos.x) * tangentY - (line.A.y - ray.pos.y) * tangentX) / determinant;
 
     // Calculate intersection along the line
-    float tLine = ((line.begin.x - ray.pos.x) * ray.dir.y - (line.begin.y - ray.pos.y) * ray.dir.x) / determinant;
+    float tLine = ((line.A.x - ray.pos.x) * ray.dir.y - (line.A.y - ray.pos.y) * ray.dir.x) / determinant;
     
     if(tNear<=0.0 || tLine<=0.0 || tLine>=1.0){
         return InvalidHitSpan;
@@ -304,64 +408,6 @@ HitSpan hitLine(Ray ray, Line line){
         HitInfo(tNear, I, N, -1),
         HitInfo(tNear+1.0, I, -N, -1)
     );
-}
-
-HitSpan hitTriangle(Ray ray, Triangle triangle){
-    vec2 vertices[3];
-    for(int k=0; k<3; k++){
-        float a = float(k)/3.0*PI*2.0-PI/2.0 + triangle.angle;
-        vertices[k] = vec2(
-            cos(a)*triangle.size + triangle.center.x,
-            sin(a)*triangle.size + triangle.center.y
-        );
-    }
-
-    Line segmentA = Line(vertices[0], vertices[1]);
-    Line segmentB = Line(vertices[1], vertices[2]);
-    Line segmentC = Line(vertices[2], vertices[0]);
-
-    HitSpan segmentAHitSpan = hitLine(ray, segmentA);
-    HitSpan segmentBHitSpan = hitLine(ray, segmentB);
-    HitSpan segmentCHitSpan = hitLine(ray, segmentC);
-
-    // find closest entry intersection
-    HitSpan enterSpan;
-    float enterT = 9999.0;
-    if(IsValidSpan(segmentAHitSpan) && segmentAHitSpan.enter.t<=enterT){
-        enterT = segmentAHitSpan.enter.t;
-        enterSpan = segmentAHitSpan;
-    }
-    if(IsValidSpan(segmentBHitSpan) && segmentBHitSpan.enter.t<=enterT){
-        enterT = segmentBHitSpan.enter.t;
-        enterSpan = segmentBHitSpan;
-    }
-    if(IsValidSpan(segmentCHitSpan) && segmentCHitSpan.enter.t<=enterT){
-        enterT = segmentCHitSpan.enter.t;
-        enterSpan = segmentCHitSpan;
-    }
-
-    // find farthest exit intersection
-    HitSpan exitSpan;
-    float exitT=0.0;
-    if(IsValidSpan(segmentAHitSpan) && segmentAHitSpan.exit.t>=exitT){
-        exitT = segmentAHitSpan.exit.t;
-        exitSpan = segmentAHitSpan;
-    }
-    if(IsValidSpan(segmentBHitSpan) && segmentBHitSpan.exit.t>=exitT){
-        exitT = segmentBHitSpan.exit.t;
-        exitSpan = segmentBHitSpan;
-    }
-    if(IsValidSpan(segmentCHitSpan) && segmentCHitSpan.exit.t>=exitT){
-        exitT = segmentCHitSpan.exit.t;
-        exitSpan = segmentCHitSpan;
-    }
-
-    if(!IsValidSpan(enterSpan) && !IsValidSpan(exitSpan))
-    {
-        return InvalidHitSpan;
-    }
-
-    return HitSpan(enterSpan.enter, exitSpan.exit);
 }
 
 HitSpan intersectSpan(HitSpan a, HitSpan b)
@@ -511,6 +557,8 @@ HitSpan hitScene(Ray ray)
     {
         if(i<int(shapesCount))
         {
+            vec2 center = CSGTransformData[i].xy;
+            float angle = CSGTransformData[i].z;
             HitSpan shapeHitSpan;
 
             if(CSGShapeData[i].x==0.0) // CIRCLE
@@ -526,8 +574,8 @@ HitSpan hitScene(Ray ray)
             else if(CSGShapeData[i].x==1.0) // RECTANGLE
             {
                 // upack rectangle
-                Rectangle rect = Rectangle(CSGTransformData[i].xy, 
-                                            CSGTransformData[i].z, 
+                Rectangle rect = Rectangle(center, 
+                                            angle, 
                                             CSGShapeData[i].y, 
                                            CSGShapeData[i].z);
                 // intersect Rectangle
@@ -536,8 +584,8 @@ HitSpan hitScene(Ray ray)
 
             else if(CSGShapeData[i].x==2.0) // SphericalLens
             {
-                SphericalLens lens = SphericalLens(CSGTransformData[i].xy, 
-                                                    CSGTransformData[i].z, 
+                SphericalLens lens = SphericalLens(center, 
+                                                    angle, 
                                                  CSGShapeData[i].y, 
                                            CSGShapeData[i].w,
                                             CSGShapeData[i].z);
@@ -545,15 +593,13 @@ HitSpan hitScene(Ray ray)
             }
             else if(CSGShapeData[i].x==3.0) // Triangle
             {
-                Triangle triangle = Triangle(CSGTransformData[i].xy, 
-                                           CSGTransformData[i].z, 
+                Triangle triangle = Triangle(center, 
+                                           angle, 
                                            CSGShapeData[i].y);
                 shapeHitSpan = hitTriangle(adjustedRay, triangle);
             }
             else if(CSGShapeData[i].x==4.0) // LineSegment
             {
-                vec2 center = CSGTransformData[i].xy;
-                float angle = CSGTransformData[i].z;
                 float length = CSGShapeData[i].y;
                 float x1 = center.x - cos(angle)*length/2.0;
                 float y1 = center.y - sin(angle)*length/2.0;
@@ -579,7 +625,14 @@ HitSpan hitScene(Ray ray)
             // get closest hit
             if(IsValidSpan(shapeHitSpan) && IsValidSpan(sceneHitSpan))
             {
-                sceneHitSpan = collapseSpan(sceneHitSpan, shapeHitSpan);
+                if(shapeHitSpan.enter.t>sceneHitSpan.enter.t)
+                {
+                    sceneHitSpan = subtractSpan(sceneHitSpan, shapeHitSpan);
+                }
+                else
+                {
+                    sceneHitSpan = subtractSpan(shapeHitSpan, sceneHitSpan);
+                } 
             }
             else if(IsValidSpan(shapeHitSpan))
             {

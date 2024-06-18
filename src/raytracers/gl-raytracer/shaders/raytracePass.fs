@@ -70,7 +70,7 @@ struct HitInfo{
     float t;
     vec2 pos;
     vec2 normal;
-    int material;
+    float material;
 };
 
 struct HitSpan{
@@ -79,8 +79,8 @@ struct HitSpan{
 };
 
 HitSpan InvalidHitSpan = HitSpan(
-    HitInfo(LARGE_NUMBER, vec2(0,0), vec2(0,0), -1), 
-    HitInfo(-LARGE_NUMBER, vec2(0,0), vec2(0,0), -1)
+    HitInfo(LARGE_NUMBER, vec2(0,0), vec2(0,0), -1.0), 
+    HitInfo(-LARGE_NUMBER, vec2(0,0), vec2(0,0), -1.0)
 );
 
 bool IsValidSpan(HitSpan ispan){
@@ -162,12 +162,12 @@ HitSpan hitCircle(Ray ray, Circle circle)
             vec2 N2 = normalize(I2-circle.center);
 
             // exit info
-            HitInfo exit = HitInfo(tFar, I2, N2, -1);
+            HitInfo exit = HitInfo(tFar, I2, N2, -1.0);
 
             if(tNear<0.0)
             {
                 return HitSpan(
-                    HitInfo(0.0, ray.pos, vec2(0.0), -1), 
+                    HitInfo(0.0, ray.pos, vec2(0.0), -1.0), 
                     exit
                 );
             }
@@ -179,7 +179,7 @@ HitSpan hitCircle(Ray ray, Circle circle)
             vec2 N1 = normalize(I1-circle.center);
 
             //enter info
-            HitInfo enter = HitInfo(tNear, I1, N1, -1);
+            HitInfo enter = HitInfo(tNear, I1, N1, -1.0);
 
             // intersection span
             return HitSpan(enter, exit);
@@ -283,14 +283,14 @@ HitSpan hitTriangle(Ray ray, Triangle triangle){
 
     if(tExit==tEnter){
         return HitSpan(
-            HitInfo(0.0, ray.pos, vec2(0.0), -1),
-            HitInfo(tEnter,  ray.pos+ray.dir*tEnter, nEnter, -1)
+            HitInfo(0.0, ray.pos, vec2(0.0), -1.0),
+            HitInfo(tEnter,  ray.pos+ray.dir*tEnter, nEnter, -1.0)
         );
     }
 
     return HitSpan(
-        HitInfo(tEnter, ray.pos+ray.dir*tEnter, nEnter, -1),
-        HitInfo(tExit,  ray.pos+ray.dir*tExit,  nExit, -1)
+        HitInfo(tEnter, ray.pos+ray.dir*tEnter, nEnter, -1.0),
+        HitInfo(tExit,  ray.pos+ray.dir*tExit,  nExit, -1.0)
     );
 }
 
@@ -334,12 +334,12 @@ HitSpan hitRectangle(Ray ray, Rectangle rect)
 
         I2 = rotate(I2, rect.angle, rect.center);
         N2 = rotate(N2, rect.angle);
-        HitInfo exit = HitInfo(tFar, I2, N2, -1);
+        HitInfo exit = HitInfo(tFar, I2, N2, -1.0);
 
         if(tNear<0.0){
             // when the enter point is behind the ray's origin, 
             // then intersection span will begin at the rays origin
-            HitInfo enter = HitInfo(0.0, ray.pos, vec2(0,0), -1);
+            HitInfo enter = HitInfo(0.0, ray.pos, vec2(0,0), -1.0);
             return HitSpan(enter,exit);
         }
 
@@ -365,7 +365,7 @@ HitSpan hitRectangle(Ray ray, Rectangle rect)
         I1 = rotate(I1, rect.angle, rect.center);
         N1 = rotate(N1, rect.angle);
 
-        HitInfo enter = HitInfo(tNear, I1, N1, -1);
+        HitInfo enter = HitInfo(tNear, I1, N1, -1.0);
 
         // return intersection span between the enter- and exit point
         return HitSpan(enter, exit);
@@ -405,8 +405,8 @@ HitSpan hitLine(Ray ray, Line line){
     N = normalize(-N);
 
     return HitSpan(
-        HitInfo(tNear, I, N, -1),
-        HitInfo(tNear+1.0, I, -N, -1)
+        HitInfo(tNear, I, N, -1.0),
+        HitInfo(tNear+1.0, I, -N, -1.0)
     );
 }
 
@@ -569,7 +569,6 @@ HitSpan hitScene(Ray ray)
                     CSGShapeData[i].y
                 );
                 shapeHitSpan = hitCircle(adjustedRay, circle);
-
             }
             else if(CSGShapeData[i].x==1.0) // RECTANGLE
             {
@@ -618,8 +617,8 @@ HitSpan hitScene(Ray ray)
 
             /* Set intersection material from current shape */
             if(IsValidSpan(shapeHitSpan)){
-                shapeHitSpan.enter.material = int(CSGMaterialData[i]);
-                shapeHitSpan.exit.material = int(CSGMaterialData[i]);
+                shapeHitSpan.enter.material = CSGMaterialData[i].x;
+                shapeHitSpan.exit.material = CSGMaterialData[i].x;
             }
 
             // get closest hit
@@ -719,11 +718,11 @@ Ray sampleScene(Ray ray, HitInfo hitInfo)
     
     // calculate exit direction in local space
     vec2 woLocal; // tangent space exit ray direction
-    if(hitInfo.material==0)
+    if(hitInfo.material<0.5)
     {
         woLocal = sampleMirror(wiLocal);
     }
-    else if(hitInfo.material==1)
+    else if(hitInfo.material<1.5)
     {
         vec3 b = vec3(1.03961212, 0.231792344, 1.01046945);
         vec3 c = vec3(0.00600069867, 0.0200179144, 103.560653);
@@ -731,13 +730,14 @@ Ray sampleScene(Ray ray, HitInfo hitInfo)
         float cauchyIor =  cauchyEquation(1.44, 0.02, ray.wavelength*1e-3);
         woLocal = sampleDielectric(wiLocal, cauchyIor);
     }
-    else if(hitInfo.material==2)
+    else if(hitInfo.material<2.5)
     {
         woLocal = sampleDiffuse(wiLocal);
     }
     else
     {
         woLocal = sampleMirror(wiLocal);
+        woLocal = vec2(0.0,1.0);
     }
     
     vec2 woWorld = woLocal.y*hitInfo.normal + woLocal.x*tangent; // worldSpace exiting r\y directiuon

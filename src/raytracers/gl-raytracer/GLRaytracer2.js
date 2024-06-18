@@ -358,8 +358,8 @@ class GLRaytracer{
          * TRACE RAYS *
          * ********** */
         regl.clear({color: [0,0.0,0,1]});
-        console.log(this.display)
-        for(let i=0;i<this.settings.maxBounce; i++){
+        console.log("gl settings:", this.settings)
+        for(let i=0; i<this.settings.maxBounce; i++){
             /* draw rays */
             this.display.rays && drawRays(regl, {
                 raysCount: rays.length,

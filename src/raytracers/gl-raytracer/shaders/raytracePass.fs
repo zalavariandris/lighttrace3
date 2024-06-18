@@ -745,6 +745,62 @@ Ray sampleScene(Ray ray, HitInfo hitInfo)
     return Ray(hitInfo.pos, woWorld, ray.intensity, ray.wavelength);
 }
 
+// Convert wavelength in nanometers to RGB using a perceptually accurate method
+vec3 wavelengthToRGB(float wavelength) {
+    
+
+    vec3 color = vec3(0.0, 0.0, 0.0);
+
+    if (wavelength >= 380.0 && wavelength <= 440.0) {
+        color.r = -1.0 * (wavelength - 440.0) / (440.0 - 380.0);
+        color.g = 0.0;
+        color.b = 1.0;
+    } else if (wavelength >= 440.0 && wavelength <= 490.0) {
+        color.r = 0.0;
+        color.g = (wavelength - 440.0) / (490.0 - 440.0);
+        color.b = 1.0;
+    } else if (wavelength >= 490.0 && wavelength <= 510.0) {
+        color.r = 0.0;
+        color.g = 1.0;
+        color.b = -1.0 * (wavelength - 510.0) / (510.0 - 490.0);
+    } else if (wavelength >= 510.0 && wavelength <= 580.0) {
+        color.r = (wavelength - 510.0) / (580.0 - 510.0);
+        color.g = 1.0;
+        color.b = 0.0;
+    } else if (wavelength >= 580.0 && wavelength <= 645.0) {
+        color.r = 1.0;
+        color.g = -1.0 * (wavelength - 645.0) / (645.0 - 580.0);
+        color.b = 0.0;
+    } else if (wavelength >= 645.0 && wavelength <= 780.0) {
+        color.r = 1.0;
+        color.g = 0.0;
+        color.b = 0.0;
+    }
+
+    // Let the intensity fall off near the vision limits
+    float factor;
+    if (wavelength >= 380.0 && wavelength <= 420.0) {
+        factor = 0.3 + 0.7 * (wavelength - 380.0) / (420.0 - 380.0);
+    } else if (wavelength >= 420.0 && wavelength <= 700.0) {
+        factor = 1.0;
+    } else if (wavelength >= 700.0 && wavelength <= 780.0) {
+        factor = 0.3 + 0.7 * (780.0 - wavelength) / (780.0 - 700.0);
+    } else {
+        factor = 0.0;
+    }
+
+    vec3 linearRGB = color * factor;
+    return linearRGB;
+}
+
+// Apply gamma correction
+vec3 linearTosRGB(vec3 linearRGB)
+{
+    float gamma = 1.0/2.2;
+    vec3 sRGB = pow(linearRGB, vec3(gamma));
+    return sRGB;
+}
+
 void main()
 {
     // unpack ray from data texture
@@ -766,12 +822,12 @@ void main()
         // pack data
         /* rayTransform */  gl_FragData[0] = vec4(secondary.pos,secondary.dir);
         /* rayProperties */ gl_FragData[1] = vec4(secondary.intensity, secondary.wavelength, 0, 0);
-        /* rayColor */      gl_FragData[2] = vec4(1,1,1,1);
+        /* rayColor */      gl_FragData[2] = vec4(wavelengthToRGB(ray.wavelength), ray.intensity*200.0);
         /* hitPoint */      gl_FragData[3] = vec4(hitInfo.pos, hitInfo.normal);
         /* hitSpan */       gl_FragData[4] = vec4(ispan.enter.pos, ispan.exit.pos);
         /* rayPath */       gl_FragData[5] = vec4(ray.pos, hitInfo.pos);
     }else{
-        /* rayColor */      gl_FragData[2] = vec4(1,1,0,1);
+        /* rayColor */      gl_FragData[2] = vec4(wavelengthToRGB(ray.wavelength), ray.intensity*200.0);
         gl_FragData[5] = vec4(ray.pos, ray.pos+ray.dir*9999.0);
     }
 }

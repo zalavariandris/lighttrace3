@@ -13,7 +13,6 @@ vec3 hsv2rgb(vec3 c)
 
 // Convert wavelength in nanometers to RGB using a perceptually accurate method
 vec3 wavelengthToRGB(float wavelength) {
-    
 
     vec3 color = vec3(0.0, 0.0, 0.0);
 
@@ -56,10 +55,6 @@ vec3 wavelengthToRGB(float wavelength) {
     }
 
     vec3 linearRGB = color * factor;
-
-    
-    
-
     return linearRGB;
 }
 

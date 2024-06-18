@@ -58,14 +58,12 @@ function GLViewport({
             maxBounce: settings.raytrace.maxBounce  
         };
 
-        console.log("settings:", settings)
         renderer.current.display = {
             rays: settings.display.glrays,
             hitSpans: settings.display.glhitspans,
             normals: settings.display.glnormals,
             paths: settings.display.glpaths
         };
-        console.log("gl display", renderer.current.display)
 
         statsStore.setValue("renderedPasses", 0);
         requestId.current = requestAnimationFrame(render);

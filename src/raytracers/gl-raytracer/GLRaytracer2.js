@@ -102,20 +102,20 @@ class GLRaytracer{
                 preserveDrawingBuffer: false,
                 preferLowPowerToHighPerformance: false,
                 failIfMajorPerformanceCaveat: false,
-                blend: {
-                    enable: true,
-                    func: {
-                        srcRGB: 'one',
-                        dstRGB: 'one',
-                        srcAlpha: 'one',
-                        dstAlpha: 'one',
-                    },
-                    equation: {
-                        rgb: 'add',
-                        alpha: 'add'
-                    },
-                    color: [0,0,0,0]
-                },
+                // blend: {
+                //     enable: true,
+                //     func: {
+                //         srcRGB: 'one',
+                //         dstRGB: 'one',
+                //         srcAlpha: 'one',
+                //         dstAlpha: 'one',
+                //     },
+                //     equation: {
+                //         rgb: 'add',
+                //         alpha: 'add'
+                //     },
+                //     color: [0,0,0,0]
+                // },
             },
             extensions: [
                 'WEBGL_draw_buffers', // multiple render targets
@@ -231,6 +231,11 @@ class GLRaytracer{
             type: "float",
         }
 
+        this.sceneFbo = regl.framebuffer({
+            color: regl.texture(texture_settings),
+            depth: false    
+        });
+
         this.postFrontFBO = regl.framebuffer({
             color: regl.texture(texture_settings),
             depth: false    
@@ -249,20 +254,28 @@ class GLRaytracer{
         this.canvas.width = width;
         this.canvas.height = height;
         this.outputResolution = [width, height]
+        this.postFrontFBO.resize(width, height)
+        this.postBackFBO.resize(width, height)
     }
 
     clear()
     {
         const regl = this.regl;
         regl.clear({
-            framebuffer: this.postFbo1, 
+            framebuffer: this.sceneFbo, 
             color: [0,0,0,1.0]
         });
         regl.clear({
-            framebuffer: this.postFbo2, 
+            framebuffer: this.postBackFBO, 
             color: [0,0,0,1.0]
         });
+        regl.clear({
+            framebuffer: this.postFrontFBO, 
+            color: [0,0,0,1.0]
+        });
+        console.log("clear gl")
         this.totalPasses=0;
+        
     }
 
     renderPass(scene, viewBox)
@@ -357,19 +370,26 @@ class GLRaytracer{
         /************ *
          * TRACE RAYS *
          * ********** */
-        regl.clear({color: [0,0.0,0,1]});
-        console.log("gl settings:", this.settings)
+
+                /* resize output framebuffers */
+        if(this.sceneFbo.width!=this.outputResolution[0] || this.sceneFbo.height!=this.outputResolution[1])
+        {
+            this.sceneFbo.resize(this.outputResolution[0], this.outputResolution[1]);
+            this.postFrontFBO.resize(this.outputResolution[0], this.outputResolution[1]);
+            this.postBackFBO.resize(this.outputResolution[0], this.outputResolution[1]);
+        }
+
         for(let i=0; i<this.settings.maxBounce; i++){
             /* draw rays */
-            // this.display.rays && drawRays(regl, {
-            //     raysCount: rays.length,
-            //     raysTexture: this.texturesFront.rayTransform,
-            //     raysLength: 50.0,
-            //     raysColor: [0.7,0.3,0,0.3],
-            //     outputResolution: this.outputResolution,
-            //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-            //     framebuffer: null
-            // });
+            this.display.rays && drawRays(regl, {
+                raysCount: rays.length,
+                raysTexture: this.texturesFront.rayTransform,
+                raysLength: 50.0,
+                raysColor: [0.7,0.3,0,0.3],
+                outputResolution: this.outputResolution,
+                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+                framebuffer: this.sceneFbo
+            });
 
             // /* draw intersection spans */
             // this.display.hitSpans && drawLineSegments(regl, {
@@ -378,19 +398,19 @@ class GLRaytracer{
             //     color: [0,1,1,0.03],
             //     outputResolution: this.outputResolution,
             //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-            //     framebuffer: null
+            //     framebuffer: this.sceneFbo
             // });
 
-            // /* draw hitpoints */
-            // this.display.normals && drawRays(regl, {
-            //     raysCount: rays.length,
-            //     raysTexture: this.texturesBack.hitPoint,
-            //     raysLength: 20.0,
-            //     raysColor: [0.0,0.9,0,0.1],
-            //     outputResolution: this.outputResolution,
-            //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-            //     framebuffer: null
-            // });
+            /* draw hitpoints */
+            this.display.normals && drawRays(regl, {
+                raysCount: rays.length,
+                raysTexture: this.texturesBack.hitPoint,
+                raysLength: 20.0,
+                raysColor: [0.0,0.9,0,0.1],
+                outputResolution: this.outputResolution,
+                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+                framebuffer: this.sceneFbo
+            });
 
             /* draw light paths */
             this.display.paths && drawLineSegments(regl, {
@@ -399,7 +419,7 @@ class GLRaytracer{
                 colors: this.texturesBack.rayColor,
                 outputResolution: this.outputResolution,
                 viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-                framebuffer: null
+                framebuffer: this.sceneFbo
             });
 
             regl({...QUAD, vert:PASS_THROUGH_VERTEX_SHADER,
@@ -419,7 +439,6 @@ class GLRaytracer{
                 frag: raytracePassShader
             })();
 
-
             /* swap buffers */
             [this.raytraceFrontFBO,            this.raytraceBackFBO]            = [this.raytraceBackFBO,            this.raytraceFrontFBO];
             [this.texturesFront.rayTransform,  this.texturesBack.rayTransform]  = [this.texturesBack.rayTransform,  this.texturesFront.rayTransform];
@@ -432,11 +451,70 @@ class GLRaytracer{
 
         /* *************** *
          * POST PROCESSING *
-         * *************** *
+         * *************** */
 
-        /* draw to screen */
-
+        /* accumulate */
+        regl({...QUAD,
+            framebuffer: this.postFrontFBO,
+            viewport: {x:0, y:0, width:this.outputResolution[0], height: this.outputResolution[1]},
+            vert: PASS_THROUGH_VERTEX_SHADER,
+            depth: { enable: false },
+            uniforms:{
+                textureA: this.sceneFbo,
+                textureB: this.postBackFBO
+            },
+            frag:`precision mediump float;
+            varying vec2 vUV;
+            uniform sampler2D textureA;
+            uniform sampler2D textureB;
         
+            vec3 filmic(vec3 x) {
+                vec3 X = max(vec3(0.0), x - 0.004);
+                vec3 result = (X * (6.2 * X + 0.5)) / (X * (6.2 * X + 1.7) + 0.06);
+                return pow(result, vec3(2.2));
+            }
+
+            void main() {
+                vec4 texA = texture2D(textureA, vUV).rgba;
+                vec4 texB = texture2D(textureB, vUV).rgba;
+                gl_FragColor = vec4(texA.rgb+texB.rgb, 1.0);
+            }`
+        })();
+
+        /* render post processing FBO to screen */
+        this.totalPasses+=1;
+        console.log(this.totalPasses)
+        
+        regl({...QUAD,
+            framebuffer: null,
+            viewport: {x:0, y:0, width:this.outputResolution[0], height: this.outputResolution[1]},
+            vert: PASS_THROUGH_VERTEX_SHADER,
+            depth: { enable: false },
+            uniforms:{
+                texture: this.postFrontFBO,
+                outputResolution: this.outputResolution,
+                exposure: 0.000003/this.totalPasses
+            },
+            frag:`precision mediump float;
+            varying vec2 vUV;
+            uniform sampler2D texture;
+            uniform float exposure;
+        
+            vec3 filmic(vec3 x) {
+                vec3 X = max(vec3(0.0), x - 0.004);
+                vec3 result = (X * (6.2 * X + 0.5)) / (X * (6.2 * X + 1.7) + 0.06);
+                return pow(result, vec3(2.2));
+            }
+
+            void main() {
+                vec4 tex = texture2D(texture, vUV).rgba;
+                vec3 color = tex.rgb*exposure;
+                // color = filmic(color);
+                gl_FragColor = vec4(color, exposure);
+            }`
+        })();
+        
+        [this.postFrontFBO, this.postBackFBO]=[this.postBackFBO, this.postFrontFBO]
     }
 }
 

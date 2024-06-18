@@ -6,7 +6,6 @@ import GLRaytracer from "../raytracers/gl-raytracer/GLRaytracer2.js";
 
 const h = React.createElement;
 
-
 function GLViewport({
     width, 
     height, 

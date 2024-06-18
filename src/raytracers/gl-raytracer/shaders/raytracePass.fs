@@ -755,19 +755,23 @@ void main()
 
     if(IsValidSpan(ispan))
     {
-        HitInfo hitInfo = ispan.enter.t>EPSILON ? ispan.enter : ispan.exit;
+        HitInfo hitInfo = ispan.enter;
+        if(hitInfo.t<EPSILON){
+            hitInfo = ispan.exit;
+        };
 
         // bounce ray
         Ray secondary = sampleScene(ray, hitInfo);
 
         // pack data
-        /*rayTransform*/gl_FragData[0] = vec4(secondary.pos,secondary.dir);
-        /*rayProperties*/gl_FragData[1] = vec4(secondary.intensity, secondary.wavelength, 0, 0);
-        /*rayColor*/gl_FragData[2] = vec4(1,1,1,1);
-        /*hitPoint*/gl_FragData[3] = vec4(hitInfo.pos, hitInfo.normal);
-        /*hitSpan*/gl_FragData[4] = vec4(ispan.enter.pos, ispan.exit.pos);
-        /*rayPath*/gl_FragData[5] = vec4(ray.pos, hitInfo.pos);
+        /* rayTransform */  gl_FragData[0] = vec4(secondary.pos,secondary.dir);
+        /* rayProperties */ gl_FragData[1] = vec4(secondary.intensity, secondary.wavelength, 0, 0);
+        /* rayColor */      gl_FragData[2] = vec4(1,1,1,1);
+        /* hitPoint */      gl_FragData[3] = vec4(hitInfo.pos, hitInfo.normal);
+        /* hitSpan */       gl_FragData[4] = vec4(ispan.enter.pos, ispan.exit.pos);
+        /* rayPath */       gl_FragData[5] = vec4(ray.pos, hitInfo.pos);
     }else{
+        /* rayColor */      gl_FragData[2] = vec4(1,1,0,1);
         gl_FragData[5] = vec4(ray.pos, ray.pos+ray.dir*9999.0);
     }
 }

@@ -120,7 +120,7 @@ function drawLinesBetweenPoints(regl, {
 function drawLineSegments(regl, {
     linesCount,
     lineSegments,
-    color,
+    colors,
     outputResolution,
     viewport,
     framebuffer=null
@@ -155,13 +155,14 @@ function drawLineSegments(regl, {
         uniforms:{
             lineSegmetsTexture: lineSegments,
             lineSegmetsResolution: [lineSegments.width, lineSegments.height],
-            color: color,
+            colorsTexture: colors,
+            colorsResolution: [colors.width, colors.height],
             projection: projection
         },
         vert: `precision mediump float;
             uniform sampler2D lineSegmetsTexture;
             uniform vec2 lineSegmetsResolution;
-            uniform vec4 color;
+            uniform sampler2D colorsTexture;
             uniform vec2 colorsResolution; 
             uniform mat4 projection;
 
@@ -204,8 +205,7 @@ function drawLineSegments(regl, {
                 // float bias = length(V) / max(abs(V.x),abs(V.y));
 
                 // set vertex colors
-
-                vColor = color;
+                vColor = texelFetchByIdx(colorsTexture, colorsResolution, lineIdx);
             }`,
 
         frag:`precision mediump float;

@@ -361,42 +361,42 @@ class GLRaytracer{
         console.log("gl settings:", this.settings)
         for(let i=0; i<this.settings.maxBounce; i++){
             /* draw rays */
-            this.display.rays && drawRays(regl, {
-                raysCount: rays.length,
-                raysTexture: this.texturesFront.rayTransform,
-                raysLength: 50.0,
-                raysColor: [0.7,0.3,0,0.3],
-                outputResolution: this.outputResolution,
-                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-                framebuffer: null
-            });
+            // this.display.rays && drawRays(regl, {
+            //     raysCount: rays.length,
+            //     raysTexture: this.texturesFront.rayTransform,
+            //     raysLength: 50.0,
+            //     raysColor: [0.7,0.3,0,0.3],
+            //     outputResolution: this.outputResolution,
+            //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+            //     framebuffer: null
+            // });
 
-            /* draw intersection spans */
-            this.display.hitSpans && drawLineSegments(regl, {
-                linesCount: rays.length,
-                lineSegments: this.texturesBack.hitSpan,
-                color: [0,1,1,0.03],
-                outputResolution: this.outputResolution,
-                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-                framebuffer: null
-            });
+            // /* draw intersection spans */
+            // this.display.hitSpans && drawLineSegments(regl, {
+            //     linesCount: rays.length,
+            //     lineSegments: this.texturesBack.hitSpan,
+            //     color: [0,1,1,0.03],
+            //     outputResolution: this.outputResolution,
+            //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+            //     framebuffer: null
+            // });
 
-            /* draw hitpoints */
-            this.display.normals && drawRays(regl, {
-                raysCount: rays.length,
-                raysTexture: this.texturesBack.hitPoint,
-                raysLength: 20.0,
-                raysColor: [0.0,0.9,0,0.1],
-                outputResolution: this.outputResolution,
-                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-                framebuffer: null
-            });
+            // /* draw hitpoints */
+            // this.display.normals && drawRays(regl, {
+            //     raysCount: rays.length,
+            //     raysTexture: this.texturesBack.hitPoint,
+            //     raysLength: 20.0,
+            //     raysColor: [0.0,0.9,0,0.1],
+            //     outputResolution: this.outputResolution,
+            //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+            //     framebuffer: null
+            // });
 
             /* draw light paths */
             this.display.paths && drawLineSegments(regl, {
                 linesCount: rays.length,
                 lineSegments: this.texturesBack.rayPath,
-                color: [1,1,1,0.1],
+                colors: this.texturesBack.rayColor,
                 outputResolution: this.outputResolution,
                 viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
                 framebuffer: null

@@ -523,7 +523,7 @@ HitSpan hitScene(Ray ray)
                 shapeHitSpan = hitCircle(adjustedRay, circle);
 
             }
-            if(CSGShapeData[i].x==1.0) // RECTANGLE
+            else if(CSGShapeData[i].x==1.0) // RECTANGLE
             {
                 // upack rectangle
                 Rectangle rect = Rectangle(CSGTransformData[i].xy, 
@@ -534,41 +534,41 @@ HitSpan hitScene(Ray ray)
                 shapeHitSpan = hitRectangle(adjustedRay , rect);
             }
 
-            // if(CSGShapeData[i].x==2.0) // SphericalLens
-            // {
-            //     SphericalLens lens = SphericalLens(CSGTransformData[i].xy, 
-            //                                         CSGTransformData[i].z, 
-            //                                      CSGShapeData[i].y, 
-            //                                CSGShapeData[i].w,
-            //                                 CSGShapeData[i].z);
-            //     shapeHitSpan = hitSphericalLens(adjustedRay, lens);
-            // }
-            if(CSGShapeData[i].x==3.0) // Triangle
+            else if(CSGShapeData[i].x==2.0) // SphericalLens
+            {
+                SphericalLens lens = SphericalLens(CSGTransformData[i].xy, 
+                                                    CSGTransformData[i].z, 
+                                                 CSGShapeData[i].y, 
+                                           CSGShapeData[i].w,
+                                            CSGShapeData[i].z);
+                shapeHitSpan = hitSphericalLens(adjustedRay, lens);
+            }
+            else if(CSGShapeData[i].x==3.0) // Triangle
             {
                 Triangle triangle = Triangle(CSGTransformData[i].xy, 
                                            CSGTransformData[i].z, 
                                            CSGShapeData[i].y);
                 shapeHitSpan = hitTriangle(adjustedRay, triangle);
             }
-            // else if(CSGShapeData[i].x==4.0) // LineSegment
-            // {
-            //     vec2 center = CSGTransformData[i].xy;
-            //     float angle = CSGTransformData[i].z;
-            //     float length = CSGShapeData[i].y;
-            //     float x1 = center.x - cos(angle)*length/2.0;
-            //     float y1 = center.y - sin(angle)*length/2.0;
-            //     float x2 = center.x + cos(angle)*length/2.0;
-            //     float y2 = center.y + sin(angle)*length/2.0;
-            //     Line line = Line(
-            //         vec2(x1,y1), 
-            //         vec2(x2,y2)
-            //     );
-            //     shapeHitSpan = hitLine(adjustedRay, line);
-            // }
-            // else
-            // {
-            //     continue;
-            // }
+            else if(CSGShapeData[i].x==4.0) // LineSegment
+            {
+                vec2 center = CSGTransformData[i].xy;
+                float angle = CSGTransformData[i].z;
+                float length = CSGShapeData[i].y;
+                float x1 = center.x - cos(angle)*length/2.0;
+                float y1 = center.y - sin(angle)*length/2.0;
+                float x2 = center.x + cos(angle)*length/2.0;
+                float y2 = center.y + sin(angle)*length/2.0;
+                Line line = Line(
+                    vec2(x1,y1), 
+                    vec2(x2,y2)
+                );
+                shapeHitSpan = hitLine(adjustedRay, line);
+            }
+            else
+            {
+                continue;
+            }
 
             /* Set intersection material from current shape */
             if(IsValidSpan(shapeHitSpan)){
@@ -579,23 +579,7 @@ HitSpan hitScene(Ray ray)
             // get closest hit
             if(IsValidSpan(shapeHitSpan) && IsValidSpan(sceneHitSpan))
             {
-                /* Find closest intersection enter- and exit points */
-
-                // Find the closest enter point
-                if(shapeHitSpan.enter.t>EPSILON && shapeHitSpan.enter.t<sceneHitSpan.enter.t){
-                    sceneHitSpan.enter = shapeHitSpan.enter;
-                }
-                if(shapeHitSpan.exit.t>EPSILON && shapeHitSpan.exit.t < sceneHitSpan.enter.t){
-                    sceneHitSpan.enter = shapeHitSpan.exit;
-                }
-
-                // Find the closest exit point right after the enter point
-                if(shapeHitSpan.enter.t>sceneHitSpan.enter.t && shapeHitSpan.enter.t < sceneHitSpan.exit.t){
-                    sceneHitSpan.exit = shapeHitSpan.enter;
-                }
-                if(shapeHitSpan.exit.t>sceneHitSpan.enter.t && shapeHitSpan.exit.t < sceneHitSpan.exit.t){
-                    sceneHitSpan.exit = shapeHitSpan.exit;
-                }
+                sceneHitSpan = collapseSpan(sceneHitSpan, shapeHitSpan);
             }
             else if(IsValidSpan(shapeHitSpan))
             {

@@ -158,119 +158,135 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
             .filter(([key, entity])=>{
                 return entity.hasOwnProperty("shape") && entity.hasOwnProperty("transform");
             })
-            .map( ([key, entity])=>{
+            .map( ([key, entity], idx)=>{
+                const cx = entity.transform.translate.x;
+                const cy = entity.transform.translate.y;
                 switch (entity.shape.type) {
                     case "circle":
-                        return h(Circle, {
-                            id: key,
-                            className: entity.selected ? "shape selected" : "shape",
-                            cx: entity.transform.translate.x,
-                            cy: entity.transform.translate.y,
-                            r: entity.shape.radius,
-                            onClick: e=>entityStore.setSelection([key]),
-                            onChange: e=>{
-                                entityStore.setValue(`${key}.transform.translate`, {
-                                    x: e.value.cx, 
-                                    y: e.value.cy
-                                });
-                                entityStore.setValue(`${key}.shape.radius`, e.value.r);
-                            }
-                        })
+                        return h("g", null, 
+                            h(Circle, {
+                                id: key,
+                                className: entity.selected ? "shape selected" : "shape",
+                                cx: entity.transform.translate.x,
+                                cy: entity.transform.translate.y,
+                                r: entity.shape.radius,
+                                onClick: e=>entityStore.setSelection([key]),
+                                onChange: e=>{
+                                    entityStore.setValue(`${key}.transform.translate`, {
+                                        x: e.value.cx, 
+                                        y: e.value.cy
+                                    });
+                                    entityStore.setValue(`${key}.shape.radius`, e.value.r);
+                                }
+                            }),
+                            h("text", {x: cx, y: cy, fill:"white"}, `${idx}`)
+                        )
                     case "triangle":
-                        return h(Triangle, {
-                            id: key,
-                            className: entity.selected ? "shape selected" : "shape",
-                            cx: entity.transform.translate.x,
-                            cy: entity.transform.translate.y,
-                            angle: entity.transform.rotate,
-                            size: entity.shape.size,
-                            onClick: e=>entityStore.setSelection([key]),
-                            onChange: e=>{
-                                const {cx,cy, angle, size} = e.value;
-    
-                                entityStore.setValue(`${key}.transform`, {
-                                    translate: {
-                                        x: cx,
-                                        y: cy,
-                                    },
-                                    rotate: angle
-                                });
-                                entityStore.setValue(`${key}.shape.size`, size);
-                            }
-                        })
+                        return h("g", null, 
+                            h(Triangle, {
+                                id: key,
+                                className: entity.selected ? "shape selected" : "shape",
+                                cx: entity.transform.translate.x,
+                                cy: entity.transform.translate.y,
+                                angle: entity.transform.rotate,
+                                size: entity.shape.size,
+                                onClick: e=>entityStore.setSelection([key]),
+                                onChange: e=>{
+                                    const {cx,cy, angle, size} = e.value;
+        
+                                    entityStore.setValue(`${key}.transform`, {
+                                        translate: {
+                                            x: cx,
+                                            y: cy,
+                                        },
+                                        rotate: angle
+                                    });
+                                    entityStore.setValue(`${key}.shape.size`, size);
+                                }
+                            }),
+                            h("text", {x: cx, y: cy, fill:"white"}, `${idx}`)
+                        )
                     case "rectangle":
-                        return h(Rectangle, {
-                            id: key,
-                            className: entity.selected ? "shape selected" : "shape",
-                            cx: entity.transform.translate.x,
-                            cy: entity.transform.translate.y,
-                            width:  entity.shape.width,
-                            height: entity.shape.height,
-                            angle: entity.transform.rotate,
-                            onChange: e=>{
-                                const {cx,cy,width, height, angle} = e.value;
-   
-                                entityStore.setValue(`${key}.transform`, {
-                                    translate: {
-                                        x: cx,
-                                        y: cy,
-                                    },
-                                    rotate: angle
-                                });
-                                entityStore.setValue(`${key}.shape.width`, width);
-                                entityStore.setValue(`${key}.shape.height`, height);
-                            },
-                            onClick: e=>entityStore.setSelection([key]),
-                        })
+                        return h("g", null, 
+                            h(Rectangle, {
+                                id: key,
+                                className: entity.selected ? "shape selected" : "shape",
+                                cx: entity.transform.translate.x,
+                                cy: entity.transform.translate.y,
+                                width:  entity.shape.width,
+                                height: entity.shape.height,
+                                angle: entity.transform.rotate,
+                                onChange: e=>{
+                                    const {cx,cy,width, height, angle} = e.value;
+    
+                                    entityStore.setValue(`${key}.transform`, {
+                                        translate: {
+                                            x: cx,
+                                            y: cy,
+                                        },
+                                        rotate: angle
+                                    });
+                                    entityStore.setValue(`${key}.shape.width`, width);
+                                    entityStore.setValue(`${key}.shape.height`, height);
+                                },
+                                onClick: e=>entityStore.setSelection([key]),
+                            }),
+                            h("text", {x: cx, y: cy, fill:"white"}, `${idx}`)
+                        )
                     case "sphericalLens":
-                        return h(Lens, {
-                            className: entity.selected ? "shape selected" : "shape",
-                            id: key,
-                            cx: entity.transform.translate.x,
-                            cy: entity.transform.translate.y,
-                            angle: entity.transform.rotate,
-                            diameter: entity.shape.diameter,
-                            edgeThickness: entity.shape.edgeThickness,
-                            centerThickness: entity.shape.centerThickness,
-                            onClick: e=>entityStore.setSelection([key]),
-                            onChange: e=>{
-                                const {cx,cy,angle, diameter, edgeThickness, centerThickness} = e.value;
-   
-                                entityStore.setValue(`${key}.transform`, {
-                                    translate: {
-                                        x: cx,
-                                        y: cy,
-                                    },
-                                    rotate: angle
-                                });
-                                entityStore.setValue(`${key}.shape.diameter`, diameter);
-                                entityStore.setValue(`${key}.shape.edgeThickness`, edgeThickness);
-                                entityStore.setValue(`${key}.shape.centerThickness`, centerThickness);
-                            },
-                            
-                        })
+                        return h("g", null, 
+                            h(Lens, {
+                                className: entity.selected ? "shape selected" : "shape",
+                                id: key,
+                                cx: entity.transform.translate.x,
+                                cy: entity.transform.translate.y,
+                                angle: entity.transform.rotate,
+                                diameter: entity.shape.diameter,
+                                edgeThickness: entity.shape.edgeThickness,
+                                centerThickness: entity.shape.centerThickness,
+                                onClick: e=>entityStore.setSelection([key]),
+                                onChange: e=>{
+                                    const {cx,cy,angle, diameter, edgeThickness, centerThickness} = e.value;
+    
+                                    entityStore.setValue(`${key}.transform`, {
+                                        translate: {
+                                            x: cx,
+                                            y: cy,
+                                        },
+                                        rotate: angle
+                                    });
+                                    entityStore.setValue(`${key}.shape.diameter`, diameter);
+                                    entityStore.setValue(`${key}.shape.edgeThickness`, edgeThickness);
+                                    entityStore.setValue(`${key}.shape.centerThickness`, centerThickness);
+                                },
+                            }),
+                            h("text", {x: cx, y: cy, fill:"white"}, `${idx}`)
+                        )
                     case "line":
-                        return h(Line, {
-                            id: key,
-                            className: entity.selected ? "shape selected" : "shape",
-                            x1: entity.transform.translate.x - Math.cos(entity.transform.rotate)*entity.shape.length/2,
-                            y1: entity.transform.translate.y - Math.sin(entity.transform.rotate)*entity.shape.length/2,
-                            x2: entity.transform.translate.x + Math.cos(entity.transform.rotate)*entity.shape.length/2,
-                            y2: entity.transform.translate.y + Math.sin(entity.transform.rotate)*entity.shape.length/2,
-                            onChange: e=>{
-                                entityStore.setValue(`${key}.transform`, {
-                                    translate: {
-                                        x: (e.value.x1+e.value.x2)/2, 
-                                        y: (e.value.y1+e.value.y2)/2
-                                    },
-                                    rotate: Math.atan2(e.value.y2-e.value.y1, e.value.x2-e.value.x1)
-                                });
-                        
-                                entityStore.setValue(`${key}.shape.length`, Math.hypot(e.value.x2-e.value.x1, e.value.y2-e.value.y1));
-                            },
-                            onClick: e=>entityStore.setSelection([key]),
-                            id: key
-                        })
+                        return h("g", null, 
+                            h(Line, {
+                                id: key,
+                                className: entity.selected ? "shape selected" : "shape",
+                                x1: entity.transform.translate.x - Math.cos(entity.transform.rotate)*entity.shape.length/2,
+                                y1: entity.transform.translate.y - Math.sin(entity.transform.rotate)*entity.shape.length/2,
+                                x2: entity.transform.translate.x + Math.cos(entity.transform.rotate)*entity.shape.length/2,
+                                y2: entity.transform.translate.y + Math.sin(entity.transform.rotate)*entity.shape.length/2,
+                                onChange: e=>{
+                                    entityStore.setValue(`${key}.transform`, {
+                                        translate: {
+                                            x: (e.value.x1+e.value.x2)/2, 
+                                            y: (e.value.y1+e.value.y2)/2
+                                        },
+                                        rotate: Math.atan2(e.value.y2-e.value.y1, e.value.x2-e.value.x1)
+                                    });
+                            
+                                    entityStore.setValue(`${key}.shape.length`, Math.hypot(e.value.x2-e.value.x1, e.value.y2-e.value.y1));
+                                },
+                                onClick: e=>entityStore.setSelection([key]),
+                                id: key
+                            }),
+                            h("text", {x: cx, y: cy, fill:"white"}, `${idx}`)
+                        )
                     default:
                         break;
                 }

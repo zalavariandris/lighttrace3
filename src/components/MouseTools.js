@@ -242,8 +242,8 @@ const lensTool = e => {
         const [dx, dy] = [sceneX-beginSceneX, sceneY-beginSceneY];
 
         entityStore.setValue(`${entityKey}.shape.diameter`, Math.abs(dy*2));
-        entityStore.setValue(`${entityKey}.shape.edgeThickness`, dx>0 ?    1 : dx*2);
-        entityStore.setValue(`${entityKey}.shape.centerThickness`, dx>0 ? dx*2 : 0);
+        entityStore.setValue(`${entityKey}.shape.edgeThickness`, dx>0 ?    Math.abs(dx*2)*0.1 : Math.abs(dx*2));
+        entityStore.setValue(`${entityKey}.shape.centerThickness`, dx>0 ? Math.abs(dx*2) : Math.abs(dx*2)*0.1);
 
     }
 

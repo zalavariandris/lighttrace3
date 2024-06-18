@@ -5,7 +5,7 @@ import settingsStore from "../../stores/settings-store.js";
 
 import * as vec2 from "../../vec2.js"
 
-import { makeCircle, makeTriangle, makeLineSegment, makeRectangle, makeSphericalLens } from "./hitTest.js";
+import { makeCircle, makeTriangle, makeLineSegment, makeRectangle, makeSphericalLens, subtractSpan } from "./hitTest.js";
 import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../sampleLights.js";
 import { HitInfo, HitSpan, collapseSpan, firstUnion, hitCircle, hitLine, hitTriangle, hitSphericalLens, hitRectangle } from "./hitTest.js"
 import { sampleMirror, sampleDiffuse, sampleDielectric, sellmeierEquation, cauchyEquation } from "./sampleMaterials.js";
@@ -87,15 +87,14 @@ function hitScene(ray, shapeEntities)
 
         if(shapeHitSpan && sceneHitSpan)
         {
-            // find the first and the second cosest hitPoint
-            const sortedIntersections = [shapeHitSpan.enter, shapeHitSpan.exit, sceneHitSpan.enter, sceneHitSpan.exit]
-                .filter(hit => hit && hit.t >= 0) // Filter out null and non-positive intersections
-                .sort((a, b) => a.t - b.t); // Sort by the intersection t
-
-            const enter = sortedIntersections[0];
-            const exit = sortedIntersections.find(hit => hit.t > enter.t);
-
-            sceneHitSpan = new HitSpan(enter, exit);
+            if(shapeHitSpan.enter.t>sceneHitSpan.enter.t)
+            {
+                sceneHitSpan = subtractSpan(sceneHitSpan, shapeHitSpan);
+            }
+            else
+            {
+                sceneHitSpan = subtractSpan(shapeHitSpan, sceneHitSpan);
+            } 
         }
         else if(shapeHitSpan)
         {
@@ -297,18 +296,33 @@ function SVGRaytracer()
             className:"intersection-spans"
         },
             settings.display.hitSpans && allIntersectionSpans.filter(ispan=>ispan).map(ispan =>
-                h('line', {
-                    x1: ispan.enter.x,
-                    y1: ispan.enter.y,
-                    x2: ispan.exit.x,
-                    y2: ispan.exit.y,
-                    className: 'intersection',
-                    vectorEffect: "non-scaling-stroke",
-                    markerEnd:"url(#arrow)",
-                    stroke:"cyan",
-                    strokeWidth: 3,
-                    opacity: 0.05
-                })
+                h("g", null, 
+                    h('line', {
+                        x1: ispan.enter.x,
+                        y1: ispan.enter.y,
+                        x2: ispan.exit.x,
+                        y2: ispan.exit.y,
+                        className: 'intersection',
+                        vectorEffect: "non-scaling-stroke",
+                        // markerEnd:"url(#arrow)",
+                        stroke:"cyan",
+                        strokeWidth: 3,
+                        opacity: 0.05
+                    }),
+                    h("text",{
+                        x: ispan.enter.x,
+                        y: ispan.enter.y,
+                        fontSize: "50%",
+                        fill:"red",
+                        stroke: "none"
+                    }, "enter"),
+                    h("text",{
+                        x: ispan.exit.x,
+                        y: ispan.exit.y,
+                        fontSize: "50%",
+                        fill:"cyan",
+                    }, "exit")
+                )
             )
         )
     );

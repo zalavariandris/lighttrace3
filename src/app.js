@@ -164,10 +164,6 @@ function App({})
                     )
                 }),
                 h("button", {
-                    onMouseDown: e=>settingsStore.reset()
-                }, "reset settings"),
-
-                h("button", {
                     onMouseDown: e=>{
                         const new_display_settings = {
                             rays: settings.display.glrays,
@@ -184,7 +180,10 @@ function App({})
                         }
                         
                     }
-                }, "swap svg and webgl")
+                }, "swap svg and webgl"),
+                h("button", {
+                    onMouseDown: e=>settingsStore.reset()
+                }, "reset settings"),
 
             )
         ):null,

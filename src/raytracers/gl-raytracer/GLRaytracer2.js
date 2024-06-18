@@ -421,14 +421,13 @@ class GLRaytracer{
 
 
             /* swap buffers */
-            [this.raytraceFrontFBO, this.raytraceBackFBO] = [this.raytraceBackFBO, this.raytraceFrontFBO];
-            
-            [this.texturesFront.rayTransform, this.texturesBack.rayTransform] = [this.texturesBack.rayTransform, this.texturesFront.rayTransform];
+            [this.raytraceFrontFBO,            this.raytraceBackFBO]            = [this.raytraceBackFBO,            this.raytraceFrontFBO];
+            [this.texturesFront.rayTransform,  this.texturesBack.rayTransform]  = [this.texturesBack.rayTransform,  this.texturesFront.rayTransform];
             [this.texturesFront.rayProperties, this.texturesBack.rayProperties] = [this.texturesBack.rayProperties, this.texturesFront.rayProperties];
-            [this.texturesFront.rayColor, this.texturesBack.rayColor] = [this.texturesBack.rayColor, this.texturesFront.rayColor];
-            [this.texturesFront.hitPoint, this.texturesBack.hitPoint] = [this.texturesBack.hitPoint, this.texturesFront.hitPoint];
-            [this.texturesFront.hitSpan, this.texturesBack.hitSpan] = [this.texturesBack.hitSpan, this.texturesFront.hitSpan];
-            [this.texturesFront.rayPath, this.texturesBack.rayPath] = [this.texturesBack.rayPath, this.texturesFront.rayPath];
+            [this.texturesFront.rayColor,      this.texturesBack.rayColor]      = [this.texturesBack.rayColor,      this.texturesFront.rayColor];
+            [this.texturesFront.hitPoint,      this.texturesBack.hitPoint]      = [this.texturesBack.hitPoint,      this.texturesFront.hitPoint];
+            [this.texturesFront.hitSpan,       this.texturesBack.hitSpan]       = [this.texturesBack.hitSpan,       this.texturesFront.hitSpan];
+            [this.texturesFront.rayPath,       this.texturesBack.rayPath]       = [this.texturesBack.rayPath,       this.texturesFront.rayPath];
         }
 
         /* *************** *

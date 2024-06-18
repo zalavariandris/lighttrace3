@@ -159,7 +159,8 @@ HitSpan hitCircle(Ray ray, Circle circle)
             vec2 I2 = ray.pos+ray.dir*tFar;
 
             // exit normal
-            vec2 N2 = normalize(I2-circle.center);
+            vec2 N2 = (I2-circle.center);
+            N2*=1.0/length(N2);
 
             // exit info
             HitInfo exit = HitInfo(tFar, I2, N2, -1.0);
@@ -167,7 +168,7 @@ HitSpan hitCircle(Ray ray, Circle circle)
             if(tNear<0.0)
             {
                 return HitSpan(
-                    HitInfo(0.0, ray.pos, vec2(0.0), -1.0), 
+                    HitInfo(0.0, ray.pos, vec2(0.0, 1.0), -1.0), 
                     exit
                 );
             }
@@ -754,18 +755,18 @@ void main()
 
     if(IsValidSpan(ispan))
     {
-        HitInfo hitInfo = ispan.enter;
+        HitInfo hitInfo = ispan.enter.t>EPSILON ? ispan.enter : ispan.exit;
 
         // bounce ray
         Ray secondary = sampleScene(ray, hitInfo);
 
         // pack data
-        gl_FragData[0] = vec4(secondary.pos,secondary.dir);
-        gl_FragData[1] = vec4(secondary.intensity, secondary.wavelength, 0, 0);
-        gl_FragData[2] = vec4(1,1,1,1);
-        gl_FragData[3] = vec4(hitInfo.pos, hitInfo.normal);
-        gl_FragData[4] = vec4(ispan.enter.pos, ispan.exit.pos);
-        gl_FragData[5] = vec4(ray.pos, hitInfo.pos);
+        /*rayTransform*/gl_FragData[0] = vec4(secondary.pos,secondary.dir);
+        /*rayProperties*/gl_FragData[1] = vec4(secondary.intensity, secondary.wavelength, 0, 0);
+        /*rayColor*/gl_FragData[2] = vec4(1,1,1,1);
+        /*hitPoint*/gl_FragData[3] = vec4(hitInfo.pos, hitInfo.normal);
+        /*hitSpan*/gl_FragData[4] = vec4(ispan.enter.pos, ispan.exit.pos);
+        /*rayPath*/gl_FragData[5] = vec4(ray.pos, hitInfo.pos);
     }else{
         gl_FragData[5] = vec4(ray.pos, ray.pos+ray.dir*9999.0);
     }

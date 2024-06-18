@@ -95,13 +95,13 @@ class GLRaytracer{
             attributes: {
                 // width: 1024, heigh: 1024,
                 alpha: false,
-                depth: false,
-                stencil: false,
-                antialias: false,
-                premultipliedAlpha: false,
-                preserveDrawingBuffer: false,
-                preferLowPowerToHighPerformance: false,
-                failIfMajorPerformanceCaveat: false,
+                // depth: false,
+                // stencil: false,
+                // antialias: false,
+                // premultipliedAlpha: false,
+                // preserveDrawingBuffer: false,
+                // preferLowPowerToHighPerformance: false,
+                // failIfMajorPerformanceCaveat: false,
                 // blend: {
                 //     enable: true,
                 //     func: {
@@ -493,7 +493,7 @@ class GLRaytracer{
             uniforms:{
                 texture: this.postFrontFBO,
                 outputResolution: this.outputResolution,
-                exposure: 0.000003/this.totalPasses
+                exposure: 0.00003/this.totalPasses
             },
             frag:`precision mediump float;
             varying vec2 vUV;

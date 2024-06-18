@@ -822,12 +822,12 @@ void main()
         // pack data
         /* rayTransform */  gl_FragData[0] = vec4(secondary.pos,secondary.dir);
         /* rayProperties */ gl_FragData[1] = vec4(secondary.intensity, secondary.wavelength, 0, 0);
-        /* rayColor */      gl_FragData[2] = vec4(wavelengthToRGB(ray.wavelength), ray.intensity*200.0);
+        /* rayColor */      gl_FragData[2] = vec4(wavelengthToRGB(ray.wavelength), ray.intensity*2.0);
         /* hitPoint */      gl_FragData[3] = vec4(hitInfo.pos, hitInfo.normal);
         /* hitSpan */       gl_FragData[4] = vec4(ispan.enter.pos, ispan.exit.pos);
         /* rayPath */       gl_FragData[5] = vec4(ray.pos, hitInfo.pos);
     }else{
-        /* rayColor */      gl_FragData[2] = vec4(wavelengthToRGB(ray.wavelength), ray.intensity*200.0);
+        /* rayColor */      gl_FragData[2] = vec4(wavelengthToRGB(ray.wavelength), ray.intensity*2.0);
         gl_FragData[5] = vec4(ray.pos, ray.pos+ray.dir*9999.0);
     }
 }

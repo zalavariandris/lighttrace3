@@ -307,7 +307,7 @@ function SVGRaytracer()
                     markerEnd:"url(#arrow)",
                     stroke:"cyan",
                     strokeWidth: 3,
-                    opacity: 0.3
+                    opacity: 0.05
                 })
             )
         )

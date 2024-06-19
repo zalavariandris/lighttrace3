@@ -308,7 +308,10 @@ class GLRaytracer{
         }
 
         const lights = Object.entries(scene)
-            .filter( ([key, entity])=>entity.hasOwnProperty("light") && entity.hasOwnProperty("transform"));
+            .filter( ([key, entity])=>
+                entity.hasOwnProperty("light") && 
+                entity.hasOwnProperty("transform")
+        );
         
         if(lights.length<1){
             regl.clear({framebuffer: null, color: [0,0,0,1.0]});

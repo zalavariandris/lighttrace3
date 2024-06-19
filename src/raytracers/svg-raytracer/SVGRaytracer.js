@@ -5,9 +5,9 @@ import settingsStore from "../../stores/settings-store.js";
 
 import * as vec2 from "../../vec2.js"
 
-import { makeCircle, makeTriangle, makeLineSegment, makeRectangle, makeSphericalLens, subtractSpan } from "./hitTest.js";
+import { Circle, Triangle, LineSegment, Rectangle, SphericalLens } from "./Shapes.js";
 import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../sampleLights.js";
-import { HitInfo, HitSpan, collapseSpan, firstUnion, hitCircle, hitLine, hitTriangle, hitSphericalLens, hitRectangle } from "./hitTest.js"
+import { HitInfo, HitSpan, collapseSpan, firstUnion, subtractSpan, hitCircle, hitLine, hitTriangle, hitSphericalLens, hitRectangle } from "./hitTest.js"
 import { sampleMirror, sampleDiffuse, sampleDielectric, sellmeierEquation, cauchyEquation } from "./sampleMaterials.js";
 import { myrandom} from "../../utils.js"
 
@@ -15,15 +15,28 @@ const EPSILON = 0.001;
 
 const h = React.createElement;
 
-function makeRay(x,y,dx,dy,intensity, wavelength){
-    return {x,y,dx,dy,intensity, wavelength};
-}
+class LightRay{
+    x;
+    y;
+    dx;
+    dy;
+    intensity;
+    wavelength;
 
+    constructor(x,y,dx,dy,intensity, wavelength){
+        this.x = x;
+        this.y = y;
+        this.dx = dx;
+        this.dy = dy;
+        this.intensity = intensity;
+        this.wavelength = wavelength;
+    }
+}
 
 function hitScene(ray, shapeEntities)
 {
     // adjust ray to avoud zero distance collisions   
-    const adjustedRay = ray ? Object.freeze(makeRay(
+    const adjustedRay = ray ? Object.freeze(new LightRay(
         ray.x+ray.dx*EPSILON, 
         ray.y+ray.dy*EPSILON,
         ray.dx,
@@ -40,13 +53,13 @@ function hitScene(ray, shapeEntities)
         let shapeHitSpan;
         switch (entity.shape.type) {
             case "circle":
-                shapeHitSpan = hitCircle(adjustedRay, makeCircle(
+                shapeHitSpan = hitCircle(adjustedRay, new Circle(
                     cx, 
                     cy, 
                     entity.shape.radius));
                 break;
             case "rectangle":
-                shapeHitSpan = hitRectangle(adjustedRay, makeRectangle(
+                shapeHitSpan = hitRectangle(adjustedRay, new Rectangle(
                     cx, 
                     cy, 
                     angle, 
@@ -54,7 +67,7 @@ function hitScene(ray, shapeEntities)
                     entity.shape.height));
                 break;
             case "triangle":
-                shapeHitSpan = hitTriangle(adjustedRay, makeTriangle(
+                shapeHitSpan = hitTriangle(adjustedRay, new Triangle(
                     cx, 
                     cy, 
                     entity.transform.rotate, 
@@ -65,10 +78,10 @@ function hitScene(ray, shapeEntities)
                 const y1 = cy - Math.sin(angle)*entity.shape.length/2;
                 const x2 = cx + Math.cos(angle)*entity.shape.length/2;
                 const y2 = cy + Math.sin(angle)*entity.shape.length/2;
-                shapeHitSpan = hitLine(adjustedRay, makeLineSegment( x1, y1, x2, y2));
+                shapeHitSpan = hitLine(adjustedRay, new LineSegment( x1, y1, x2, y2));
                 break;
             case "sphericalLens":
-                shapeHitSpan = hitSphericalLens(adjustedRay, makeSphericalLens(
+                shapeHitSpan = hitSphericalLens(adjustedRay, new SphericalLens(
                     cx, 
                     cy, 
                     angle, 
@@ -145,7 +158,7 @@ const sampleScene = (ray, hit, random_number)=>{
         const vx = woY * hit.nx + woX * tangentX;
         const vy = woY * hit.ny + woX * tangentY;   
 
-        secondary = makeRay(
+        secondary = new LightRay(
             hit.x, 
             hit.y, 
             -vx, 
@@ -186,44 +199,47 @@ function SVGRaytracer()
                 case "directional":
                     return sampleDirectionalLight(entity, 16, true);
                 default:
-                    return makeRay(0,0,0,0,0,0);
+                    return new LightRay(0,0,0,0,0,0);
             }
         }).flat(1);
 
-    /* RAYTRACE */
-    const shapeEntities = Object.values(scene).filter(entity=>entity.hasOwnProperty("shape"));
-    for(let i=0; i<settings.raytrace.maxBounce; i++)
+    if(rays.length>0)
     {
-        /* Raytrace Scene */
-        const raytraceInfo = rays.map(ray=>{
-            if(ray==null){return [null,null, null];}
+        /* RAYTRACE */
+        const shapeEntities = Object.values(scene).filter(entity=>entity.hasOwnProperty("shape"));
+        for(let i=0; i<settings.raytrace.maxBounce; i++)
+        {
+            /* Raytrace Scene */
+            const raytraceInfo = rays.map(ray=>{
+                if(ray==null){return [null,null, null];}
 
-            // calc ray hitspans with scene
-            const hitSpan = Object.freeze(hitScene(ray, shapeEntities));
+                // calc ray hitspans with scene
+                const hitSpan = Object.freeze(hitScene(ray, shapeEntities));
 
-            // closest intersection point of sceneHitSpanPerRay
-            let hit;
-            if(hitSpan){
-                hit = Object.freeze(hitSpan.enter.t>EPSILON ? hitSpan.enter : hitSpan.exit);
-            }else{
-                hit = null;
-            }
+                // closest intersection point of sceneHitSpanPerRay
+                let hit;
+                if(hitSpan){
+                    hit = Object.freeze(hitSpan.enter.t>EPSILON ? hitSpan.enter : hitSpan.exit);
+                }else{
+                    hit = null;
+                }
 
-            /* secondary ray */
-            const secondary = sampleScene(ray, hit, myrandom(i+1));
+                /* secondary ray */
+                const secondary = sampleScene(ray, hit, myrandom(i+1));
 
-            // return raytrace results
-            return [hitSpan, hit, secondary];
-        });
+                // return raytrace results
+                return [hitSpan, hit, secondary];
+            });
 
-        const [hitSpans, hits, secondaries] = _.unzip(raytraceInfo);
+            const [hitSpans, hits, secondaries] = _.unzip(raytraceInfo);
 
-        /* collect */
-        allRays = [...allRays, ...rays]
-        allIntersectionSpans = [...allIntersectionSpans, ...hitSpans];
-        allHits = [...allHits, ...hits];
+            /* collect */
+            allRays = [...allRays, ...rays]
+            allIntersectionSpans = [...allIntersectionSpans, ...hitSpans];
+            allHits = [...allHits, ...hits];
 
-        rays = secondaries;
+            rays = secondaries;
+        }
     }
     
     return h('g', {

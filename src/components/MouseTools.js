@@ -307,7 +307,7 @@ const directionalLightTool = e => {
             type: "directional",
             width: 30,
             temperature: 6500,
-            intensity:3,
+            intensity:1.0,
         },
         selected: false
     });
@@ -344,7 +344,7 @@ const laserTool = e => {
         light: {
             type: "laser",
             temperature: 6500,
-            intensity:3,
+            intensity:1.0,
         },
         selected: false
     });

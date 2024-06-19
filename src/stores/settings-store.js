@@ -16,7 +16,7 @@ const defaultSettings = {
         glpaths: true
     },
     raytrace: {
-        lightSamples: Math.pow(4,5),//128*128; //Math.pow(4,4);
+        lightSamples: 128*128,//128*128; //Math.pow(4,4);
         maxBounce: 7,
         targetPasses: 10,
         downres: 1/2

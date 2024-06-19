@@ -8,6 +8,26 @@ import Icon from "../UI/Icon.js"
 
 const h = React.createElement;
 
+function Log2Slider({
+    min, 
+    max, 
+    value, 
+    onChange, 
+    ...props
+}){
+    return h("input", {
+        // type: "range",
+        min: Math.log2(2, min),
+        max: Math.log2(2, max),
+        value: Math.log2(2, value),
+        onChange: e=>{
+            console.log("on change", e)
+            onChange(e, Math.pow(parseInt(e.target.value), 2))
+        },
+        ...props
+    });
+}
+
 function SettingsToolbar({
 
 }){
@@ -29,7 +49,7 @@ function SettingsToolbar({
         h("label", null,
             h("input",{
                 type: "range",
-                min:1, max:9, step:1,
+                min:1, max:2048,
                 value: settings.raytrace.maxBounce,
                 onChange: e=>settingsStore.setValue(`raytrace.maxBounce`, parseInt(e.target.value))
             }),
@@ -37,11 +57,13 @@ function SettingsToolbar({
         ),
 
         h("label", null,
-            h("input",{
-                type: "range",
-                min:1, max:15, step:1,
-                value: Math.log2(settings.raytrace.lightSamples),
-                onChange: e=>settingsStore.setValue(`raytrace.lightSamples`, Math.pow(2,e.target.value))
+            h(Log2Slider,{
+                min:2, max:256, step:1,
+                value: settings.raytrace.lightSamples,
+                onChange: (e, val)=>{
+                    console.log(val);
+                    settingsStore.setValue(`raytrace.lightSamples`, parseInt(val))
+                }
             }),
             h("span", {style:{whiteSpace:"nowrap"}}, `samples: ${settings.raytrace.lightSamples}`)
         ),
@@ -49,9 +71,9 @@ function SettingsToolbar({
         h("label", null,
             h("input",{
                 type: "range",
-                min: 1, max:100, step:1,
+                min: 1, max:1000, step:1,
                 value: settings.raytrace.targetPasses,
-                onChange: e=>settingsStore.setValue(`raytrace.targetPasses`, e.target.value)
+                onChange: e=>settingsStore.setValue(`raytrace.targetPasses`, parseInt(e.target.value))
             }),
             h("span", {style:{whiteSpace:"nowrap"}}, `target passes: ${settings.raytrace.targetPasses}`)
         ),
@@ -114,88 +136,90 @@ function CreateToolbar({}){
     return h("div", {
         className: "toolbar horizontal"
     },
-        h("button", { 
-            className: uiState.activeMouseTool?false:true ? "active" : "",
-            onClick: (e)=>uiStore.setValue("activeMouseTool", null)
-        }, 
-            h(Icon, {icon: "cursor"}),
-            "select"
+        h("div", {className: "toolgroup"}, 
+            h("button", { 
+                className: uiState.activeMouseTool?false:true ? "active" : "",
+                onClick: (e)=>uiStore.setValue("activeMouseTool", null)
+            }, 
+                h(Icon, {icon: "cursor"}),
+                "select"
+            )
         ),
 
-        h("hr"),
+        h("div", {className: "toolgroup"}, 
+            h("button", {
+                className: uiState.activeMouseTool=="circle" ? "active" : "",
+                onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "circle")
+            }, 
+                h(Icon, {icon: "circle"}),
+                h("span", null, "circle")
+            ),
 
-        h("button", {
-            className: uiState.activeMouseTool=="circle" ? "active" : "",
-            onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "circle")
-        }, 
-            h(Icon, {icon: "circle"}),
-            h("span", null, "circle")
+            h("button", { 
+                className: uiState.activeMouseTool=="rectangle" ? "active" : "",
+                onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "rectangle")
+            },
+                h(Icon, {icon: "square"}),
+                "rectangle"
+            ),
+
+            h("button", { 
+                className: uiState.activeMouseTool=="triangle" ? "active" : "",
+                onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "triangle")
+            },
+                h(Icon, {icon: "triangle"}),
+                "triangle"
+            ),
+
+            h("button", { 
+                className: uiState.activeMouseTool=="lens" ? "active" : "",
+                onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "lens")
+            },
+                h(Icon, {icon: "lens"}),
+                "lens"
+            ),
+
+            h("button", { 
+                className: uiState.activeMouseTool=="line" ? "active" : "",
+                label:"create line",
+                onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "line")
+            },
+                h(Icon, {icon: "line"}),
+                "line"
+            )
         ),
 
-        h("button", { 
-            className: uiState.activeMouseTool=="rectangle" ? "active" : "",
-            onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "rectangle")
-        },
-            h(Icon, {icon: "square"}),
-            "rectangle"
+        h("div", {className: "toolgroup"}, 
+            h("button", { 
+                className: uiState.activeMouseTool=="pointLight" ? "active" : "",
+                onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "pointLight")
+            },
+                h(Icon, {icon: "lightbulb"}),
+                "pointlight"
+            ),
+            h("button", { 
+                className: uiState.activeMouseTool=="laser" ? "active" : "",
+                onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "laser")
+            },
+                h(Icon, {icon: "laser"}),
+                "laser"
+            ),
+            h("button", {
+                className: uiState.activeMouseTool=="directional" ? "active" : "",
+                onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "directional")
+            },
+                h(Icon, {icon: "sun"}),
+                "directional"
+            )
         ),
 
-        h("button", { 
-            className: uiState.activeMouseTool=="triangle" ? "active" : "",
-            onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "triangle")
-        },
-            h(Icon, {icon: "triangle"}),
-            "triangle"
-        ),
-
-        h("button", { 
-            className: uiState.activeMouseTool=="lens" ? "active" : "",
-            onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "lens")
-        },
-            h(Icon, {icon: "lens"}),
-            "lens"
-        ),
-
-        h("button", { 
-            className: uiState.activeMouseTool=="line" ? "active" : "",
-            label:"create line",
-            onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "line")
-        },
-            h(Icon, {icon: "line"}),
-            "line"
-        ),
-
-        h("hr"),
-
-        h("button", { 
-            className: uiState.activeMouseTool=="pointLight" ? "active" : "",
-            onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "pointLight")
-        },
-            h(Icon, {icon: "lightbulb"}),
-            "pointlight"
-        ),
-        h("button", { 
-            className: uiState.activeMouseTool=="laser" ? "active" : "",
-            onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "laser")
-        },
-            h(Icon, {icon: "laser"}),
-            "laser"
-        ),
-        h("button", {
-            className: uiState.activeMouseTool=="directional" ? "active" : "",
-            onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "directional")
-        },
-            h(Icon, {icon: "sun"}),
-            "directional"
-        ),
-
-        h("hr"),
-
-        h("button", {
-            onMouseDown: (e)=>{uiStore.setValue("page", "settings")}
-        },
-            h(Icon, {icon: "cog"}),
-            "settings"
+        h("div", {className: "toolgroup"}, 
+            h("button", {
+                onMouseDown: (e)=>{uiStore.setValue("page", "settings")}
+            },
+                h(Icon, {icon: "cog"}),
+                "settings"
+            )
         )
     )
 }
@@ -251,9 +275,9 @@ function EditToolbar({})
             h("label", null,
                 h("input",{
                     type: "range",
-                    min:0.1, max:10.0, step: 0.1,
+                    min:0.1, max:50.0, step: 0.1,
                     value: selectedObject.light.intensity,
-                    onChange: e=>entityStore.setValue(`${selectedKey}.light.intensity`, e.target.value)
+                    onChange: e=>entityStore.setValue(`${selectedKey}.light.intensity`, parseFloat(e.target.value))
                 }),
                 h("span", {style:{whiteSpace:"nowrap"}}, `${selectedObject.light.intensity} lm`)
             ),
@@ -261,9 +285,9 @@ function EditToolbar({})
             h("label", null,
                 h("input",{
                     type: "range",
-                    min:1000, max:10000, step:100,
+                    min:1000, max:100000, step:100,
                     value: selectedObject.light.temperature,
-                    onChange: e=>entityStore.setValue(`${selectedKey}.light.temperature`, e.target.value)
+                    onChange: e=>entityStore.setValue(`${selectedKey}.light.temperature`, parseFloat(e.target.value))
                 }),
                 h("span", {style:{whiteSpace:"nowrap"}}, `${selectedObject.light.temperature} K`)
             ),

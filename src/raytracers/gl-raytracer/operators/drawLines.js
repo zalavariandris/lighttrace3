@@ -55,9 +55,10 @@ function drawLinesBetweenPoints(regl, {
             endpointsResolution: [endpoints.width, endpoints.height],
             colorsTexture: colors,
             colorsResolution: [colors.width, colors.height],
-            projection: projection
+            projection: projection,
+            correctRasterizationBias: true
         },
-        vert: `precision mediump float;
+        vert: /*glsl*/`precision mediump float;
             uniform sampler2D startpointsTexture;
             uniform vec2 startpointsResolution;
             uniform sampler2D endpointsTexture;
@@ -65,6 +66,7 @@ function drawLinesBetweenPoints(regl, {
             uniform sampler2D colorsTexture;
             uniform vec2 colorsResolution; 
             uniform mat4 projection;
+            uniform bool correctRasterizationBias;
 
             attribute float vertexIdx;
 
@@ -97,17 +99,17 @@ function drawLinesBetweenPoints(regl, {
                     gl_Position = projection * vec4(endPoint, 0.0, 1.0);
                 }
 
-                // rasterization bias
-                vec2 dir = endPoint-startPoint;
-                float biasCorrection = clamp(length(dir)/max(abs(dir.x), abs(dir.y)), 1.0, 1.414214);
-                // vec2 dir = endPoint-startPoint;
-                // float bias = length(V) / max(abs(V.x),abs(V.y));
-
                 // set vertex colors
-                vColor = vec4(1,1,1,1);//texelFetchByIdx(colorsTexture, colorsResolution, lineIdx).rgba * vec4(biasCorrection,biasCorrection,biasCorrection,1);
+                vec4 lineColor = texelFetchByIdx(colorsTexture, colorsResolution, lineIdx);
+                if(correctRasterizationBias){
+                    vec2 dir = endPoint-startPoint;
+                    float biasCorrection = clamp(length(dir)/max(abs(dir.x), abs(dir.y)), 1.0, 1.414214);
+                    lineColor*= vec4(biasCorrection, biasCorrection, biasCorrection, 1.0);
+                }
+                vColor =  lineColor;
             }`,
 
-        frag:`precision mediump float;
+        frag: /*glsl*/`precision mediump float;
         uniform vec4 lineColor;
         varying vec4 vColor;
         void main()
@@ -157,14 +159,16 @@ function drawLineSegments(regl, {
             lineSegmetsResolution: [lineSegments.width, lineSegments.height],
             colorsTexture: colors,
             colorsResolution: [colors.width, colors.height],
-            projection: projection
+            projection: projection,
+            correctRasterizationBias: true
         },
-        vert: `precision mediump float;
+        vert: /*glsl*/`precision mediump float;
             uniform sampler2D lineSegmetsTexture;
             uniform vec2 lineSegmetsResolution;
             uniform sampler2D colorsTexture;
             uniform vec2 colorsResolution; 
             uniform mat4 projection;
+            uniform bool correctRasterizationBias;
 
             attribute float vertexIdx;
 
@@ -205,10 +209,14 @@ function drawLineSegments(regl, {
                 // float bias = length(V) / max(abs(V.x),abs(V.y));
 
                 // set vertex colors
-                vColor = texelFetchByIdx(colorsTexture, colorsResolution, lineIdx);
+                vec4 lineColor = texelFetchByIdx(colorsTexture, colorsResolution, lineIdx);
+                if(correctRasterizationBias){
+                    lineColor*= vec4(biasCorrection, biasCorrection, biasCorrection, 1.0);
+                }
+                vColor =  lineColor;
             }`,
 
-        frag:`precision mediump float;
+        frag: /*glsl*/`precision mediump float;
         uniform vec4 lineColor;
         varying vec4 vColor;
         void main()

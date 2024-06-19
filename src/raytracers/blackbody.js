@@ -128,7 +128,6 @@ function Plot({
     );
 }
 
-
 /**
  * Samples a wavelength based on the blackbody radiation spectrum for a given temperature.
  * This function uses Planck's law to calculate the spectral radiance for wavelengths in the visible spectrum
@@ -138,8 +137,9 @@ function Plot({
  * @param {number} samplesStep - The step size for sampling wavelengths within the visible spectrum. Default is 10 nm.
  * @returns {number} The sampled wavelength in nanometers.
  */
-function sampleBlackbody(temperature, random_number, samplesStep=10)
+function sampleBlackbody(temperature, random_number, samplesStep=100)
 {
+    // return getRandomWavelength(temperature)
     // Constants for Planck's law calculation
     const h = 6.62607015e-34; // Planck constant in m^2 kg / s
     const c = 2.99792458e8; // Speed of light in m / s
@@ -160,8 +160,8 @@ function sampleBlackbody(temperature, random_number, samplesStep=10)
     }
 
     // Define the visible spectrum range
-    const minWavelength = 380; // 380 nm, start of visible spectrum
-    const maxWavelength = 780; // 780 nm, end of visible spectrum
+    const minWavelength = 300; // 400 nm, start of visible spectrum
+    const maxWavelength = 700; // 700 nm, end of visible spectrum
 
     // Calculate radiance for sampled wavelengths within the visible spectrum
     let totalRadiance = 0;
@@ -187,8 +187,11 @@ function sampleBlackbody(temperature, random_number, samplesStep=10)
 
     // Sample a wavelength based on the cumulative probabilities
     const sampledIndex = cumulativeProbabilities.findIndex(cumProb => random_number < cumProb);
-    const sampledWavelength = radianceMap[sampledIndex].wavelength;
+    let sampledWavelength = radianceMap[sampledIndex].wavelength;
+    // since probability sample steps will return discreet wavelength values. spread the waveleneth between this steps with a random number
+    sampledWavelength+=Math.random()*samplesStep;
 
+    //
     return sampledWavelength;
 }
 

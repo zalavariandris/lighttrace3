@@ -2,6 +2,8 @@ import * as vec2 from "../../vec2.js"
 const EPSILON = 0.001;
 const LARGE_NUMBER = 9999;//.EPSILON;
 
+import { Circle, LineSegment, Rectangle } from "./Shapes.js";
+
 class HitInfo
 {
      constructor(t, x, y, nx=0, ny=0, material=-1)
@@ -23,56 +25,6 @@ class HitSpan{
         this.exit = exit;
     }
 }
-
-function makeRectangle(cx, cy, angle, width, height)
-{
-    return {cx,cy,angle, width, height};
-}
-
-function makeCircle(cx, cy, r){
-    return {cx, cy, r};
-}
-
-function makeLineSegment(x1, y1, x2, y2){
-    return {x1, y1, x2, y2};
-}
-
-function makeTriangle(cx, cy, angle, size){
-    return {cx, cy, angle, size};
-}
-
-function makeSphericalLens(cx,cy,angle, diameter, centerThickness, edgeThickness){
-    return {cx,cy,angle, diameter, centerThickness, edgeThickness}
-}
-
-/**
- * Calculates the center and radius of a circle that passes through three given points.
- * @param {number} Sx - The x-coordinate of the first point.
- * @param {number} Sy - The y-coordinate of the first point.
- * @param {number} Mx - The x-coordinate of the second point.
- * @param {number} My - The y-coordinate of the second point.
- * @param {number} Ex - The x-coordinate of the third point.
- * @param {number} Ey - The y-coordinate of the third point.
- * @returns {{cx: number, cy: number, r: number}} An object containing the x and y coordinates of the circle's center (cx, cy) and its radius (r).
- */
-function makeCircleFromThreePoints([Sx, Sy], [Mx, My], [Ex, Ey])
-{
-    const a = Sx * (My - Ey) - Sy * (Mx - Ex) + Mx * Ey - Ex * My;
-    
-    const b = (Sx * Sx + Sy * Sy) * (Ey - My) 
-            + (Mx * Mx + My * My) * (Sy - Ey)
-            + (Ex * Ex + Ey * Ey) * (My - Sy);
-    
-    const c = (Sx * Sx + Sy * Sy) * (Mx - Ex) 
-            + (Mx * Mx + My * My) * (Ex - Sx) 
-            + (Ex * Ex + Ey * Ey) * (Sx - Mx);
-    
-    const cx = -b / (2.0 * a);
-    const cy = -c / (2.0 * a);
-    const r = Math.sqrt((cx - Sx) * (cx - Sx) + (cy - Sy) * (cy - Sy));
-    return {cx, cy, r};
-}
-
 
 function collapseSpan(a, b)
 {
@@ -387,9 +339,9 @@ function hitTriangle(ray, {cx, cy, angle, size}){
     });
 
     // intersect each side
-    const I1 = lineIntersection(ray, makeLineSegment(vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y));
-    const I2 = lineIntersection(ray, makeLineSegment(vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y));
-    const I3 = lineIntersection(ray, makeLineSegment(vertices[2].x, vertices[2].y, vertices[0].x, vertices[0].y));
+    const I1 = lineIntersection(ray, new LineSegment(vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y));
+    const I2 = lineIntersection(ray, new LineSegment(vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y));
+    const I3 = lineIntersection(ray, new LineSegment(vertices[2].x, vertices[2].y, vertices[0].x, vertices[0].y));
     
     // find closest entry intersection
     let tEnter = LARGE_NUMBER;
@@ -577,28 +529,28 @@ function hitSphericalLens(ray, {cx, cy, angle, diameter, centerThickness, edgeTh
     const centerRight = cx + centerThickness/2.0;
 
     // subshapes
-    const leftCircle =  makeCircleFromThreePoints(
+    const leftCircle =  Circle.fromThreePoints(
         vec2.rotate([edgeLeft,  top], angle, [cx,cy]), 
         vec2.rotate([centerLeft,  cy],  angle, [cx,cy]), 
         vec2.rotate([edgeLeft, bottom], angle, [cx,cy])
     );
-    const rightCircle = makeCircleFromThreePoints(
+    const rightCircle = Circle.fromThreePoints(
         vec2.rotate([edgeRight, top],  angle, [cx,cy]), 
         vec2.rotate([centerRight, cy],  angle, [cx,cy]), 
         vec2.rotate([edgeRight, bottom], angle, [cx,cy])
     );
-    const boundingBox = makeRectangle(cx, cy, angle, Math.max(centerThickness, edgeThickness), diameter);
+    const boundingBox = new Rectangle(cx, cy, angle, Math.max(centerThickness, edgeThickness), diameter);
 
     const IsConvex = centerThickness>edgeThickness;
     if(IsConvex){
         // hitspans
         const leftHitSpan = hitCircle(ray, leftCircle);
         const rightHitSpan = hitCircle(ray, rightCircle);
-        const boundingSpan = hitRectangle(ray, makeRectangle(cx, cy, angle, Math.max(centerThickness, edgeThickness), diameter));
+        const boundingSpan = hitRectangle(ray, new Rectangle(cx, cy, angle, Math.max(centerThickness, edgeThickness), diameter));
         return intersectSpan(boundingSpan, intersectSpan(leftHitSpan, rightHitSpan));
     }
     else{
-        const boundingSpan = hitRectangle(ray, makeRectangle(cx, cy, angle, Math.max(centerThickness, edgeThickness), diameter));
+        const boundingSpan = hitRectangle(ray, new Rectangle(cx, cy, angle, Math.max(centerThickness, edgeThickness), diameter));
         const leftHitSpan = hitCircle(ray, leftCircle);
         const rightHitSpan = hitCircle(ray, rightCircle);
 
@@ -611,6 +563,5 @@ function hitSphericalLens(ray, {cx, cy, angle, diameter, centerThickness, edgeTh
 }
 
 export {HitInfo, HitSpan}
-export {makeCircle, makeRectangle, makeTriangle, makeLineSegment, makeSphericalLens};
-export {collapseSpan, intersectSpan, subtractSpan, firstUnion};
 export {hitCircle, hitLine, hitTriangle, hitSphericalLens, hitRectangle};
+export {collapseSpan, intersectSpan, subtractSpan, firstUnion};

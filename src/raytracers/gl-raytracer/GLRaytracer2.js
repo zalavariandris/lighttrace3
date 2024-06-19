@@ -18,18 +18,6 @@ import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../s
 
 import { myrandom } from "../../utils.js";
 
-function sampleLight(entity, lightSamples)
-{
-    switch (entity.light.type) {
-        case "point":
-            return samplePointLight(entity, lightSamples);
-        case "laser":
-            return sampleLaserLight(entity, lightSamples);
-        case "directional":
-            return sampleDirectionalLight(entity, lightSamples);
-    }
-}
-
 function loadImageData(imagePath){
     return new Promise(resolve => {
         const im = new Image();
@@ -93,29 +81,29 @@ class GLRaytracer{
             canvas: this.canvas,
             // pixelRatio: 2.0,
             attributes: {
-                // width: 1024, heigh: 1024,
+                width: 1024, heigh: 1024,
                 alpha: false,
-                // depth: false,
-                // stencil: false,
-                // antialias: false,
-                // premultipliedAlpha: false,
-                // preserveDrawingBuffer: false,
-                // preferLowPowerToHighPerformance: false,
-                // failIfMajorPerformanceCaveat: false,
-                // blend: {
-                //     enable: true,
-                //     func: {
-                //         srcRGB: 'one',
-                //         dstRGB: 'one',
-                //         srcAlpha: 'one',
-                //         dstAlpha: 'one',
-                //     },
-                //     equation: {
-                //         rgb: 'add',
-                //         alpha: 'add'
-                //     },
-                //     color: [0,0,0,0]
-                // },
+                depth: false,
+                stencil: false,
+                antialias: false,
+                premultipliedAlpha: false,
+                preserveDrawingBuffer: false,
+                preferLowPowerToHighPerformance: false,
+                failIfMajorPerformanceCaveat: false,
+                blend: {
+                    enable: true,
+                    func: {
+                        srcRGB: 'one',
+                        dstRGB: 'one',
+                        srcAlpha: 'one',
+                        dstAlpha: 'one',
+                    },
+                    equation: {
+                        rgb: 'add',
+                        alpha: 'add'
+                    },
+                    color: [0,0,0,1]
+                },
             },
             extensions: [
                 'WEBGL_draw_buffers', // multiple render targets
@@ -128,7 +116,7 @@ class GLRaytracer{
     {
         const regl = this.regl;
         const lightsCount = 2;
-        const RaysCount = 16**2; // default size for tyextures
+        const RaysCount = 16; // default size for tyextures
         const dataTextureRadius = Math.ceil(Math.sqrt(RaysCount)); // get radius to fit
         const common_settings = {
             width: dataTextureRadius,
@@ -137,29 +125,33 @@ class GLRaytracer{
             min: "nearest", 
             mag: "nearest"
         }
+        this.randomNumberPerRay =  regl.texture({...common_settings,
+            format: "luminance",
+            type: "float",
+        });
         this.texturesFront = {
             rayTransform: regl.texture({...common_settings,
-                format: "rgba",
+                format: "rgba", /*x,y,dx, dy*/
                 type: "float",
             }),
             rayProperties: regl.texture({...common_settings,
-                format: "rgba",
+                format: "rgba",/*intensity, wavelength*/
                 type: "float",
             }),
             rayColor: regl.texture({...common_settings,
-                format: "rgba",
+                format: "rgba", /* rgb+ color perceptual visibility as alpha */
                 type: "float",
             }),
             hitPoint: regl.texture({...common_settings,
-                format: "rgba",
+                format: "rgba", /*x,y,nx,ny*/
                 type: "float",
             }),
             hitSpan: regl.texture({...common_settings,
-                format: "rgba",
+                format: "rgba",/* x1,y1,x2,y2 */
                 type: "float",
             }),
             rayPath: regl.texture({...common_settings,
-                format: "rgba",
+                format: "rgba",/* x1,y1,x2,y2 */
                 type: "float",
             })
         };
@@ -172,7 +164,7 @@ class GLRaytracer{
             rayProperties: regl.texture({...common_settings,
                 format: "rgba",
                 type: "float",
-            }),
+            }), 
             rayColor: regl.texture({...common_settings,
                 format: "rgba",
                 type: "float",
@@ -231,20 +223,19 @@ class GLRaytracer{
             type: "float",
         }
 
-        this.sceneFbo = regl.framebuffer({
+        this.sceneFBO = regl.framebuffer({
             color: regl.texture(texture_settings),
-            depth: false    
+            depth: false
         });
 
         this.postFrontFBO = regl.framebuffer({
             color: regl.texture(texture_settings),
-            depth: false    
+            depth: false
         });
 
-        /* Framebuffers for post processing */
         this.postBackFBO = regl.framebuffer({
             color: regl.texture(texture_settings),
-            depth: false    
+            depth: false
         });
     }
 
@@ -254,15 +245,13 @@ class GLRaytracer{
         this.canvas.width = width;
         this.canvas.height = height;
         this.outputResolution = [width, height]
-        this.postFrontFBO.resize(width, height)
-        this.postBackFBO.resize(width, height)
     }
 
     clear()
     {
         const regl = this.regl;
         regl.clear({
-            framebuffer: this.sceneFbo, 
+            framebuffer: this.sceneFBO, 
             color: [0,0,0,1.0]
         });
         regl.clear({
@@ -273,39 +262,58 @@ class GLRaytracer{
             framebuffer: this.postFrontFBO, 
             color: [0,0,0,1.0]
         });
-        console.log("clear gl")
-        this.totalPasses=0;
-        
+
+        this.totalPasses = 0;
     }
 
     renderPass(scene, viewBox)
     {
         const regl = this.regl;
 
+        if(!scene || !viewBox)
+        {
+            regl.clear({framebuffer: null, color: [0,0,0,1.0]});
+            return;
+        }
+
         /* Cast initial rays */
         /* filter entities to lights */
-        const rays = Object.entries(scene)
+        const lightEntities = Object.fromEntries(Object.entries(scene)
             .filter( ([key, entity])=>
                 entity.hasOwnProperty("light") && 
                 entity.hasOwnProperty("transform")
-            )
+            ))
+
+        if(Object.keys(lightEntities).length<1){
+            regl.clear({framebuffer: null, color: [0,0,0,1.0]});
+            return;
+        }
+
+        const totalLightIntensity = Object.values(lightEntities).reduce( (accumulator, lightEntity)=>{
+            return accumulator+lightEntity.light.intensity;
+        }, 0.0 );
+
+        const rays = Object.entries(lightEntities)
             .map( ([key, entity])=>{
+                const totalSamples = this.settings.lightSamples;
+                const lightSamples = totalSamples * entity.light.intensity/totalLightIntensity;
+
                 switch (entity.light.type) {
                     case "point":
-                        return samplePointLight(entity, this.settings.lightSamples);
+                        return samplePointLight(entity, lightSamples);
                     case "laser":
-                        return sampleLaserLight(entity, this.settings.lightSamples);
+                        return sampleLaserLight(entity, lightSamples);
                     case "directional":
-                        return sampleDirectionalLight(entity, this.settings.lightSamples);
+                        return sampleDirectionalLight(entity, lightSamples);
                     default:
-                        return makeRay(0,0,0,0,0,0);
+                        throw Error("light type is not supported", entity.light.type)
                 }
             }).flat(1);
 
 
         /* Upload rays the textures */
         // calc output texture resolution to hold rays data on the GPU
-        const dataTextureRadius = Math.ceil(Math.sqrt(rays.length));
+        const dataTextureRadius = Math.ceil(Math.sqrt(this.settings.lightSamples));
         this.raytraceFrontFBO.resize(dataTextureRadius);
         this.raytraceBackFBO.resize(dataTextureRadius);
 
@@ -322,8 +330,13 @@ class GLRaytracer{
         });
         this.texturesFront.rayProperties({...common_raytrace_textures_settings,
             data: rays.map(ray=>
-                [ray.wavelength, ray.wavelength, ray.wavelength, ray.intensity]
+                [ray.intensity, ray.wavelength, 0, 0]
             ).extend([0,0,0,0], dataTextureRadius**2)
+        });
+        this.randomNumberPerRay({...common_raytrace_textures_settings,
+            data: Array.from({length: dataTextureRadius**2}).map(_=>
+                [Math.random(), Math.random(), Math.random(), Math.random()]
+            )
         });
 
         /* Prepare Scene data for GPU */
@@ -357,13 +370,13 @@ class GLRaytracer{
         const materialData = shapeEntities.map(entity=>{
             switch (entity.material.type) {
                 case "mirror":
-                    return [0, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
-                case "glass":
                     return [1, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
-                case "diffuse":
+                case "glass":
                     return [2, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
+                case "diffuse":
+                    return [3, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
                 default:
-                    return [0,0,0,0];
+                    return [-1,0,0,0];
             }
         });
 
@@ -371,10 +384,11 @@ class GLRaytracer{
          * TRACE RAYS *
          * ********** */
 
-                /* resize output framebuffers */
-        if(this.sceneFbo.width!=this.outputResolution[0] || this.sceneFbo.height!=this.outputResolution[1])
+        /* resize output framebuffers */
+        regl.clear({framebuffer: this.sceneFBO, color: [0,0,0,1.0]});
+        if(this.sceneFBO.width!=this.outputResolution[0] || this.sceneFBO.height!=this.outputResolution[1])
         {
-            this.sceneFbo.resize(this.outputResolution[0], this.outputResolution[1]);
+            this.sceneFBO.resize(this.outputResolution[0], this.outputResolution[1]);
             this.postFrontFBO.resize(this.outputResolution[0], this.outputResolution[1]);
             this.postBackFBO.resize(this.outputResolution[0], this.outputResolution[1]);
         }
@@ -388,7 +402,7 @@ class GLRaytracer{
                 raysColor: [0.7,0.3,0,0.3],
                 outputResolution: this.outputResolution,
                 viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-                framebuffer: this.sceneFbo
+                framebuffer: this.sceneFBO
             });
 
             // /* draw intersection spans */
@@ -398,7 +412,7 @@ class GLRaytracer{
             //     color: [0,1,1,0.03],
             //     outputResolution: this.outputResolution,
             //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-            //     framebuffer: this.sceneFbo
+            //     framebuffer: this.sceneFBO
             // });
 
             /* draw hitpoints */
@@ -409,7 +423,7 @@ class GLRaytracer{
                 raysColor: [0.0,0.9,0,0.1],
                 outputResolution: this.outputResolution,
                 viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-                framebuffer: this.sceneFbo
+                framebuffer: this.sceneFBO
             });
 
             /* draw light paths */
@@ -419,16 +433,17 @@ class GLRaytracer{
                 colors: this.texturesBack.rayColor,
                 outputResolution: this.outputResolution,
                 viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-                framebuffer: this.sceneFbo
+                framebuffer: this.sceneFBO
             });
 
             regl({...QUAD, vert:PASS_THROUGH_VERTEX_SHADER,
                 framebuffer: this.raytraceBackFBO,
                 uniforms: {
-                    SEED: Math.random()*500,
+                    SEED: Math.random()*this.totalPasses,
                     resolution: [this.raytraceBackFBO.width, this.raytraceBackFBO.height],
                     rayTransformTexture: this.texturesFront.rayTransform,
                     rayPropertiesTexture: this.texturesFront.rayProperties,
+                    randomNumberPerRay: this.randomNumberPerRay,
                     shapesCount: shapeData.length,
                     ...shapeEntities.length>0 && { // include shape info in uniforms only if they exist. otherwise regl throws an error. TODO: review this
                         CSGTransformData: transformData.flat(),
@@ -454,16 +469,31 @@ class GLRaytracer{
          * *************** */
 
         /* accumulate */
+        this.totalPasses+=1;
         regl({...QUAD,
             framebuffer: this.postFrontFBO,
             viewport: {x:0, y:0, width:this.outputResolution[0], height: this.outputResolution[1]},
             vert: PASS_THROUGH_VERTEX_SHADER,
             depth: { enable: false },
             uniforms:{
-                textureA: this.sceneFbo,
+                textureA: this.sceneFBO,
                 textureB: this.postBackFBO
             },
-            frag:`precision mediump float;
+            // blend: {
+            //     enable: true,
+            //     func: {
+            //         srcRGB: 'one',
+            //         dstRGB: 'one',
+            //         srcAlpha: 'one',
+            //         dstAlpha: 'one',
+            //     },
+            //     equation: {
+            //         rgb: 'add',
+            //         alpha: 'add'
+            //     },
+            //     color: [0,0,0,0]
+            // },
+            frag:/*glsl*/`precision mediump float;
             varying vec2 vUV;
             uniform sampler2D textureA;
             uniform sampler2D textureB;
@@ -482,8 +512,7 @@ class GLRaytracer{
         })();
 
         /* render post processing FBO to screen */
-        this.totalPasses+=1;
-        console.log(this.totalPasses)
+        
         
         regl({...QUAD,
             framebuffer: null,
@@ -493,12 +522,56 @@ class GLRaytracer{
             uniforms:{
                 texture: this.postFrontFBO,
                 outputResolution: this.outputResolution,
-                exposure: 0.00003/this.totalPasses
+                totalPasses: this.totalPasses,
+                exposure: 100.0
             },
-            frag:`precision mediump float;
+            frag:/*glsl*/`precision mediump float;
             varying vec2 vUV;
             uniform sampler2D texture;
+            uniform float totalPasses;
             uniform float exposure;
+
+            vec3 ACEScgFromLinearRGB(vec3 linearRGB)
+            {
+                // Transformation matrix from linear sRGB to ACEScg
+                const mat3 ACEScgMatrix = mat3(
+                    0.6624541811085053, 0.13400420645643313, 0.1561876870049078,
+                    0.27222871678091454, 0.6740817658111483,  0.05368951740793705,
+                    0.005574649490039499, 0.004060733528982825, 0.9833800523172168
+                );
+
+                return ACEScgMatrix * linearRGB;
+            }
+
+            vec3 linearRGBFromACEScg(vec3 ACEScgRGB)
+            {
+                // Inverse transformation matrix from ACEScg to linear sRGB
+                const mat3 inverseACEScgMatrix = mat3(
+                    1.6410233797, -0.3248032942, -0.2364246952,
+                    -0.6636628587,  1.6153315917,  0.0167563477,
+                    0.0117218943, -0.0082844420,  1.0082749946
+                );
+
+                return inverseACEScgMatrix * ACEScgRGB;
+            }
+
+            vec3 sRGBFromRGB(vec3 linearRGB){
+                float gamma = 1.0 / 2.2;
+                vec3 sRGB = pow(linearRGB, vec3(gamma));
+                return sRGB;
+            }
+
+            vec3 rec709FromRGB(vec3 linearRGB){
+                vec3 rec709RGB;
+                for (int i = 0; i < 3; i++) {
+                    if (linearRGB[i] < 0.018) {
+                        rec709RGB[i] = linearRGB[i] * 4.5;
+                    } else {
+                        rec709RGB[i] = 1.099 * pow(linearRGB[i], 0.45) - 0.099;
+                    }
+                }
+                return rec709RGB;
+            }
         
             vec3 filmic(vec3 x) {
                 vec3 X = max(vec3(0.0), x - 0.004);
@@ -506,11 +579,21 @@ class GLRaytracer{
                 return pow(result, vec3(2.2));
             }
 
-            void main() {
-                vec4 tex = texture2D(texture, vUV).rgba;
-                vec3 color = tex.rgb*exposure;
+            void main()
+            {
+                // get linear RGB color
+                vec3 color = texture2D(texture, vUV).rgb;
+                color *= 1.0/totalPasses;
+
+                // apply exposure in ACEScg colorspace
+                color = ACEScgFromLinearRGB(color);
+                color*=exposure;
+
+                // convert ACES to display colorspace
+                color = linearRGBFromACEScg(color);
+                // color = sRGBFromRGB(color);
                 // color = filmic(color);
-                gl_FragColor = vec4(color, exposure);
+                gl_FragColor = vec4(color, 1.0);
             }`
         })();
         

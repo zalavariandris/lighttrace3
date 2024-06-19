@@ -36,7 +36,6 @@
 - [x] fix ugly manipulators
 - [x] remove coreui
 
-
 ## fix bugs
 - [x] persistent viewbox
 - [x] stop gl rendering when hidden
@@ -54,16 +53,20 @@
 
 - WebGL raytracer
   - [x] rasterize bias: fix ray energy uniform in all direction
-  - [ ] fix convex lens rayrtacing in webgl raytracer
-  - [ ] lens intersect outside of diemeter, when edge thickness is greater then zero
-  - [ ] HOW TO REPRESENT No HitInfo and No Intersection SPAN? eg.: valid field, or tNear> tFar. The later could be automatic in several situation, but less readable.
-  - [ ] random rays seem to be on the same place. Review generating random numbers
+  - [x] fix convex lens rayrtacing in webgl raytracer
+  - [x] lens intersect outside of diemeter, when edge thickness is greater then zero
+  - [x] HOW TO REPRESENT No HitInfo and No Intersection SPAN? eg.: valid field, or tNear> tFar. The later could be automatic in several situation, but less readable.: IsValidSpan function chacks if tNear is greater than tFar
+  - [x] random rays seem to be on the same place. Review generating random numbers. random numbers generater was ok. The blackbody sampling returned discreet
+  - [x] distrubute lightSamples among all lights (based on intensity)
+  - [x] review data texture types.
+        all fbo attachment must have the same format (bitsize).
+  - [ ] review postprocessing. e.g.: support multiple colorspaces. refactor tonemapping, exposure and accumulate
   - [ ] physically accurate wavelength to color wavelength->XYZ->linearRGB->sRGB
-  - [ ] review data texture types. eg.: dont use alpha for light color. some texture a
-  - [ ] review tonemapping. support multiple colorspaces
+
   - [ ] refactor glviewport to map entities to its internal data (eg initialrays array, transformArray, shapes Array materialsArray...)
   - [ ] check if GLRaytracer leaks memory?
-  - [ ] distrubute lightSamples among all lights (based on intensity)
+  - [ ] fix accumulate makes final intensity stronger
+
 
 - [ ] Mobile support (ipad, iphone, android?, safari, chrome)
   - [ ] webgl support check (eg.: gl extension)
@@ -80,7 +83,7 @@
     - corner and rotation manips should work on the cornsers or edges as well. Keep tha manipulators for new users.
 
 - UI
-  - [ ] when window is narrow, the bottom bar buttons are not visible. break lines at categories if necessary
+  - [x] when window is narrow, the bottom bar buttons are not visible. break lines at categories if necessary
 
 
 # The code

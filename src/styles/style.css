@@ -1,4 +1,10 @@
 /*RESET*/
+*,
+*:before,
+*:after {
+    box-sizing: inherit;
+}
+
 body{
     margin: 0;
     padding: 0;
@@ -35,7 +41,8 @@ body{
 
 #topbar{
     position: fixed;
-    width: content-fit;
+    width: max-content;
+    max-width: 100%;
     top: 0;
     left: 50%;
     transform: translate(-50%, 0);
@@ -44,7 +51,8 @@ body{
 
 #bottombar{
     position: fixed;
-    width: content-fit;
+    width: max-content;
+    max-width: 100%;
     bottom: 0;
     left: 50%;
     transform: translate(-50%, 0);

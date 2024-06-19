@@ -7,10 +7,22 @@ precision mediump float;
 #define EPSILON 0.001
 #define LARGE_NUMBER 9999.0
 
+#define MATERIAL_NOTHING -1
+#define MATERIAL_MIRROR 1
+#define MATERIAL_GLASS 2
+#define MATERIAL_DIFFUSE 3
+
+#define SHAPE_CIRCLE 0
+#define SHAPE_RECTANGLE 1
+#define SHAPE_SPHERICAL_LENS 2
+#define SHAPE_TRIANGLE 3
+#define SHAPE_LINE_SEGMENT 4
+
 uniform float SEED;
 uniform vec2 resolution;
 uniform sampler2D rayTransformTexture;
 uniform sampler2D rayPropertiesTexture;
+uniform sampler2D randomNumberPerRay;
 uniform float shapesCount;
 uniform vec3 CSGTransformData[MAX_SHAPES];
 uniform vec4 CSGShapeData[MAX_SHAPES];
@@ -37,16 +49,6 @@ float gold_noise(vec2 xy, float seed){
     return fract(tan(distance(xy*PHI, xy)*seed));
 }
 
-int MIRROR = 1;
-int GLASS = 2;
-int DIFFUSE = 3;
-
-int CIRCLE_SHAPE = 0;
-int RECTANGLE_SHAPE = 1;
-int SPHERICAL_LENS_SHAPE = 2;
-int TRIANGLE_SHAPE = 3;
-int LINE_SEGMENT_SHAPE = 4;
-
 struct Ray{
     vec2 pos;
     vec2 dir;
@@ -57,12 +59,15 @@ struct Ray{
 Ray getCurrentRay()
 {
     vec2 texCoord = gl_FragCoord.xy / resolution;
+
     vec4 rayTransform = texture2D(rayTransformTexture, texCoord);
     vec2 rayPos = rayTransform.xy;
     vec2 rayDir = rayTransform.zw;
+
     vec4 rayProperties = texture2D(rayPropertiesTexture, texCoord);
     float intensity = rayProperties.x;
     float wavelength = rayProperties.y;
+
     return Ray(rayPos, rayDir, intensity, wavelength);
 }
 
@@ -70,7 +75,7 @@ struct HitInfo{
     float t;
     vec2 pos;
     vec2 normal;
-    float material;
+    int material;
 };
 
 struct HitSpan{
@@ -79,8 +84,8 @@ struct HitSpan{
 };
 
 HitSpan InvalidHitSpan = HitSpan(
-    HitInfo(LARGE_NUMBER, vec2(0,0), vec2(0,0), -1.0), 
-    HitInfo(-LARGE_NUMBER, vec2(0,0), vec2(0,0), -1.0)
+    HitInfo(LARGE_NUMBER, vec2(0,0), vec2(0,0), MATERIAL_NOTHING), 
+    HitInfo(-LARGE_NUMBER, vec2(0,0), vec2(0,0), MATERIAL_NOTHING)
 );
 
 bool IsValidSpan(HitSpan ispan){
@@ -163,12 +168,12 @@ HitSpan hitCircle(Ray ray, Circle circle)
             N2*=1.0/length(N2);
 
             // exit info
-            HitInfo exit = HitInfo(tFar, I2, N2, -1.0);
+            HitInfo exit = HitInfo(tFar, I2, N2, MATERIAL_NOTHING);
 
             if(tNear<0.0)
             {
                 return HitSpan(
-                    HitInfo(0.0, ray.pos, vec2(0.0, 1.0), -1.0), 
+                    HitInfo(0.0, ray.pos, vec2(0.0, 1.0), MATERIAL_NOTHING), 
                     exit
                 );
             }
@@ -180,7 +185,7 @@ HitSpan hitCircle(Ray ray, Circle circle)
             vec2 N1 = normalize(I1-circle.center);
 
             //enter info
-            HitInfo enter = HitInfo(tNear, I1, N1, -1.0);
+            HitInfo enter = HitInfo(tNear, I1, N1, MATERIAL_NOTHING);
 
             // intersection span
             return HitSpan(enter, exit);
@@ -284,14 +289,14 @@ HitSpan hitTriangle(Ray ray, Triangle triangle){
 
     if(tExit==tEnter){
         return HitSpan(
-            HitInfo(0.0, ray.pos, vec2(0.0), -1.0),
-            HitInfo(tEnter,  ray.pos+ray.dir*tEnter, nEnter, -1.0)
+            HitInfo(0.0, ray.pos, vec2(0.0), MATERIAL_NOTHING),
+            HitInfo(tEnter,  ray.pos+ray.dir*tEnter, nEnter, MATERIAL_NOTHING)
         );
     }
 
     return HitSpan(
-        HitInfo(tEnter, ray.pos+ray.dir*tEnter, nEnter, -1.0),
-        HitInfo(tExit,  ray.pos+ray.dir*tExit,  nExit, -1.0)
+        HitInfo(tEnter, ray.pos+ray.dir*tEnter, nEnter, MATERIAL_NOTHING),
+        HitInfo(tExit,  ray.pos+ray.dir*tExit,  nExit, MATERIAL_NOTHING)
     );
 }
 
@@ -335,12 +340,12 @@ HitSpan hitRectangle(Ray ray, Rectangle rect)
 
         I2 = rotate(I2, rect.angle, rect.center);
         N2 = rotate(N2, rect.angle);
-        HitInfo exit = HitInfo(tFar, I2, N2, -1.0);
+        HitInfo exit = HitInfo(tFar, I2, N2, MATERIAL_NOTHING);
 
         if(tNear<0.0){
             // when the enter point is behind the ray's origin, 
             // then intersection span will begin at the rays origin
-            HitInfo enter = HitInfo(0.0, ray.pos, vec2(0,0), -1.0);
+            HitInfo enter = HitInfo(0.0, ray.pos, vec2(0,0), MATERIAL_NOTHING);
             return HitSpan(enter,exit);
         }
 
@@ -366,7 +371,7 @@ HitSpan hitRectangle(Ray ray, Rectangle rect)
         I1 = rotate(I1, rect.angle, rect.center);
         N1 = rotate(N1, rect.angle);
 
-        HitInfo enter = HitInfo(tNear, I1, N1, -1.0);
+        HitInfo enter = HitInfo(tNear, I1, N1, MATERIAL_NOTHING);
 
         // return intersection span between the enter- and exit point
         return HitSpan(enter, exit);
@@ -406,8 +411,8 @@ HitSpan hitLine(Ray ray, Line line){
     N = normalize(-N);
 
     return HitSpan(
-        HitInfo(tNear, I, N, -1.0),
-        HitInfo(tNear+1.0, I, -N, -1.0)
+        HitInfo(tNear, I, N, MATERIAL_NOTHING),
+        HitInfo(tNear+1.0, I, -N, MATERIAL_NOTHING)
     );
 }
 
@@ -560,9 +565,11 @@ HitSpan hitScene(Ray ray)
         {
             vec2 center = CSGTransformData[i].xy;
             float angle = CSGTransformData[i].z;
-            HitSpan shapeHitSpan;
+            int shapeType = int(CSGShapeData[i].x);
+            int materialType = int(CSGMaterialData[i].x);
 
-            if(CSGShapeData[i].x==0.0) // CIRCLE
+            HitSpan shapeHitSpan;
+            if(shapeType==SHAPE_CIRCLE) // CIRCLE
             {
 
                 Circle circle = Circle(
@@ -571,7 +578,7 @@ HitSpan hitScene(Ray ray)
                 );
                 shapeHitSpan = hitCircle(adjustedRay, circle);
             }
-            else if(CSGShapeData[i].x==1.0) // RECTANGLE
+            else if(shapeType==SHAPE_RECTANGLE) // RECTANGLE
             {
                 // upack rectangle
                 Rectangle rect = Rectangle(center, 
@@ -582,7 +589,7 @@ HitSpan hitScene(Ray ray)
                 shapeHitSpan = hitRectangle(adjustedRay , rect);
             }
 
-            else if(CSGShapeData[i].x==2.0) // SphericalLens
+            else if(shapeType==SHAPE_SPHERICAL_LENS) // SphericalLens
             {
                 SphericalLens lens = SphericalLens(center, 
                                                     angle, 
@@ -591,14 +598,14 @@ HitSpan hitScene(Ray ray)
                                             CSGShapeData[i].z);
                 shapeHitSpan = hitSphericalLens(adjustedRay, lens);
             }
-            else if(CSGShapeData[i].x==3.0) // Triangle
+            else if(shapeType==SHAPE_TRIANGLE) // Triangle
             {
                 Triangle triangle = Triangle(center, 
                                            angle, 
                                            CSGShapeData[i].y);
                 shapeHitSpan = hitTriangle(adjustedRay, triangle);
             }
-            else if(CSGShapeData[i].x==4.0) // LineSegment
+            else if(shapeType==SHAPE_LINE_SEGMENT) // LineSegment
             {
                 float length = CSGShapeData[i].y;
                 float x1 = center.x - cos(angle)*length/2.0;
@@ -618,8 +625,8 @@ HitSpan hitScene(Ray ray)
 
             /* Set intersection material from current shape */
             if(IsValidSpan(shapeHitSpan)){
-                shapeHitSpan.enter.material = CSGMaterialData[i].x;
-                shapeHitSpan.exit.material = CSGMaterialData[i].x;
+                shapeHitSpan.enter.material = materialType;
+                shapeHitSpan.exit.material = materialType;
             }
 
             // get closest hit
@@ -670,15 +677,15 @@ float sellmeierEquation(vec3 b, vec3 c, float lambda)
     return sqrt(nSq);
 }
 
-vec2 sampleDiffuse(vec2 wi)
+vec2 sampleDiffuse(vec2 wi, float randomNumber)
 {
-    float randomNumber = gold_noise(gl_FragCoord.xy, SEED);
+    // float randomNumber = gold_noise(gl_FragCoord.xy, SEED);
     float x = randomNumber*2.0 - 1.0;
     float y = sqrt(1.0 - x*x);
     return vec2(x, y*sign(wi.y));
 }
 
-vec2 sampleDielectric(vec2 wi, float ior) 
+vec2 sampleDielectric(vec2 wi, float ior, float randomNumber) 
 {
     float eta = wi.y < 0.0 ? ior : 1.0 / ior;
     float sinThetaTSq = eta * eta * (1.0 - abs(wi.y) * abs(wi.y));
@@ -701,7 +708,7 @@ vec2 sampleDielectric(vec2 wi, float ior)
         fresnell = (Rs * Rs + Rp * Rp) * 0.5;
     }
 
-    float randomNumber = gold_noise(gl_FragCoord.xy, SEED);
+    // float randomNumber = gold_noise(gl_FragCoord.xy, SEED);
     if (1.0 < fresnell) 
     {
         return vec2(-wi.x, wi.y);
@@ -712,28 +719,28 @@ vec2 sampleDielectric(vec2 wi, float ior)
     }
 }
 
-Ray sampleScene(Ray ray, HitInfo hitInfo)
+Ray bounceRay(Ray ray, HitInfo hitInfo, float randomNumber)
 {
     vec2 tangent = vec2(-hitInfo.normal.y, hitInfo.normal.x); // 90deg rotation
     vec2 wiLocal = -vec2(dot(tangent, ray.dir), dot(hitInfo.normal, ray.dir));  // tangent space exiting r\y directiuon
     
     // calculate exit direction in local space
     vec2 woLocal; // tangent space exit ray direction
-    if(hitInfo.material<0.5)
+    if(hitInfo.material==MATERIAL_MIRROR)
     {
         woLocal = sampleMirror(wiLocal);
     }
-    else if(hitInfo.material<1.5)
+    else if(hitInfo.material==MATERIAL_GLASS)
     {
         vec3 b = vec3(1.03961212, 0.231792344, 1.01046945);
         vec3 c = vec3(0.00600069867, 0.0200179144, 103.560653);
         float sellmeierIor =  sellmeierEquation(b, c, ray.wavelength*1e-3);
         float cauchyIor =  cauchyEquation(1.44, 0.02, ray.wavelength*1e-3);
-        woLocal = sampleDielectric(wiLocal, cauchyIor);
+        woLocal = sampleDielectric(wiLocal, cauchyIor, randomNumber);
     }
-    else if(hitInfo.material<2.5)
+    else if(hitInfo.material==MATERIAL_DIFFUSE)
     {
-        woLocal = sampleDiffuse(wiLocal);
+        woLocal = sampleDiffuse(wiLocal, randomNumber);
     }
     else
     {
@@ -745,67 +752,55 @@ Ray sampleScene(Ray ray, HitInfo hitInfo)
     return Ray(hitInfo.pos, woWorld, ray.intensity, ray.wavelength);
 }
 
-// Convert wavelength in nanometers to RGB using a perceptually accurate method
-vec3 wavelengthToRGB(float wavelength) {
-    
-
-    vec3 color = vec3(0.0, 0.0, 0.0);
-
-    if (wavelength >= 380.0 && wavelength <= 440.0) {
-        color.r = -1.0 * (wavelength - 440.0) / (440.0 - 380.0);
-        color.g = 0.0;
-        color.b = 1.0;
-    } else if (wavelength >= 440.0 && wavelength <= 490.0) {
-        color.r = 0.0;
-        color.g = (wavelength - 440.0) / (490.0 - 440.0);
-        color.b = 1.0;
-    } else if (wavelength >= 490.0 && wavelength <= 510.0) {
-        color.r = 0.0;
-        color.g = 1.0;
-        color.b = -1.0 * (wavelength - 510.0) / (510.0 - 490.0);
-    } else if (wavelength >= 510.0 && wavelength <= 580.0) {
-        color.r = (wavelength - 510.0) / (580.0 - 510.0);
-        color.g = 1.0;
-        color.b = 0.0;
-    } else if (wavelength >= 580.0 && wavelength <= 645.0) {
-        color.r = 1.0;
-        color.g = -1.0 * (wavelength - 645.0) / (645.0 - 580.0);
-        color.b = 0.0;
-    } else if (wavelength >= 645.0 && wavelength <= 780.0) {
-        color.r = 1.0;
-        color.g = 0.0;
-        color.b = 0.0;
-    }
-
-    // Let the intensity fall off near the vision limits
-    float factor;
-    if (wavelength >= 380.0 && wavelength <= 420.0) {
-        factor = 0.3 + 0.7 * (wavelength - 380.0) / (420.0 - 380.0);
-    } else if (wavelength >= 420.0 && wavelength <= 700.0) {
-        factor = 1.0;
-    } else if (wavelength >= 700.0 && wavelength <= 780.0) {
-        factor = 0.3 + 0.7 * (780.0 - wavelength) / (780.0 - 700.0);
-    } else {
-        factor = 0.0;
-    }
-
-    vec3 linearRGB = color * factor;
-    return linearRGB;
-}
-
-// Apply gamma correction
-vec3 linearTosRGB(vec3 linearRGB)
+// Wavelength to RGB
+// Created by Alan Zucconi
+// spurce: https://www.alanzucconi.com/2017/07/15/improving-the-rainbow-2/
+float saturate (float x)
 {
-    float gamma = 1.0/2.2;
-    vec3 sRGB = pow(linearRGB, vec3(gamma));
-    return sRGB;
+    return min(1.0, max(0.0,x));
 }
+vec3 saturate (vec3 x)
+{
+    return min(vec3(1.,1.,1.), max(vec3(0.,0.,0.),x));
+}
+vec3 bump3y (vec3 x, vec3 yoffset)
+{
+	vec3 y = vec3(1.,1.,1.) - x * x;
+    y = y-yoffset;
+	y = saturate(y);
+	return y;
+}
+vec3 spectral_zucconi6 (float w)
+{
+    // w: [400, 700]
+    // x: [0,   1]
+    float x = saturate((w - 400.0)/ 300.0);
+
+    vec3 c1 = vec3(3.54585104, 2.93225262, 2.41593945);
+    vec3 x1 = vec3(0.69549072, 0.49228336, 0.27699880);
+    vec3 y1 = vec3(0.02312639, 0.15225084, 0.52607955);
+
+    vec3 c2 = vec3(3.90307140, 3.21182957, 3.96587128);
+    vec3 x2 = vec3(0.11748627, 0.86755042, 0.66077860);
+    vec3 y2 = vec3(0.84897130, 0.88445281, 0.73949448);
+
+    return
+        bump3y(c1 * (x - x1), y1) +
+        bump3y(c2 * (x - x2), y2) ;
+}
+
+// Convert wavelength in nanometers to RGB using a perceptually accurate method
+vec3 RGBFromWavelength(float wavelength) {
+    vec3 RGB = spectral_zucconi6(wavelength);
+    return RGB;
+}
+
 
 void main()
 {
     // unpack ray from data texture
     Ray ray = getCurrentRay();
-
+    float randomNumber = gold_noise(gl_FragCoord.xy, SEED);
     // hit scene
     HitSpan ispan = hitScene(ray);
 
@@ -816,18 +811,19 @@ void main()
             hitInfo = ispan.exit;
         };
 
+
         // bounce ray
-        Ray secondary = sampleScene(ray, hitInfo);
+        Ray secondary = bounceRay(ray, hitInfo, randomNumber);
 
         // pack data
         /* rayTransform */  gl_FragData[0] = vec4(secondary.pos,secondary.dir);
         /* rayProperties */ gl_FragData[1] = vec4(secondary.intensity, secondary.wavelength, 0, 0);
-        /* rayColor */      gl_FragData[2] = vec4(wavelengthToRGB(ray.wavelength), ray.intensity*2.0);
+        /* rayColor */      gl_FragData[2] = vec4(RGBFromWavelength(ray.wavelength), ray.intensity);
         /* hitPoint */      gl_FragData[3] = vec4(hitInfo.pos, hitInfo.normal);
         /* hitSpan */       gl_FragData[4] = vec4(ispan.enter.pos, ispan.exit.pos);
         /* rayPath */       gl_FragData[5] = vec4(ray.pos, hitInfo.pos);
     }else{
-        /* rayColor */      gl_FragData[2] = vec4(wavelengthToRGB(ray.wavelength), ray.intensity*2.0);
+        /* rayColor */      gl_FragData[2] = vec4(RGBFromWavelength(ray.wavelength), ray.intensity);
         gl_FragData[5] = vec4(ray.pos, ray.pos+ray.dir*9999.0);
     }
 }

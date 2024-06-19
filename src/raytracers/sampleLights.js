@@ -4,7 +4,7 @@ import {myrandom} from "../utils.js"
 function samplePointLight(entity, lightSamples)
 {
     return Array.from({length: lightSamples}).map((_, k)=>{
-        const angle = k/lightSamples*Math.PI*2+Math.PI/8.0;
+        const angle = Math.random()*Math.PI*2+Math.PI/8.0;
         return {
             x:entity.transform.translate.x, 
             y:entity.transform.translate.y, 

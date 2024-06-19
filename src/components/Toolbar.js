@@ -8,25 +8,7 @@ import Icon from "../UI/Icon.js"
 
 const h = React.createElement;
 
-function Log2Slider({
-    min, 
-    max, 
-    value, 
-    onChange, 
-    ...props
-}){
-    return h("input", {
-        // type: "range",
-        min: Math.log2(2, min),
-        max: Math.log2(2, max),
-        value: Math.log2(2, value),
-        onChange: e=>{
-            console.log("on change", e)
-            onChange(e, Math.pow(parseInt(e.target.value), 2))
-        },
-        ...props
-    });
-}
+
 
 function SettingsToolbar({
 
@@ -57,12 +39,12 @@ function SettingsToolbar({
         ),
 
         h("label", null,
-            h(Log2Slider,{
-                min:2, max:256, step:1,
+            h("input",{
+                type: "range",
+                min:2, max:2048, step:1,
                 value: settings.raytrace.lightSamples,
-                onChange: (e, val)=>{
-                    console.log(val);
-                    settingsStore.setValue(`raytrace.lightSamples`, parseInt(val))
+                onChange: (e)=>{
+                    settingsStore.setValue(`raytrace.lightSamples`, parseInt(e.target.value))
                 }
             }),
             h("span", {style:{whiteSpace:"nowrap"}}, `samples: ${settings.raytrace.lightSamples}`)

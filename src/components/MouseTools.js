@@ -1,4 +1,8 @@
-import entityStore from "../stores/entity-store.js"
+import entityStore from "../stores/entity-store.js";
+import {makeTransform} from "../stores/entity-store.js";
+import {makeCircle, makeRectangle, makeTriangle, makeSphericalLens, makeLineSegment} from "../stores/entity-store.js";
+import {makeMirror, makeGlass, makeDiffuse} from "../stores/entity-store.js";
+import {makePointLight, makeDirectionalLight, makeLaserLight} from "../stores/entity-store.js";
 import uiStore from "../stores/ui-store.js";
 
 // shapes
@@ -46,20 +50,9 @@ const circleTool = e => {
     // create circle
     const key = generateUniqueName("circle", Object.keys(entityStore.getSnapshot()));
     entityStore.addEntity(key, {
-        transform:{
-            translate: {
-                x: beginSceneX,
-                y: beginSceneY
-            },
-            rotate: 0
-        },
-        shape: {
-            type: "circle",
-            radius: 5
-        },
-        material: {
-            type: "glass"
-        },
+        transform: makeTransform(beginSceneX, beginSceneY),
+        shape: makeCircle(5),
+        material: makeGlass(),
         selected: false
     });
 
@@ -87,21 +80,9 @@ const rectangleTool = e => {
 
     const key = generateUniqueName("rectangle", Object.keys(entityStore.getSnapshot()));
     entityStore.addEntity(key, {
-        transform:{
-            translate: {
-                x: beginSceneX,
-                y: beginSceneY
-            },
-            rotate: 0
-        },
-        shape: {
-            type: "rectangle",
-            width: 5,
-            height: 5
-        },
-        material: {
-            type: "diffuse"
-        },
+        transform: makeTransform(beginSceneX, beginSceneY),
+        shape: makeRectangle(5,5),
+        material: makeDiffuse(),
         selected: false
     });
 
@@ -131,20 +112,9 @@ const triangleTool = e => {
 
     const key = generateUniqueName("triangle", Object.keys(entityStore.getSnapshot()));
     entityStore.addEntity(key, {
-        transform:{
-            translate: {
-                x: beginSceneX,
-                y: beginSceneY
-            },
-            rotate: 0
-        },
-        shape: {
-            type: "triangle",
-            size: 5,
-        },
-        material: {
-            type: "diffuse"
-        },
+        transform: makeTransform(beginSceneX, beginSceneY),
+        shape: makeTriangle(5),
+        material: makeDiffuse(),
         selected: false
     });
 
@@ -173,17 +143,12 @@ const lineTool = e => {
 
     const entityKey = generateUniqueName("line", Object.keys(entityStore.getSnapshot()));
     entityStore.addEntity(entityKey, {
-        transform:{
-            translate: {x: beginSceneX, y: beginSceneY},
-            rotate: 0.0
-        },
+        transform: makeTransform(beginSceneX, beginSceneY),
         shape: {
             type: "line", 
             length: 5.0
         },
-        material: {
-            type: "diffuse"
-        },
+        material: makeDiffuse(),
         selected: false
     });
 
@@ -219,19 +184,14 @@ const lensTool = e => {
 
     const entityKey = generateUniqueName("lens", Object.keys(entityStore.getSnapshot()));
     entityStore.addEntity(entityKey, {
-        transform: {
-            translate: {x: beginSceneX, y: beginSceneY},
-            rotate: 0
-        },
+        transform: makeTransform(beginSceneX, beginSceneY),
         shape: {
             type: "sphericalLens",
             diameter: 20,
             edgeThickness: 0,
             centerThickness: 5
         },
-        material: {
-            type: "glass"
-        },
+        material: makeGlass(),
         selected: false
     });
 
@@ -262,15 +222,8 @@ const pointlightTool = e => {
 
     const entityKey = generateUniqueName("pointlight", Object.keys(entityStore.getSnapshot()));
     entityStore.addEntity(entityKey, {
-        transform:{
-            translate: {x: beginSceneX, y: beginSceneY},
-            rotate: 0.0
-        },
-        light: {
-            type: "point",
-            temperature: 6500,
-            intensity:1.0,
-        },
+        transform: makeTransform(beginSceneX, beginSceneY),
+        light: makePointLight(6500, 1.0),
         selected: false
     });
 
@@ -299,16 +252,8 @@ const directionalLightTool = e => {
     
     const key = generateUniqueName("directionalLight", Object.keys(entityStore.getSnapshot()));
     entityStore.addEntity(key, {
-        transform:{
-            translate: {x: beginSceneX, y: beginSceneY},
-            rotate: 0
-        },
-        light: {
-            type: "directional",
-            width: 30,
-            temperature: 6500,
-            intensity:1.0,
-        },
+        transform: makeTransform(beginSceneX, beginSceneY),
+        light: makeDirectionalLight(6500, 1.0, 30),
         selected: false
     });
 
@@ -337,15 +282,8 @@ const laserTool = e => {
 
     const entityKey = generateUniqueName("laser", Object.keys(entityStore.getSnapshot()));
     entityStore.addEntity(entityKey, {
-        transform:{
-            translate: {x: beginSceneX, y: beginSceneY},
-            rotate: 0
-        },
-        light: {
-            type: "laser",
-            temperature: 6500,
-            intensity:1.0,
-        },
+        transform: makeTransform(beginSceneX, beginSceneY),
+        light: makeLaserLight(6500, 1.0),
         selected: false
     });
 

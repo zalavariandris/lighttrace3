@@ -23,10 +23,22 @@ uniform vec2 resolution;
 uniform sampler2D rayTransformTexture;
 uniform sampler2D rayPropertiesTexture;
 uniform sampler2D randomNumberPerRay;
+uniform sampler2D spectralTexture;
+
+
 uniform float shapesCount;
 uniform vec3 CSGTransformData[MAX_SHAPES];
 uniform vec4 CSGShapeData[MAX_SHAPES];
 uniform vec4 CSGMaterialData[MAX_SHAPES];
+
+float PHI = 1.61803398874989484820459;  // Φ = Golden Ratio
+float gold_noise(vec2 xy, float seed){
+    return fract(tan(distance(xy*PHI, xy)*seed));
+}
+
+float rand(){
+    return gold_noise(gl_FragCoord.xy, SEED+5.0);
+}
 
 vec2 rotate(vec2 pos, float radAngle, vec2 pivot)
 {
@@ -44,10 +56,7 @@ vec2 rotate(vec2 pos, float radAngle){
     return rotate(pos, radAngle, vec2(0,0));
 }
 
-float PHI = 1.61803398874989484820459;  // Φ = Golden Ratio
-float gold_noise(vec2 xy, float seed){
-    return fract(tan(distance(xy*PHI, xy)*seed));
-}
+
 
 struct Ray{
     vec2 pos;
@@ -677,15 +686,15 @@ float sellmeierEquation(vec3 b, vec3 c, float lambda)
     return sqrt(nSq);
 }
 
-vec2 sampleDiffuse(vec2 wi, float randomNumber)
+vec2 sampleDiffuse(vec2 wi)
 {
     // float randomNumber = gold_noise(gl_FragCoord.xy, SEED);
-    float x = randomNumber*2.0 - 1.0;
+    float x = rand()*2.0 - 1.0;
     float y = sqrt(1.0 - x*x);
     return vec2(x, y*sign(wi.y));
 }
 
-vec2 sampleDielectric(vec2 wi, float ior, float randomNumber) 
+vec2 sampleDielectric(vec2 wi, float ior) 
 {
     float eta = wi.y < 0.0 ? ior : 1.0 / ior;
     float sinThetaTSq = eta * eta * (1.0 - abs(wi.y) * abs(wi.y));
@@ -709,7 +718,7 @@ vec2 sampleDielectric(vec2 wi, float ior, float randomNumber)
     }
 
     // float randomNumber = gold_noise(gl_FragCoord.xy, SEED);
-    if (1.0 < fresnell) 
+    if (rand() < fresnell) 
     {
         return vec2(-wi.x, wi.y);
     }
@@ -719,7 +728,7 @@ vec2 sampleDielectric(vec2 wi, float ior, float randomNumber)
     }
 }
 
-Ray bounceRay(Ray ray, HitInfo hitInfo, float randomNumber)
+Ray bounceRay(Ray ray, HitInfo hitInfo)
 {
     vec2 tangent = vec2(-hitInfo.normal.y, hitInfo.normal.x); // 90deg rotation
     vec2 wiLocal = -vec2(dot(tangent, ray.dir), dot(hitInfo.normal, ray.dir));  // tangent space exiting r\y directiuon
@@ -736,11 +745,11 @@ Ray bounceRay(Ray ray, HitInfo hitInfo, float randomNumber)
         vec3 c = vec3(0.00600069867, 0.0200179144, 103.560653);
         float sellmeierIor =  sellmeierEquation(b, c, ray.wavelength*1e-3);
         float cauchyIor =  cauchyEquation(1.44, 0.02, ray.wavelength*1e-3);
-        woLocal = sampleDielectric(wiLocal, cauchyIor, randomNumber);
+        woLocal = sampleDielectric(wiLocal, cauchyIor);
     }
     else if(hitInfo.material==MATERIAL_DIFFUSE)
     {
-        woLocal = sampleDiffuse(wiLocal, randomNumber);
+        woLocal = sampleDiffuse(wiLocal);
     }
     else
     {
@@ -789,18 +798,45 @@ vec3 spectral_zucconi6 (float w)
         bump3y(c2 * (x - x2), y2) ;
 }
 
+
+
+vec3 hueToLinearRGB(float hue) {
+    // hue is expected to be in the range [0, 1]
+    float r = abs(hue * 6.0 - 3.0) - 1.0;
+    float g = 2.0 - abs(hue * 6.0 - 2.0);
+    float b = 2.0 - abs(hue * 6.0 - 4.0);
+    return vec3(clamp(r, 0.0, 1.0), clamp(g, 0.0, 1.0), clamp(b, 0.0, 1.0));
+}
+
+vec3 spectralMap(float wavelength)
+{
+    // Calculate a random wavelength directly
+    float randL = rand();
+    float lambda = 360.0 + (750.0 - 360.0) * randL;
+    
+    // Convert wavelength to a spectrum offset assuming Spectrum texture is mapped linearly to wavelengths
+    float spectrumOffset = (lambda - 360.0) / (750.0 - 360.0);
+
+    // Sample the spectrum texture to get RGB values
+    vec4 color = texture2D(spectralTexture, vec2(spectrumOffset, 0.5));
+    return color.rgb;
+    // float x = saturate((wavelength - 400.0)/ 300.0);
+    // vec4 rgba = texture2D(spectralTexture, vec2(x, 0.5));
+    // return rgba;
+}
+
 // Convert wavelength in nanometers to RGB using a perceptually accurate method
 vec3 RGBFromWavelength(float wavelength) {
+    return spectralMap(wavelength);
     vec3 RGB = spectral_zucconi6(wavelength);
     return RGB;
 }
-
 
 void main()
 {
     // unpack ray from data texture
     Ray ray = getCurrentRay();
-    float randomNumber = gold_noise(gl_FragCoord.xy, SEED);
+
     // hit scene
     HitSpan ispan = hitScene(ray);
 
@@ -813,7 +849,7 @@ void main()
 
 
         // bounce ray
-        Ray secondary = bounceRay(ray, hitInfo, randomNumber);
+        Ray secondary = bounceRay(ray, hitInfo);
 
         // pack data
         /* rayTransform */  gl_FragData[0] = vec4(secondary.pos,secondary.dir);

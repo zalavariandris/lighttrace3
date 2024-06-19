@@ -39,7 +39,8 @@ function loadImageData(imagePath){
     })
 }
 
-const spectralImage = await loadImageData("./src/Spectrum-cropped.png");
+const spectralImage1 = await loadImageData("./src/Spectrum-cropped.png");
+const spectralImage2 = await loadImageData("./tantulum-spectrum.png");
 
 Array.prototype.extend = function(value, newLength)
 {
@@ -119,10 +120,10 @@ class GLRaytracer{
         const RaysCount =16**2; // default size for tyextures
         const dataTextureRadius = Math.ceil(Math.sqrt(RaysCount));
         this.spectralTexture = regl.texture({
-            data: spectralImage.data,
+            data: spectralImage2.data,
             flipY:false,
-            width: spectralImage.width, 
-            height: spectralImage.height,
+            width: spectralImage2.width, 
+            height: spectralImage2.height,
             wrap: 'clamp',
             format: "rgba",
             type: "uint8"

@@ -3,406 +3,280 @@
 import {produce} from "immer";
 import _ from "lodash"
 import { myrandom } from "../utils.js";
+
+
+/* ******************** *
+ * TRANSFORM COMPONENTS *
+ * ******************** */
+function makeTransform(x=0.0,y=0.0,rotate=0.0){
+    return {
+        translate: {x,y},
+        rotate: rotate
+    };
+}
+
+/* **************** *
+ * SHAPE COMPONENTS *
+ * **************** */
+function makeRectangle(width=40, height=40) {
+    return {
+        type: "rectangle",
+        width: width,
+        height: height
+    };
+}
+
+function makeCircle(radius=10) {
+    return {
+        type: "circle",
+        radius: radius
+    };
+}
+
+function makeSphericalLens(diameter=40, edgeThickness=5, centerThickness=20) {
+    return {
+        type: "sphericalLens",
+        diameter: diameter,
+        edgeThickness: edgeThickness,
+        centerThickness: centerThickness
+    };
+}
+
+function makeTriangle(size=10){
+    return {
+        type: "triangle",
+        size: size
+    }
+}
+
+function makeLineSegment(length=400.0) {
+    return {
+        type: "line",
+        length: length
+    };
+}
+
+/* ******************* *
+ * MATERIAL COMPONENTS *
+ * ******************* */
+
+function makeGlass(ior=1.44, dispersion=0.02){
+    return {
+        type: "glass",
+        ior: ior,
+        dispersion: dispersion
+    };
+}
+
+function makeDiffuse(){
+    return {
+        type: "diffuse"
+    };
+}
+
+function makeMirror(){
+    return {
+        type: "mirror"
+    };
+}
+
+/* **************** *
+ * LIGHT COMPONENTS *
+ * **************** */
+function makePointLight(temperature=6500, intensity=1.0) {
+    return {
+        type: "point",
+        temperature: temperature,
+        intensity: intensity
+    };
+}
+
+function makeDirectionalLight(temperature=6500, intensity=3, width=300) {
+    return {
+        type: "directional",
+        width: width,
+        temperature: temperature,
+        intensity: intensity
+    };
+}
+
+function makeLaserLight(temperature=6500, intensity=3) {
+    return {
+        type: "laser",
+        temperature: temperature,
+        intensity: intensity
+    };
+}
+
+/* *************** *
+ * TEMPLATE SCENES *
+ * *************** */
 const defaultScene = {
-    // "light": {
-    //     transform:{
-    //         translate: {x: 200, y: 10},
-    //         rotate: 0.0
-    //     },
-    //     light: {
-    //         type: "point",
-    //         temperature: 6500,
-    //         intensity:1.0,
-    //     },
-    //     selected: false
-    // },
     "pointer": {
-        transform:{
-            translate: {x: 50, y: 180},
-            rotate: -3.0*Math.PI/180.0
-        },
-        light: {
-            type: "laser",
-            temperature: 6500,
-            intensity:3,
-        },
+        transform: makeTransform(50, 180, -3.0*Math.PI/180.0),
+        light: makeLaserLight(6500, 3),
         selected: false
     },
 
     "prism":{
-        transform: {
-            translate: {x: 250, y:200},
-            rotate: 0.0
-        },
-        shape:{
-            type: "triangle",
-            size: 70
-        },
-        material:{
-            type: "glass"
-        },
+        transform: makeTransform(250, 200, 0.0),
+        shape: makeTriangle(70),
+        material: makeGlass(1.44, 0.02),
         selected: false
     },
     "ball3": {
-        transform:{
-            translate: {x: 400, y: 201},
-            rotate: 0.0
-        },
-        shape: {
-            type: "circle", 
-            radius: 30
-        },
-        material: {
-            type: "mirror"
-        },
+        transform: makeTransform(400, 201, 0.0),
+        shape: makeCircle(30),
+        material: makeMirror(),
         selected: false
     },
     "ground": {
-        transform:{
-            translate: {x: 256, y: 450},
-            rotate: 0.0
-        },
-        shape: {
-            type: "line", 
-            length: 400.0
-        },
-        material: {
-            type: "diffuse"
-        },
+        transform: makeTransform(256, 450, 0.0),
+        shape: makeLineSegment(400.0),
+        material: makeDiffuse(),
         selected: false
     },
-    // "box": {
-    //     transform: {
-    //         translate: {x: 370, y: 130},
-    //         rotate: 0.1
-    //     },
-    //     shape: {
-    //         type: "rectangle",
-    //         width: 200,
-    //         height: 200
-    //     },
-    //     material: {
-    //         type: "diffuse"
-    //     },
-    //     selected: true
-    // },
     "lens": {
-        transform: {
-            translate: {x: 180, y: 120},
-            rotate: 0
-        },
-        shape: {
-            type: "sphericalLens",
-            diameter: 140,
-            edgeThickness: 5,
-            centerThickness: 80
-        },
-        material: {
-            type: "glass"
-        },
+        transform: makeTransform(180, 120, 0),
+        shape: makeSphericalLens(140, 5, 80),
+        material: makeGlass(1.44, 0.02),
         selected: false
     }
 };
 
 const cornelBoxScene = {
     "light":{
-        transform:{
-            translate: {x: 50, y:100},
-            rotate: 0.0
-        },
-        light: {
-            type: "point",
-            temperature: 6500,
-            intensity:1.0,
-        },
+        transform: makeTransform(50, 100, 0.0),
+        light: makePointLight(6500, 1.0),
         selected: false
     },
 
     "rectangle":{
-        transform:{
-            translate: {x: 150,y: 250},
-            rotate: 0/180*Math.PI
-        },
-        shape: {
-            type: "rectangle",
-            width: 300,
-            height: 400
-        },
-        material: {
-            type: "glass"
-        },
+        transform: makeTransform(150, 250, 0),
+        shape: makeRectangle(300, 400),
+        material: makeGlass(1.44, 0.02),
         selected: false
     },
 
     "glassball":{
-        transform:{
-            translate: {x: 230, y: 350},
-            rotate: 0
-        },
-        shape: {
-            type: "circle",
-            radius: 50
-        },
-        material: {
-            type: "glass"
-        },
+        transform: makeTransform(230, 350, 0),
+        shape: makeCircle(50),
+        material: makeGlass(1.44, 0.02),
         selected: false
     },
     
     "mirrorball":{
-        transform:{
-            translate: {x: 70, y: 350},
-            rotate: 0
-        },
-        shape: {
-            type: "circle",
-            radius: 50
-        },
-        material: {
-            type: "mirror"
-        },
+        transform: makeTransform(70, 350, 0),
+        shape: makeCircle(50),
+        material: makeMirror(),
         selected: false
     }
 }
 
 const lensesScene = {
     "sun":{
-        transform:{
-            translate: {x: 50, y: 200},
-            rotate: 0/180*Math.PI
-        },
-        light: {
-            type: "directional",
-            width: 100,
-            temperature: 6500,
-            intensity:3,
-        },
+        transform: makeTransform(50, 200, 0),
+        light: makeDirectionalLight(6500, 3, 100),
         selected: false
     },
     "lens": {
-        transform: {
-            translate: {x: 180, y: 200},
-            rotate: 0
-        },
-        shape: {
-            type: "sphericalLens",
-            diameter: 140,
-            edgeThickness: 20,
-            centerThickness: 80
-        },
-        material: {
-            type: "glass"
-        },
+        transform: makeTransform(180, 200, 0),
+        shape: makeSphericalLens(140, 20, 80),
+        material: makeGlass(1.44, 0.02),
         selected: false
     },
     "concave": {
-        transform: {
-            translate: {x: 280, y: 200},
-            rotate: 0
-        },
-        shape: {
-            type: "sphericalLens",
-            diameter: 140,
-            edgeThickness: 80,
-            centerThickness: 10
-        },
-        material: {
-            type: "glass"
-        },
+        transform: makeTransform(280, 200, 0),
+        shape: makeSphericalLens(140, 80, 10),
+        material: makeGlass(1.44, 0.02),
         selected: false
     }
 }
 
+
 const prismScene = {
     "pointer": {
-        transform:{
-            translate: {x: 100, y: 230},
-            rotate: -15.0*Math.PI/180.0
-        },
-        light: {
-            type: "laser",
-            temperature: 6500,
-            intensity:3,
-        },
+        transform: makeTransform(100, 230, -15.0*Math.PI/180.0),
+        light: makeLaserLight(6500, 3),
         selected: false
     },
     "prism": {
-        transform: {
-            translate: {x: 230, y: 220},
-            rotate: 0
-        },
-        shape: {
-            type: "triangle",
-            size: 50
-        },
-        material: {
-            type: "glass"
-        },
+        transform: makeTransform(230, 220, 0),
+        shape: makeTriangle(50),
+        material: makeGlass(1.44, 0.02),
         selected: false
     }
 }
 
 const lightsScene = {
     "laser":{
-        transform:{
-            translate: {x: 150, y: 200},
-            rotate: 90/180*Math.PI
-        },
-        light: {
-            type: "laser",
-            temperature: 6500,
-            intensity:3,
-        },
+        transform: makeTransform(150, 200, 90/180*Math.PI),
+        light: makeLaserLight(6500, 3),
         selected: false
     },
     "sun":{
-        transform:{
-            translate: {x: 250, y: 200},
-            rotate: 90/180*Math.PI
-        },
-        light: {
-            type: "directional",
-            width: 30,
-            temperature: 6500,
-            intensity:3,
-        },
+        transform: makeTransform(250, 200, 90/180*Math.PI),
+        light: makeDirectionalLight(6500, 3, 30),
         selected: false
     },
     "light":{
-        transform:{
-            translate: {x: 350, y: 200},
-            rotate: 90/180*Math.PI
-        },
-        light: {
-            type: "point",
-            temperature: 6500,
-            intensity:1.0,
-        },
+        transform: makeTransform(350, 200, 90/180*Math.PI),
+        light: makePointLight(6500, 1.0),
         selected: false
     },
     "ground": {
-        transform:{
-            translate: {x: 256, y: 450},
-            rotate: 0.0
-        },
-        shape: {
-            type: "line", 
-            length: 400.0
-        },
-        material: {
-            type: "diffuse"
-        },
+        transform: makeTransform(256, 450, 0.0),
+        shape: makeLineSegment(400.0),
+        material: makeDiffuse(),
         selected: false
     }
 }
-
 const shapesScene = {
     "sun":{
-        transform:{
-            translate: {x: 10, y: 250},
-            rotate: 10/180*Math.PI
-        },
-        light: {
-            type: "directional",
-            width: 300,
-            temperature: 6500,
-            intensity:3,
-        },
+        transform: makeTransform(10, 250, 10/180*Math.PI),
+        light: makeDirectionalLight(6500, 3, 300),
         selected: false
     },
     "ground": {
-        transform:{
-            translate: {x: 256, y: 450},
-            rotate: 0.0
-        },
-        shape: {
-            type: "line", 
-            length: 400.0
-        },
-        material: {
-            type: "diffuse"
-        },
+        transform: makeTransform(256, 450, 0.0),
+        shape: makeLineSegment(400.0),
+        material: makeDiffuse(),
         selected: false
     },
     "circle":{
-        transform:{
-            translate: {
-                x: 100,
-                y: 150
-            },
-            rotate: 0
-        },
-        shape: {
-            type: "circle",
-            radius: 20
-        },
-        material: {
-            type: "glass"
-        },
+        transform: makeTransform(100, 150, 0),
+        shape: makeCircle(20),
+        material: makeGlass(),
     },
     "rectangle":{
-        transform:{
-            translate: {x: 100,y: 210},
-            rotate: -10/180*Math.PI
-        },
-        shape: {
-            type: "rectangle",
-            width: 40,
-            height: 40
-        },
-        material: {
-            type: "glass"
-        },
+        transform: makeTransform(100, 210, -10/180*Math.PI),
+        shape: makeRectangle(40, 40),
+        material: makeGlass(),
         selected: false
     },
     "prism":{
-        transform:{
-            translate: {x: 100,y: 270},
-            rotate: 0
-        },
-        shape: {
-            type: "triangle",
-            size: 25,
-        },
-        material: {
-            type: "glass"
-        },
+        transform: makeTransform(100, 270, 0),
+        shape: makeTriangle(25),
+        material: makeGlass(),
         selected: false
     }, 
     "concave lens": {
-        transform: {
-            translate: {x: 100, y: 320},
-            rotate: 0
-        },
-        shape: {
-            type: "sphericalLens",
-            diameter: 40,
-            edgeThickness: 5,
-            centerThickness: 20
-        },
-        material: {
-            type: "glass"
-        },
+        transform: makeTransform(100, 320, 0),
+        shape: makeSphericalLens(40, 5, 20),
+        material: makeGlass(),
         selected: false
     },
     "convex lens": {
-        transform: {
-            translate: {x: 100, y: 380},
-            rotate: 0
-        },
-        shape: {
-            type: "sphericalLens",
-            diameter: 40,
-            edgeThickness: 40,
-            centerThickness: 20
-        },
-        material: {
-            type: "glass"
-        },
+        transform: makeTransform(100, 380, 0),
+        shape: makeSphericalLens(40, 40, 20),
+        material: makeGlass(),
         selected: false
     }
 }
 
+/* ************ *
+ * ENTITY STORE *
+ * *****    ******* */
 let scene;
 scene = JSON.parse(localStorage.getItem("scene"));
 if(!scene)
@@ -519,3 +393,8 @@ export default {
         return scene;
     }
 }
+
+export {makeTransform};
+export {makeCircle, makeRectangle, makeTriangle, makeSphericalLens, makeLineSegment};
+export {makeMirror, makeGlass, makeDiffuse};
+export {makePointLight, makeDirectionalLight, makeLaserLight};

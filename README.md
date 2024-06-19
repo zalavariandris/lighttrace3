@@ -42,7 +42,6 @@
 - [x] circle size handler is usable even when not selected...
 - [x] with the new SVG Ratracer hitLines has problams when included in a scene.
       Any objects in the back, were messing up the hitrays. did not affect raytracing
-- [ ] Since SVG raytracing uses random numbers, its flickering. Add a uniform random number to diffuse sampling, or a random number with seed.
 - [/] handle errors in components. eg.: raytracing errors in SVGRaytracer component
 
 - SVG Raytracer
@@ -50,6 +49,7 @@
   - [x] fix SVGRaytracer interacting with a rectangle.
   - [x] support dispersion in svg-raytracer?
   - [ ] support colored lines
+  - [ ] Since SVG raytracing uses random numbers, its flickering. Add a uniform random number to diffuse sampling, or a random number with seed.
 
 - WebGL raytracer
   - [x] rasterize bias: fix ray energy uniform in all direction
@@ -60,12 +60,11 @@
   - [x] distrubute lightSamples among all lights (based on intensity)
   - [x] review data texture types.
         all fbo attachment must have the same format (bitsize).
-  - [ ] review postprocessing. e.g.: support multiple colorspaces. refactor tonemapping, exposure and accumulate
+  - [x] review postprocessing. e.g.: support multiple colorspaces. refactor tonemapping, exposure and accumulate
   - [ ] physically accurate wavelength to color wavelength->XYZ->linearRGB->sRGB
-
   - [ ] refactor glviewport to map entities to its internal data (eg initialrays array, transformArray, shapes Array materialsArray...)
   - [ ] check if GLRaytracer leaks memory?
-  - [ ] fix accumulate makes final intensity stronger
+  - [x] fix accumulate makes final intensity stronger
 
 
 - [ ] Mobile support (ipad, iphone, android?, safari, chrome)

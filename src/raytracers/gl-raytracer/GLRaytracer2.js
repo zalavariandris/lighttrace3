@@ -17,6 +17,7 @@ const raytracePassShader = await loadShader("./src/raytracers//gl-raytracer/shad
 import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../sampleLights.js";
 
 import { myrandom } from "../../utils.js";
+import spectrumTable from "./spectrumTable.js";
 
 function loadImageData(imagePath){
     return new Promise(resolve => {
@@ -37,7 +38,9 @@ function loadImageData(imagePath){
     })
 }
 
-const spectralImage = await loadImageData("./src/Spectrum-cropped.png");
+// const spectralImage = await loadImageData("./src/Spectrum-cropped.png");
+
+
 
 Array.prototype.extend = function(value, newLength)
 {
@@ -115,7 +118,19 @@ class GLRaytracer{
     initRaytraceBuffers()
     {
         const regl = this.regl;
-        const lightsCount = 2;
+
+
+        this.spectrum = regl.texture({
+            width: spectrumTable.length/4,
+            height: 1,
+            data: spectrumTable,
+            wrap: 'clamp',
+            min: "nearest", 
+            mag: "nearest",
+            format: "rgba",
+            type: "float"
+        });
+
         const RaysCount = 16; // default size for tyextures
         const dataTextureRadius = Math.ceil(Math.sqrt(RaysCount)); // get radius to fit
         const common_settings = {
@@ -444,6 +459,7 @@ class GLRaytracer{
                     rayTransformTexture: this.texturesFront.rayTransform,
                     rayPropertiesTexture: this.texturesFront.rayProperties,
                     randomNumberPerRay: this.randomNumberPerRay,
+                    spectralTexture: this.spectrum,
                     shapesCount: shapeData.length,
                     ...shapeEntities.length>0 && { // include shape info in uniforms only if they exist. otherwise regl throws an error. TODO: review this
                         CSGTransformData: transformData.flat(),
@@ -512,8 +528,6 @@ class GLRaytracer{
         })();
 
         /* render post processing FBO to screen */
-        
-        
         regl({...QUAD,
             framebuffer: null,
             viewport: {x:0, y:0, width:this.outputResolution[0], height: this.outputResolution[1]},
@@ -523,7 +537,7 @@ class GLRaytracer{
                 texture: this.postFrontFBO,
                 outputResolution: this.outputResolution,
                 totalPasses: this.totalPasses,
-                exposure: 100.0
+                exposure: 10.0
             },
             frag:/*glsl*/`precision mediump float;
             varying vec2 vUV;
@@ -591,7 +605,7 @@ class GLRaytracer{
 
                 // convert ACES to display colorspace
                 color = linearRGBFromACEScg(color);
-                // color = sRGBFromRGB(color);
+                color = sRGBFromRGB(color);
                 // color = filmic(color);
                 gl_FragColor = vec4(color, 1.0);
             }`

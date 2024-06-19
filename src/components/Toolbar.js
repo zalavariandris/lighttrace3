@@ -41,7 +41,7 @@ function SettingsToolbar({
         h("label", null,
             h("input",{
                 type: "range",
-                min:2, max:2048, step:1,
+                min:2, max:4096*2*2*2*2, step:1,
                 value: settings.raytrace.lightSamples,
                 onChange: (e)=>{
                     settingsStore.setValue(`raytrace.lightSamples`, parseInt(e.target.value))
@@ -267,7 +267,7 @@ function EditToolbar({})
             h("label", null,
                 h("input",{
                     type: "range",
-                    min:1000, max:100000, step:100,
+                    min:1_000, max:10_000, step:100,
                     value: selectedObject.light.temperature,
                     onChange: e=>entityStore.setValue(`${selectedKey}.light.temperature`, parseFloat(e.target.value))
                 }),

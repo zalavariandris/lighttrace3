@@ -31,7 +31,7 @@ function SettingsToolbar({
         h("label", null,
             h("input",{
                 type: "range",
-                min:1, max:2048,
+                min:1, max:9,
                 value: settings.raytrace.maxBounce,
                 onChange: e=>settingsStore.setValue(`raytrace.maxBounce`, parseInt(e.target.value))
             }),

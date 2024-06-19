@@ -600,12 +600,12 @@ class GLRaytracer{
                 color *= 1.0/totalPasses;
 
                 // apply exposure in ACEScg colorspace
-                color = ACEScgFromLinearRGB(color);
+                // color = ACEScgFromLinearRGB(color);
                 color*=exposure;
 
                 // convert ACES to display colorspace
-                color = linearRGBFromACEScg(color);
-                color = sRGBFromRGB(color);
+                // color = linearRGBFromACEScg(color);
+                // color = sRGBFromRGB(color);
                 // color = filmic(color);
                 gl_FragColor = vec4(color, 1.0);
             }`

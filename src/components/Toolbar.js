@@ -229,6 +229,30 @@ function EditToolbar({})
                     h("option", {value: "glass", selected: selectedObject.material.type=="glass"}, "glass")
                 )
             ),
+
+            selectedObject.material.type=="glass" && h("label", {style: {display: "flex", flexDirection:"column", alignItems: "center"}},
+                h("input", {
+                    type: "range",
+                    min:0.5,
+                    max:2.0,
+                    step: 0.1,
+                    value: selectedObject.material.ior,
+                    onChange: e=>entityStore.setValue(`${selectedKey}.material.ior`, parseFloat(e.target.value))
+                }),
+                h("span", null, `ior ${selectedObject.material.ior}`)
+            ),
+
+            selectedObject.material.type=="glass" && h("label", {style: {display: "flex", flexDirection:"column", alignItems: "center"}},
+            h("input", {
+                type: "range",
+                min:0.001,
+                max:2.0,
+                step: 0.001,
+                value: selectedObject.material.dispersion,
+                onChange: e=>entityStore.setValue(`${selectedKey}.material.dispersion`, parseFloat(e.target.value))
+            }),
+            h("span", null, `dispersion ${selectedObject.material.dispersion}`)
+        ),
             
             h("hr"),
     

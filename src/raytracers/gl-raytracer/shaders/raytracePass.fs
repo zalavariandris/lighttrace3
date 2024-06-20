@@ -25,7 +25,6 @@ uniform sampler2D rayPropertiesTexture;
 uniform sampler2D randomNumberPerRay;
 uniform sampler2D spectralTexture;
 
-
 uniform float shapesCount;
 uniform vec3 CSGTransformData[MAX_SHAPES];
 uniform vec4 CSGShapeData[MAX_SHAPES];
@@ -56,8 +55,6 @@ vec2 rotate(vec2 pos, float radAngle){
     return rotate(pos, radAngle, vec2(0,0));
 }
 
-
-
 struct Ray{
     vec2 pos;
     vec2 dir;
@@ -85,7 +82,20 @@ struct HitInfo{
     vec2 pos;
     vec2 normal;
     int material;
+    float roughness;
+    float ior;
+    float dispersion;
 };
+
+HitInfo makeHitInfo(float t,vec2 pos,vec2 normal, int material, float roughness, float ior, float dispersion)
+{
+    return HitInfo(t, pos, normal, material, roughness, ior, dispersion);
+}
+
+HitInfo makeHitInfo(float t,vec2 pos,vec2 normal){
+    return HitInfo(t, pos, normal, MATERIAL_NOTHING, 0.0, 1.44, 0.2);
+}
+
 
 struct HitSpan{
     HitInfo enter;
@@ -93,8 +103,8 @@ struct HitSpan{
 };
 
 HitSpan InvalidHitSpan = HitSpan(
-    HitInfo(LARGE_NUMBER, vec2(0,0), vec2(0,0), MATERIAL_NOTHING), 
-    HitInfo(-LARGE_NUMBER, vec2(0,0), vec2(0,0), MATERIAL_NOTHING)
+    HitInfo(LARGE_NUMBER, vec2(0,0), vec2(0,0), MATERIAL_NOTHING, 0.0,1.4,0.2), 
+    HitInfo(-LARGE_NUMBER, vec2(0,0), vec2(0,0), MATERIAL_NOTHING, 0.0,1.4,0.2)
 );
 
 bool IsValidSpan(HitSpan ispan){
@@ -177,12 +187,12 @@ HitSpan hitCircle(Ray ray, Circle circle)
             N2*=1.0/length(N2);
 
             // exit info
-            HitInfo exit = HitInfo(tFar, I2, N2, MATERIAL_NOTHING);
+            HitInfo exit = makeHitInfo(tFar, I2, N2);
 
             if(tNear<0.0)
             {
                 return HitSpan(
-                    HitInfo(0.0, ray.pos, vec2(0.0, 1.0), MATERIAL_NOTHING), 
+                    makeHitInfo(0.0, ray.pos, vec2(0.0, 1.0)), 
                     exit
                 );
             }
@@ -194,7 +204,7 @@ HitSpan hitCircle(Ray ray, Circle circle)
             vec2 N1 = normalize(I1-circle.center);
 
             //enter info
-            HitInfo enter = HitInfo(tNear, I1, N1, MATERIAL_NOTHING);
+            HitInfo enter = makeHitInfo(tNear, I1, N1);
 
             // intersection span
             return HitSpan(enter, exit);
@@ -298,14 +308,14 @@ HitSpan hitTriangle(Ray ray, Triangle triangle){
 
     if(tExit==tEnter){
         return HitSpan(
-            HitInfo(0.0, ray.pos, vec2(0.0), MATERIAL_NOTHING),
-            HitInfo(tEnter,  ray.pos+ray.dir*tEnter, nEnter, MATERIAL_NOTHING)
+            makeHitInfo(0.0, ray.pos, vec2(0.0)),
+            makeHitInfo(tEnter,  ray.pos+ray.dir*tEnter, nEnter)
         );
     }
 
     return HitSpan(
-        HitInfo(tEnter, ray.pos+ray.dir*tEnter, nEnter, MATERIAL_NOTHING),
-        HitInfo(tExit,  ray.pos+ray.dir*tExit,  nExit, MATERIAL_NOTHING)
+        makeHitInfo(tEnter, ray.pos+ray.dir*tEnter, nEnter),
+        makeHitInfo(tExit,  ray.pos+ray.dir*tExit,  nExit)
     );
 }
 
@@ -349,12 +359,12 @@ HitSpan hitRectangle(Ray ray, Rectangle rect)
 
         I2 = rotate(I2, rect.angle, rect.center);
         N2 = rotate(N2, rect.angle);
-        HitInfo exit = HitInfo(tFar, I2, N2, MATERIAL_NOTHING);
+        HitInfo exit = makeHitInfo(tFar, I2, N2);
 
         if(tNear<0.0){
             // when the enter point is behind the ray's origin, 
             // then intersection span will begin at the rays origin
-            HitInfo enter = HitInfo(0.0, ray.pos, vec2(0,0), MATERIAL_NOTHING);
+            HitInfo enter = makeHitInfo(0.0, ray.pos, vec2(0,0));
             return HitSpan(enter,exit);
         }
 
@@ -380,7 +390,7 @@ HitSpan hitRectangle(Ray ray, Rectangle rect)
         I1 = rotate(I1, rect.angle, rect.center);
         N1 = rotate(N1, rect.angle);
 
-        HitInfo enter = HitInfo(tNear, I1, N1, MATERIAL_NOTHING);
+        HitInfo enter = makeHitInfo(tNear, I1, N1);
 
         // return intersection span between the enter- and exit point
         return HitSpan(enter, exit);
@@ -420,8 +430,8 @@ HitSpan hitLine(Ray ray, Line line){
     N = normalize(-N);
 
     return HitSpan(
-        HitInfo(tNear, I, N, MATERIAL_NOTHING),
-        HitInfo(tNear+1.0, I, -N, MATERIAL_NOTHING)
+        makeHitInfo(tNear, I, N),
+        makeHitInfo(tNear+1.0, I, -N)
     );
 }
 
@@ -465,8 +475,8 @@ HitSpan subtractSpan(HitSpan a, HitSpan b){
 
         // Invert normals of span b
         b = HitSpan(
-            HitInfo(b.enter.t,b.enter.pos,-b.enter.normal, b.enter.material),
-            HitInfo(b.exit.t,b.exit.pos,-b.exit.normal, b.enter.material)
+            makeHitInfo(b.enter.t,b.enter.pos,-b.enter.normal, b.enter.material, b.enter.roughness, b.enter.ior, b.enter.dispersion),
+            makeHitInfo(b.exit.t,b.exit.pos,-b.exit.normal, b.enter.material, b.enter.roughness, b.enter.ior, b.enter.dispersion)
         );
 
         // Case 1: Span b is completely before span a
@@ -576,6 +586,9 @@ HitSpan hitScene(Ray ray)
             float angle = CSGTransformData[i].z;
             int shapeType = int(CSGShapeData[i].x);
             int materialType = int(CSGMaterialData[i].x);
+            float roughness = CSGMaterialData[i].y;
+            float ior = CSGMaterialData[i].z;
+            float dispersion = CSGMaterialData[i].w;
 
             HitSpan shapeHitSpan;
             if(shapeType==SHAPE_CIRCLE) // CIRCLE
@@ -636,6 +649,12 @@ HitSpan hitScene(Ray ray)
             if(IsValidSpan(shapeHitSpan)){
                 shapeHitSpan.enter.material = materialType;
                 shapeHitSpan.exit.material = materialType;
+                shapeHitSpan.enter.roughness = roughness;
+                shapeHitSpan.exit.roughness = roughness;
+                shapeHitSpan.enter.ior = ior;
+                shapeHitSpan.exit.ior = ior;
+                shapeHitSpan.enter.dispersion = dispersion;
+                shapeHitSpan.exit.dispersion = dispersion;
             }
 
             // get closest hit
@@ -744,7 +763,8 @@ Ray bounceRay(Ray ray, HitInfo hitInfo)
         vec3 b = vec3(1.03961212, 0.231792344, 1.01046945);
         vec3 c = vec3(0.00600069867, 0.0200179144, 103.560653);
         float sellmeierIor =  sellmeierEquation(b, c, ray.wavelength*1e-3);
-        float cauchyIor =  cauchyEquation(1.44, 0.02, ray.wavelength*1e-3);
+
+        float cauchyIor =  cauchyEquation(hitInfo.ior, hitInfo.dispersion, ray.wavelength*1e-3);
         woLocal = sampleDielectric(wiLocal, cauchyIor);
     }
     else if(hitInfo.material==MATERIAL_DIFFUSE)
@@ -811,15 +831,15 @@ vec3 hueToLinearRGB(float hue) {
 vec3 spectralMap(float wavelength)
 {
     // Calculate a random wavelength directly
-    float randL = rand();
-    float lambda = 360.0 + (750.0 - 360.0) * randL;
+    // float randL = rand();
+    // float lambda = 360.0 + (750.0 - 360.0) * randL;
     
     // Convert wavelength to a spectrum offset assuming Spectrum texture is mapped linearly to wavelengths
-    float spectrumOffset = (lambda - 360.0) / (750.0 - 360.0);
+    float spectrumOffset = (wavelength - 360.0) / (750.0 - 360.0);
 
     // Sample the spectrum texture to get RGB values
-    vec4 color = texture2D(spectralTexture, vec2(spectrumOffset, 0.5));
-    return color.rgb;
+    vec3 color = texture2D(spectralTexture, vec2(spectrumOffset, 0.5)).rgb;
+    return color;
     // float x = saturate((wavelength - 400.0)/ 300.0);
     // vec4 rgba = texture2D(spectralTexture, vec2(x, 0.5));
     // return rgba;

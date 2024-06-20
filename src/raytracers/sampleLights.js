@@ -73,7 +73,7 @@ function sampleWhite(){
 
 function sampleWavelength(lightComponent)
 {
-    return sampleWhite();
+    // return sampleWhite();
     return sampleBlackbody(lightComponent.temperature, Math.random());
 }
 

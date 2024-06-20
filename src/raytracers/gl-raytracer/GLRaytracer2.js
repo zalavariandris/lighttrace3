@@ -38,10 +38,6 @@ function loadImageData(imagePath){
     })
 }
 
-// const spectralImage = await loadImageData("./src/Spectrum-cropped.png");
-
-
-
 Array.prototype.extend = function(value, newLength)
 {
     const oldLength = this.length;
@@ -384,12 +380,12 @@ class GLRaytracer{
 
         const materialData = shapeEntities.map(entity=>{
             switch (entity.material.type) {
-                case "mirror":
-                    return [1, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
                 case "glass":
-                    return [2, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
+                    return [2, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.2];
+                case "mirror":
+                    return [1, entity.material.roughness || 0.0, 0.0, 0.0];
                 case "diffuse":
-                    return [3, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.0];
+                    return [3, entity.material.roughness || 0.0, 0.0, 0.0];
                 default:
                     return [-1,0,0,0];
             }
@@ -575,6 +571,12 @@ class GLRaytracer{
                 return sRGB;
             }
 
+            vec3 linearRGBFromsRGB(vec3 sRGB){
+                float gamma = 2.2;
+                vec3 linearRGB = pow(sRGB, vec3(gamma));
+                return linearRGB;
+            }
+
             vec3 rec709FromRGB(vec3 linearRGB){
                 vec3 rec709RGB;
                 for (int i = 0; i < 3; i++) {
@@ -597,14 +599,15 @@ class GLRaytracer{
             {
                 // get linear RGB color
                 vec3 color = texture2D(texture, vUV).rgb;
+                
                 color *= 1.0/totalPasses;
 
                 // apply exposure in ACEScg colorspace
-                // color = ACEScgFromLinearRGB(color);
+                color = ACEScgFromLinearRGB(color);
                 color*=exposure;
 
-                // convert ACES to display colorspace
-                // color = linearRGBFromACEScg(color);
+                /* convert ACES to display colorspace*/
+                color = linearRGBFromACEScg(color);
                 // color = sRGBFromRGB(color);
                 // color = filmic(color);
                 gl_FragColor = vec4(color, 1.0);

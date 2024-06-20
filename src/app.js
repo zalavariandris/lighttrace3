@@ -17,7 +17,6 @@ const calcZoom = ([clientWidth, clientHeight], viewBox)=>{
 
 }
 
-
 function fitViewboxInSize(viewBox, size)
 {
     // adjust viewbox width to match resolution aspect "contain"

@@ -71,6 +71,9 @@
   - [x] review postprocessing. e.g.: support multiple colorspaces. refactor tonemapping, exposure and accumulate
   - [x] physically accurate wavelength to color wavelength->XYZ->linearRGB->sRGB
         currently usind a datatable from tantalum (https://benedikt-bitterli.me/tantalum/tantalum.html)
+  - [ ] refacto HitSpan and HitInfo
+        use IntersectionSpan with CSG only
+  - [ ] we need to pass the material and surface properties from sceneHit to bounceRays. HOW?
   - [ ] refactor glviewport to map entities to its internal data
         (eg initialrays array, transformArray, shapes Array materialsArray...)
   - [ ] compile shader parts seperatelly, and attach them. eg intersection, CSG etc.

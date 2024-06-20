@@ -1,3 +1,4 @@
+// @flow
 import * as vec2 from "../../vec2.js"
 const EPSILON = 0.001;
 const LARGE_NUMBER = 9999;//.EPSILON;
@@ -28,6 +29,8 @@ class HitSpan{
 
 function collapseSpan(a, b)
 {
+    const c = new Circle()
+    
     // be carefull. this is not equal to span union.
     // this will result with the closest enter and the farthest exit.
     if(a && b){
@@ -169,7 +172,7 @@ function subtractSpan(a, b)
  * @param {number} r - The radius of the circle.
  * @returns {HitSpan} - a pair of enter/exit hitInfo
  */
-function hitCircle(ray, {cx, cy, r})
+function hitCircle(ray, {cx,cy,r})
 {
     const ux = ray.x - cx;
     const uy = ray.y - cy;
@@ -328,6 +331,8 @@ function lineIntersection(ray, {x1, y1, x2, y2})
 
     return null;
 }
+
+
 function hitTriangle(ray, {cx, cy, angle, size}){
     
     const vertices = Array.from({length:3}).map( (_,k)=>{

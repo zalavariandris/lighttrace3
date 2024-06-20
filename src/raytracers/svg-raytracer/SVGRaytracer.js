@@ -120,7 +120,7 @@ function hitScene(ray, shapeEntities)
     return hitSpanResult;
 }
 
-const sampleScene = (ray, hit, random_number)=>{
+const bounceRays = (ray, hit, random_number)=>{
     let secondary;
     if(hit)
     {
@@ -225,7 +225,7 @@ function SVGRaytracer()
                 }
 
                 /* secondary ray */
-                const secondary = sampleScene(ray, hit, myrandom(i+1));
+                const secondary = bounceRays(ray, hit, myrandom(i+1));
 
                 // return raytrace results
                 return [hitSpan, hit, secondary];

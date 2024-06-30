@@ -45,7 +45,7 @@ vec4 texelFetchByIdx(sampler2D texture, vec2 resolution, float texelIdx)
 }
 
 float rand(){
-    float delta = texture2D(randomNumberPerRay, gl_FragCoord.xy).x;
+    float delta = texture2D(randomNumberPerRay, gl_FragCoord.xy/resolution).x;
     return delta;
     return gold_noise(gl_FragCoord.xy, SEED+delta);
 }
@@ -307,39 +307,6 @@ bool IsValid(IntersectionSpan ispan){
     return ispan!=NoIntersectionSpan;
 }
 
-IntersectionSpan intersect(Line line, Ray ray, int matId)
-{
-    vec2 tangent = line.B-line.A;
-
-    // Calculate the determinant
-    float determinant = ray.dir.x * tangent.y- ray.dir.y * tangent.x;
-
-    if (abs(determinant) < EPSILON){
-        // ray and line are parallel
-        return NoIntersectionSpan;
-    }
-
-    // Calculate the intersection along the ray
-    float tNear = ((line.A.x - ray.pos.x) * tangent.y - (line.A.y - ray.pos.y) * tangent.x) / determinant;
-    // Calculate intersection along the line
-    float tLine = ((line.A.x - ray.pos.x) * ray.dir.y - (line.A.y - ray.pos.y) * ray.dir.x) / determinant;
-
-    if(0.0 < tNear && 0.0 <= tLine && tLine <=1.0)
-    {
-        vec2 N = vec2(-tangent.y, tangent.x);
-        N = normalize(-N);
-        vec2 I1 = ray.pos+ray.dir*tNear;
-        float tFar = tNear+1.0;
-        vec2 I2 = ray.pos+ray.dir*tFar;
-        return IntersectionSpan(
-            Intersection(tNear, I1, N, matId),
-            Intersection(tFar,I2, N, matId)
-        );
-    }
-
-    return NoIntersectionSpan;
-}
-
 IntersectionSpan intersect(Circle circle, Ray ray, int matId){
     vec2 u = ray.pos-circle.center;
 
@@ -347,7 +314,7 @@ IntersectionSpan intersect(Circle circle, Ray ray, int matId){
     float C = dot(u, u) - circle.r*circle.r;
     float detSq = B*B - C;
 
-    if (detSq >= 0.0)
+    if (detSq >= -EPSILON)
     {
         float det = sqrt(detSq);
         float tNear = -B - det;
@@ -356,7 +323,7 @@ IntersectionSpan intersect(Circle circle, Ray ray, int matId){
         // If t far is greater than 0 than ther is an exit point
         // If enter point is negative we are inside the shape, 
         // then Let the intersection span begin at the origin of ray
-        if(tFar>0.0)
+        if(tFar>EPSILON)
         {
             //exit point
             vec2 I2 = ray.pos+ray.dir*tFar;
@@ -393,6 +360,68 @@ IntersectionSpan intersect(Circle circle, Ray ray, int matId){
     return NoIntersectionSpan;
 }
 
+IntersectionSpan intersect(Line line, Ray ray, int matId)
+{
+    vec2 tangent = line.B-line.A;
+
+    // Calculate the determinant
+    float determinant = ray.dir.x * tangent.y- ray.dir.y * tangent.x;
+
+    if (abs(determinant) < EPSILON){
+        // ray and line are parallel
+        return NoIntersectionSpan;
+    }
+
+    // Calculate the intersection along the ray
+    float tNear = ((line.A.x - ray.pos.x) * tangent.y - (line.A.y - ray.pos.y) * tangent.x) / determinant;
+    // Calculate intersection along the line
+    float tLine = ((line.A.x - ray.pos.x) * ray.dir.y - (line.A.y - ray.pos.y) * ray.dir.x) / determinant;
+
+    if(0.0 < tNear && 0.0 <= tLine && tLine <=1.0)
+    {
+        vec2 N = vec2(-tangent.y, tangent.x);
+        N = normalize(-N);
+        vec2 I1 = ray.pos+ray.dir*tNear;
+        float tFar = tNear+EPSILON;
+        vec2 I2 = ray.pos+ray.dir*tFar;
+        return IntersectionSpan(
+            Intersection(tNear, I1, N, matId),
+            Intersection(tFar,I2, N, matId)
+        );
+    }
+
+    return NoIntersectionSpan;
+}
+
+Intersection lineIntersect(Line line, Ray ray, int matId){
+    vec2 tangent = line.B-line.A;
+
+    // Calculate the determinant
+    float determinant = ray.dir.x * tangent.y- ray.dir.y * tangent.x;
+
+    if (abs(determinant) < 0.0){
+        // ray and line are parallel
+        return NoIntersection;
+    }
+
+    // Calculate the intersection along the ray
+    float tNear = ((line.A.x - ray.pos.x) * tangent.y - (line.A.y - ray.pos.y) * tangent.x) / determinant;
+    // Calculate intersection along the line
+    float tLine = ((line.A.x - ray.pos.x) * ray.dir.y - (line.A.y - ray.pos.y) * ray.dir.x) / determinant;
+
+    if(EPSILON <= tNear && 0.0 <= tLine && tLine <=1.0)
+    {
+        vec2 N = vec2(-tangent.y, tangent.x);
+        N = normalize(-N);
+        vec2 I1 = ray.pos+ray.dir*tNear;
+        float tFar = tNear+EPSILON;
+        vec2 I2 = ray.pos+ray.dir*tFar;
+        return Intersection(tNear, I1, N, matId);
+    }
+
+    return NoIntersection;
+}
+
 IntersectionSpan intersect(Triangle triangle, Ray ray, int matId){
     vec2 vertices[3];
     for(int k=0; k<3; k++){
@@ -407,9 +436,9 @@ IntersectionSpan intersect(Triangle triangle, Ray ray, int matId){
     Line segmentB = Line(vertices[1], vertices[2]);
     Line segmentC = Line(vertices[2], vertices[0]);
 
-    Intersection I1 = intersect(segmentA, ray, matId).enter;
-    Intersection I2 = intersect(segmentB, ray, matId).enter;
-    Intersection I3 = intersect(segmentC, ray, matId).enter;
+    Intersection I1 = lineIntersect(segmentA, ray, matId);
+    Intersection I2 = lineIntersect(segmentB, ray, matId);
+    Intersection I3 = lineIntersect(segmentC, ray, matId);
 
     // find closest entry intersection
     float tEnter = LARGE_NUMBER;
@@ -732,7 +761,7 @@ vec2 sampleDielectric(vec2 wi, float ior)
 
     float cosThetaT;
     float fresnell;
-    if (sinThetaTSq > 1.0) 
+    if (sinThetaTSq > 1.0+EPSILON) 
     {
         cosThetaT = 0.0;
         fresnell = 1.0;
@@ -749,7 +778,7 @@ vec2 sampleDielectric(vec2 wi, float ior)
     }
 
     // float randomNumber = gold_noise(gl_FragCoord.xy, SEED);
-    if (rand() < fresnell) 
+    if (rand() <= fresnell) 
     {
         return vec2(-wi.x, wi.y);
     }

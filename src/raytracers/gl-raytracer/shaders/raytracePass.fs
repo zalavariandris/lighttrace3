@@ -150,7 +150,7 @@ struct Ray{
 const Ray NoRay = Ray(vec2(0.0), vec2(0.0), 0.0, 0.0);
 
 bool IsValid(Ray ray){
-    return dot(ray.dir, ray.dir)>0.0;
+    return ray!=NoRay;
 }
 
 Ray getCurrentRay()
@@ -285,14 +285,15 @@ SphericalLens unpackSphericalLens(int i){
  * ************ */
 struct Intersection{
     float t;
+    vec2 pos;
     vec2 normal;
     int matId;
 };
 
-const Intersection NoIntersection = Intersection(-LARGE_NUMBER, vec2(0.0), -1);
+const Intersection NoIntersection = Intersection(-LARGE_NUMBER, vec2(0.0), vec2(0.5), -1);
 
 bool IsValid(Intersection i){
-    return i.t>=0.0;
+    return i!=NoIntersection;
 }
 struct IntersectionSpan{
     Intersection enter;
@@ -302,7 +303,7 @@ struct IntersectionSpan{
 const IntersectionSpan NoIntersectionSpan = IntersectionSpan(NoIntersection, NoIntersection);
 
 bool IsValid(IntersectionSpan ispan){
-    return IsValid(ispan.enter) && IsValid(ispan.exit) && ispan.enter.t < ispan.exit.t;
+    return ispan!=NoIntersectionSpan;
 }
 
 IntersectionSpan intersect(Line line, Ray ray, int matId)
@@ -326,9 +327,12 @@ IntersectionSpan intersect(Line line, Ray ray, int matId)
     {
         vec2 N = vec2(-tangent.y, tangent.x);
         N = normalize(-N);
+        vec2 I1 = ray.pos+ray.dir*tNear;
+        float tFar = tNear+1.0;
+        vec2 I2 = ray.pos+ray.dir*tFar;
         return IntersectionSpan(
-            Intersection(tNear, N, matId),
-            Intersection(tNear+1.0, N, matId)
+            Intersection(tNear, I1, N, matId),
+            Intersection(tFar,I2, N, matId)
         );
     }
 
@@ -360,13 +364,13 @@ IntersectionSpan intersect(Circle circle, Ray ray, int matId){
             vec2 N2 = (I2-circle.center);
             N2=normalize(N2);
 
-            // exit info
-            Intersection exit = Intersection(tFar, N2, matId);
+
+            Intersection exit = Intersection(tFar, I2, N2, matId);
 
             if(tNear<EPSILON)
             {
                 return IntersectionSpan(
-                    Intersection(0.0, vec2(0.0, 0.0), matId), 
+                    Intersection(0.0, ray.pos, vec2(0.0, 0.0), matId), 
                     exit
                 );
             }
@@ -378,7 +382,7 @@ IntersectionSpan intersect(Circle circle, Ray ray, int matId){
             vec2 N1 = normalize(I1-circle.center);
 
             //enter info
-            Intersection enter = Intersection(tNear, N1, matId);
+            Intersection enter = Intersection(tNear, I1, N1, matId);
 
             // intersection span
             return IntersectionSpan(enter, exit);
@@ -445,16 +449,19 @@ IntersectionSpan intersect(Triangle triangle, Ray ray, int matId){
         return NoIntersectionSpan;
     }
 
+    vec2 IEnter = ray.pos+ray.dir*tEnter;
+    vec2 IExit = ray.pos+ray.dir*tExit;
+
     if(tExit==tEnter){
         return IntersectionSpan(
-            Intersection(0.0, vec2(0.0), matId),
-            Intersection(tEnter, nEnter, matId)
+            Intersection(0.0, ray.pos, vec2(0.0), matId),
+            Intersection(tEnter, IEnter, nEnter, matId)
         );
     }
 
     return IntersectionSpan(
-        Intersection(tEnter, nEnter, matId),
-        Intersection(tExit, nExit, matId)
+        Intersection(tEnter, IEnter, nEnter, matId),
+        Intersection(tExit, IExit,nExit, matId)
     );
 }
 
@@ -497,12 +504,13 @@ IntersectionSpan intersect(Rectangle rect, Ray ray, int matId){
 
         I2 = rotate(I2, rect.angle, rect.center);
         N2 = rotate(N2, rect.angle);
-        Intersection exit = Intersection(tFar, N2, matId);
+
+        Intersection exit = Intersection(tFar, I2, N2, matId);
 
         if(tNear<EPSILON){
             // when the enter point is behind the ray's origin, 
             // then intersection span will begin at the rays origin
-            Intersection enter = Intersection(0.0, vec2(0,0), matId);
+            Intersection enter = Intersection(0.0, ray.pos, vec2(0,0), matId);
             return IntersectionSpan(enter,exit);
         }
 
@@ -528,7 +536,7 @@ IntersectionSpan intersect(Rectangle rect, Ray ray, int matId){
         I1 = rotate(I1, rect.angle, rect.center);
         N1 = rotate(N1, rect.angle);
 
-        Intersection enter = Intersection(tNear, N1, matId);
+        Intersection enter = Intersection(tNear, I1, N1, matId);
 
         // return intersection span between the enter- and exit point
         return IntersectionSpan(enter, exit);
@@ -576,8 +584,8 @@ IntersectionSpan subtractSpan(IntersectionSpan a, IntersectionSpan b){
 
         // Invert normals of span b
         b = IntersectionSpan(
-            Intersection(b.enter.t, -b.enter.normal, b.enter.matId),
-            Intersection(b.exit.t, -b.exit.normal, b.exit.matId)
+            Intersection(b.enter.t, b.enter.pos, -b.enter.normal, b.enter.matId),
+            Intersection(b.exit.t, b.exit.pos, -b.exit.normal, b.exit.matId)
         );
 
         // Case 1: Span b is completely before span a
@@ -771,14 +779,12 @@ vec2 snellsLaw(vec2 wi, float ior)
  * RAYTRACE *
  * ******** */
 
-Ray raytraceScene(Ray ray, out IntersectionSpan sceneIntersectionSpan){
+IntersectionSpan intersectScene(Ray ray){
 /* *************** *
      * intersect scene
      * *************** */
-    Ray adjustedRay = Ray(ray.pos+ray.dir*EPSILON, ray.dir, ray.intensity, ray.wavelength);
-    sceneIntersectionSpan = NoIntersectionSpan;
-    int shapeIdx;
-
+    // Ray adjustedRay = Ray(ray.pos+ray.dir*EPSILON, ray.dir, ray.intensity, ray.wavelength);
+    IntersectionSpan sceneIntersectionSpan = NoIntersectionSpan;
     for(int i=0;i<MAX_SHAPES;i++)
     {
         if(i<int(shapesCount))
@@ -811,7 +817,7 @@ Ray raytraceScene(Ray ray, out IntersectionSpan sceneIntersectionSpan){
             }
             else
             {
-                continue;
+                shapeIntersectionSpan = NoIntersectionSpan;
             }
 
             if(IsValid(sceneIntersectionSpan) && IsValid(shapeIntersectionSpan)){
@@ -826,15 +832,13 @@ Ray raytraceScene(Ray ray, out IntersectionSpan sceneIntersectionSpan){
             
         }
     }
-    
-    Ray secondary = NoRay;
-    if(IsValid(sceneIntersectionSpan))
-    {
-        Intersection intersection = sceneIntersectionSpan.enter;
-        if(intersection.t<=0.0){
-            intersection = sceneIntersectionSpan.exit;
-        };
+    return sceneIntersectionSpan;
+}
 
+Ray bounceRay(Ray ray, Intersection intersection){
+    Ray secondary = NoRay;
+    if(IsValid(intersection))
+    {
         // int shapeIdx = intersection.
 
         /* ********** *
@@ -851,7 +855,7 @@ Ray raytraceScene(Ray ray, out IntersectionSpan sceneIntersectionSpan){
         int materialType = unpackMaterialType(intersection.matId);
         if(materialType==MATERIAL_MIRROR)
         {
-            float roughness = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(16*2+shapeIdx)).y;
+            float roughness = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(16*2+intersection.matId)).y;
             woLocal = sampleMirror(wiLocal);
         }
         else if(materialType==MATERIAL_GLASS)
@@ -859,16 +863,16 @@ Ray raytraceScene(Ray ray, out IntersectionSpan sceneIntersectionSpan){
             // vec3 b = vec3(1.03961212, 0.231792344, 1.01046945);
             // vec3 c = vec3(0.00600069867, 0.0200179144, 103.560653);
             // float sellmeierIor =  sellmeierEquation(b, c, ray.wavelength*1e-3);
-            float roughness = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(16*2+shapeIdx)).y;
-            float ior = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(16*2+shapeIdx)).z;
-            float dispersion = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(16*2+shapeIdx)).w;
+            float roughness = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(16*2+intersection.matId)).y;
+            float ior = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(16*2+intersection.matId)).z;
+            float dispersion = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(16*2+intersection.matId)).w;
 
-            float cauchyIor =  cauchyEquation(1.44, 0.02, 550.0*1e-3);
-            woLocal = snellsLaw(wiLocal, cauchyIor);
+            float cauchyIor =  cauchyEquation(ior, dispersion, ray.wavelength*1e-3);
+            woLocal = sampleDielectric(wiLocal, cauchyIor);
         }
         else if(materialType==MATERIAL_DIFFUSE)
         {
-            float roughness = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(16*2+shapeIdx)).y;
+            float roughness = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(16*2+intersection.matId)).y;
             woLocal = sampleDiffuse(wiLocal);
         }
         else
@@ -878,7 +882,7 @@ Ray raytraceScene(Ray ray, out IntersectionSpan sceneIntersectionSpan){
         
         vec2 woWorld = woLocal.y*intersection.normal + woLocal.x*tangent; // worldSpace exiting r\y directiuon
 
-        secondary = Ray(ray.pos+intersection.t*ray.dir, -woWorld, ray.intensity, ray.wavelength);
+        secondary = Ray(intersection.pos, -woWorld, ray.intensity, ray.wavelength);
 
     }else{
         return NoRay;
@@ -895,32 +899,30 @@ void main()
     // unpack ray from data texture
     Ray ray = getCurrentRay();
 
-    IntersectionSpan ispan;
-    Ray secondary = raytraceScene(ray, ispan);
+
+    IntersectionSpan ispan = intersectScene(ray);
 
     if(IsValid(ispan))
     {
-        Intersection intersection = ispan.enter;
-        if(intersection.t<0.0){
+        Intersection intersection;
+        if(ispan.enter.t>EPSILON){
+            intersection = ispan.enter;
+        }else{
             intersection = ispan.exit;
         };
 
-        vec2 intersectionPoint = ray.pos+ray.dir*intersection.t;
-
-
-        // bounce ray
-        // Ray secondary = bounceRay(ray, hitInfo);
+        Ray secondary = bounceRay(ray, intersection);
 
         // pack data
         /* rayTransform */  gl_FragData[0] = vec4(secondary.pos,secondary.dir);
         /* rayProperties */ gl_FragData[1] = vec4(secondary.intensity, secondary.wavelength, 0, 0);
         /* rayColor */      gl_FragData[2] = vec4(RGBFromWavelength(ray.wavelength), ray.intensity);
-        /* hitPoint */      gl_FragData[3] = vec4(intersectionPoint, intersection.normal);
-        /* hitSpan */       gl_FragData[4] = vec4(ray.pos+ray.dir*ispan.enter.t, ray.pos+ray.dir*ispan.exit.t);
-        /* rayPath */       gl_FragData[5] = vec4(ray.pos, intersectionPoint);
+        /* hitPoint */      gl_FragData[3] = vec4(intersection.pos, intersection.normal);
+        /* hitSpan */       gl_FragData[4] = vec4(ispan.enter.pos, ispan.exit.pos);
+        /* rayPath */       gl_FragData[5] = vec4(ray.pos, intersection.pos);
     }else{
         /* rayColor */      gl_FragData[2] = vec4(RGBFromWavelength(ray.wavelength), ray.intensity);
-         /* rayPath */ gl_FragData[5] = vec4(ray.pos, ray.pos+ray.dir*9999.0);
+         /* rayPath */  gl_FragData[5] = vec4(ray.pos, ray.pos+ray.dir*9999.0);
     }
 }
 

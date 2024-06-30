@@ -13,7 +13,7 @@ function drawRays(regl, {
     raysLength,
     outputResolution,
     viewport,
-    raysColor=[0.9,0.5,0.0,0.3],
+    raysColor=[1.0,1.0,1.0,0.3],
     framebuffer=null
 }={})
 {

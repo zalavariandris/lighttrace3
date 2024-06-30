@@ -239,14 +239,21 @@ function hitCircle(ray, {cx,cy,r})
  */
 function hitLine(ray, {x1, y1, x2, y2})
 {
-    const tangentX = x2 - x1;
-    const tangentY = y2 - y1;
+
+    const tangentX = x2-x1;
+    const tangentY = y2-y1;
 
     // Calculate the determinant
     const determinant = ray.dx * tangentY - ray.dy * tangentX;
 
-    if (Math.abs(determinant) < EPSILON) {
+    if (Math.abs(determinant) < EPSILON){
         return null;
+    }
+
+    if(determinant>0.0){ // from outside
+
+    }else{ // from inside
+
     }
 
     // Calculate the intersection along the ray
@@ -254,13 +261,13 @@ function hitLine(ray, {x1, y1, x2, y2})
 
     // Calculate intersection along the line
     const tLine = ((x1 - ray.x) * ray.dy - (y1 - ray.y) * ray.dx) / determinant;
-
-    if (tNear <= EPSILON || tLine <= EPSILON || tLine >= 1.0 - EPSILON) {
+    
+    if(tNear<=0.0 || tLine<=0.0 || tLine>=1.0){
         return null;
     }
 
-    const Ix = ray.x + ray.dx * tNear;
-    const Iy = ray.y + ray.dy * tNear;
+    const Ix = ray.x+ray.dx*tNear;
+    const Iy = ray.y+ray.dy*tNear;
 
     let Nx = -tangentY;
     let Ny = tangentX;
@@ -268,18 +275,19 @@ function hitLine(ray, {x1, y1, x2, y2})
 
     return new HitSpan(
         new HitInfo(tNear, Ix, Iy, Nx, Ny, -1),
-        new HitInfo(tNear + 1.0, Ix, Iy, -Nx, -Ny, -1)
+        new HitInfo(tNear+1.0, Ix, Iy, -Nx, -Ny, -1)
     );
 
-    if (determinant < 0) { // from outside
+    //
+    if (determinant < 0){ // from outside
         const enter = new HitInfo(tNear, Ix, Iy, Nx, Ny, -1);
-        const exit = new HitInfo(LARGE_NUMBER, ray.x + ray.dx * LARGE_NUMBER, ray.y + ray.dy * LARGE_NUMBER, 0, 0, -1);
+        const exit  = new HitInfo(LARGE_NUMBER, ray.x+ray.dx*LARGE_NUMBER, ray.y+ray.dy*LARGE_NUMBER, 0,0, -1);
         return new HitSpan(
-            enter, enter
+            enter,enter
         );
-    } else { // from inside
+    }else{ // from inside
         const enter = new HitInfo(0, ray.x, ray.y, 0, 0, -1);
-        const exit = new HitInfo(tNear, Ix, Iy, Nx, Ny, -1);
+        const exit  = new HitInfo(tNear, Ix, Iy, Nx, Ny, -1);
         return new HitSpan(
             exit, exit
         );
@@ -297,13 +305,13 @@ function hitLine(ray, {x1, y1, x2, y2})
  */
 function lineIntersection(ray, {x1, y1, x2, y2})
 {
-    const tangentX = x2 - x1;
-    const tangentY = y2 - y1;
+    const tangentX = x2-x1;
+    const tangentY = y2-y1;
 
     // Calculate the determinant
     const determinant = ray.dx * tangentY - ray.dy * tangentX;
 
-    if (Math.abs(determinant) < EPSILON) {
+    if (Math.abs(determinant) < EPSILON){
         // ray and line are parallel
         return null;
     }
@@ -313,11 +321,12 @@ function lineIntersection(ray, {x1, y1, x2, y2})
     // Calculate intersection along the line
     const tLine = ((x1 - ray.x) * ray.dy - (y1 - ray.y) * ray.dx) / determinant;
 
-    if (tNear > EPSILON && tLine >= 0.0 && tLine <= 1.0) {
+    if(0.0 < tNear && 0.0 <= tLine && tLine <=1.0)
+    {
         let Nx = -tangentY;
         let Ny = tangentX;
         [Nx, Ny] = vec2.normalize(-Nx, -Ny);
-        return { t: tNear, normal: [Nx, Ny] };
+        return {t: tNear, normal: [Nx, Ny]};
     }
 
     return null;
@@ -441,7 +450,7 @@ function hitRectangle(ray, {cx, cy, angle, width, height})
         [Nx2, Ny2] = vec2.rotate([Nx2, Ny2], angle);
         const exit = new HitInfo(tFar, Ix2, Iy2, Nx2, Ny2, -1);
 
-        if(tNear<EPSILON){
+        if(tNear<0){
             // when the enter point is behind the ray's origin, 
             // then intersection span will begin at the rays origin
             return new HitSpan(

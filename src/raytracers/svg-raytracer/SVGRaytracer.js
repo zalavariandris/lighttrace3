@@ -11,7 +11,7 @@ import { HitInfo, HitSpan, collapseSpan, firstUnion, subtractSpan, hitCircle, hi
 import { sampleMirror, sampleDiffuse, sampleDielectric, snellsLaw, sellmeierEquation, cauchyEquation } from "./sampleMaterials.js";
 import { myrandom} from "../../utils.js"
 
-const EPSILON = 10.001;
+const EPSILON = 0.001;
 
 const h = React.createElement;
 
@@ -36,17 +36,13 @@ class LightRay{
 function hitScene(ray, shapeEntities)
 {
     // adjust ray to avoud zero distance collisions   
-    const adjustedRay = ray ? Object.freeze(new LightRay(
-        ray.x+ray.dx, 
-        ray.y+ray.dy,
-        ray.dx,
-        ray.dy, 
-        ray.intensity, 
-        ray.wavelength
-    )):null;
+
 
     /* intersect rays with CSG scene */
-    const hitSpanResult = shapeEntities.reduce((sceneHitSpan, entity)=>{
+    let sceneHitSpan = null;
+    for(let i=0;i<shapeEntities.length; i++)
+    {
+        const entity = shapeEntities[i];
         const cx = entity.transform.translate.x;
         const cy = entity.transform.translate.y;
         const angle = entity.transform.rotate;
@@ -98,23 +94,18 @@ function hitScene(ray, shapeEntities)
             shapeHitSpan.exit.material = entity.material;
         }
 
-        if(shapeHitSpan && sceneHitSpan)
-        {
+        if(shapeHitSpan && sceneHitSpan){
             if(shapeHitSpan.enter.t>sceneHitSpan.enter.t){
                 sceneHitSpan = subtractSpan(sceneHitSpan, shapeHitSpan);
             }else{
                 sceneHitSpan = subtractSpan(shapeHitSpan, sceneHitSpan);
             } 
-        }
-        else if(shapeHitSpan)
-        {
+        }else if(shapeHitSpan){
             sceneHitSpan = shapeHitSpan;
         }
+    }
 
-        return sceneHitSpan;
-    }, null);
-
-    return hitSpanResult;
+    return sceneHitSpan;
 }
 
 const bounceRays = (ray, hit, random_number)=>{
@@ -212,12 +203,12 @@ function SVGRaytracer()
                 if(ray==null){return [null,null, null];}
 
                 // calc ray hitspans with scene
-                const hitSpan = Object.freeze(hitScene(ray, shapeEntities));
+                const hitSpan = hitScene(ray, shapeEntities);
 
                 // closest intersection point of sceneHitSpanPerRay
                 let hit;
                 if(hitSpan){
-                    hit = Object.freeze(hitSpan.enter.t>EPSILON ? hitSpan.enter : hitSpan.exit);
+                    hit = hitSpan.enter.t>EPSILON ? hitSpan.enter : hitSpan.exit;
                 }else{
                     hit = null;
                 }
@@ -253,8 +244,8 @@ function SVGRaytracer()
                 h('line', {
                     x1: ray.x,
                     y1: ray.y,
-                    x2: hit?hit.x:ray.x+ray.dx*9999,
-                    y2: hit?hit.y:ray.y+ray.dy*9999,
+                    x2: hit?ray.x+ray.dx*hit.t:ray.x+ray.dx*9999,
+                    y2: hit?ray.y+ray.dy*hit.t:ray.y+ray.dy*9999,
                     className: 'lightray',
                     vectorEffect: "non-scaling-stroke",
                     style: {
@@ -269,12 +260,12 @@ function SVGRaytracer()
         h('g', {
             className: 'hitNormals'
         },
-            settings.display.normals && allHits.filter(hit=>hit).map(hit=>
+            settings.display.normals && _.zip(allRays, allHits).filter(([ray, hit])=>hit).map(([ray, hit])=>
                 h('line', {
-                    x1: hit.x,
-                    y1: hit.y,
-                    x2: hit.x+hit.nx*20,
-                    y2: hit.y+hit.ny*20,
+                    x1: ray.x+ray.dx*hit.t,
+                    y1: ray.y+ray.dy*hit.t,
+                    x2: ray.x+ray.dx*hit.t+hit.nx*20,
+                    y2: ray.y+ray.dy*hit.t+hit.ny*20,
                     className: 'intersection',
                     vectorEffect: "non-scaling-stroke",
                     style: {
@@ -309,13 +300,13 @@ function SVGRaytracer()
         h("g", {
             className:"intersection-spans"
         },
-            settings.display.hitSpans && allIntersectionSpans.filter(ispan=>ispan).map(ispan =>
+            settings.display.hitSpans && _.zip(allRays, allIntersectionSpans).filter(([ray, ispan])=>ispan).map(([ray, ispan]) =>
                 h("g", null, 
                     h('line', {
-                        x1: ispan.enter.x,
-                        y1: ispan.enter.y,
-                        x2: ispan.exit.x,
-                        y2: ispan.exit.y,
+                        x1: ray.x+ray.dx*ispan.enter.t,
+                        y1: ray.y+ray.dy*ispan.enter.t,
+                        x2: ray.x+ray.dx*ispan.exit.t,
+                        y2: ray.y+ray.dy*ispan.exit.t,
                         className: 'intersection',
                         vectorEffect: "non-scaling-stroke",
                         // markerEnd:"url(#arrow)",
@@ -324,15 +315,15 @@ function SVGRaytracer()
                         opacity: 0.05
                     }),
                     h("text",{
-                        x: ispan.enter.x,
-                        y: ispan.enter.y,
+                        x: ray.x+ray.dx*ispan.enter.t,
+                        y: ray.y+ray.dy*ispan.enter.t,
                         fontSize: "50%",
                         fill:"red",
                         stroke: "none"
                     }, "enter"),
                     h("text",{
-                        x: ispan.exit.x,
-                        y: ispan.exit.y,
+                        x: ray.x+ray.dx*ispan.exit.t,
+                        y: ray.y+ray.dy*ispan.exit.t,
                         fontSize: "50%",
                         fill:"cyan",
                     }, "exit")

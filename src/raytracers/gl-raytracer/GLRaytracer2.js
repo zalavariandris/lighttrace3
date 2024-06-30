@@ -493,7 +493,7 @@ class GLRaytracer{
                 raysCount: rays.length,
                 raysTexture: this.texturesBack.hitPoint,
                 raysLength: 20.0,
-                raysColor: [0.0,0.9,0,0.1],
+                raysColor: [0.0, 1.0, 0.0, 0.003],
                 outputResolution: this.outputResolution,
                 viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
                 framebuffer: this.sceneFBO

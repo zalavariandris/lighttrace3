@@ -39,8 +39,7 @@ function loadImageData(imagePath){
     })
 }
 
-const spectralImage1 = await loadImageData("./src/Spectrum-cropped.png");
-const spectralImage2 = await loadImageData("./tantulum-spectrum.png");
+const spectralImage2 = await loadImageData("./src/Spectrum-cropped.png");
 
 Array.prototype.extend = function(value, newLength)
 {

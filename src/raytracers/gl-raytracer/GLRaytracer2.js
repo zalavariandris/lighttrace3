@@ -113,20 +113,6 @@ class GLRaytracer{
             min: "nearest", 
             mag: "nearest"
         }
-        this.CSG = {
-            transform: regl.texture({...common_settings,
-                format: "rgba",
-                type: "float",
-            }),
-            shape: regl.texture({...common_settings,
-                format: "rgba",
-                type: "float",
-            }),
-            material: regl.texture({...common_settings,
-                format: "rgba",
-                type: "float",
-            }),
-        };
 
         this.CSGTexture = regl.texture({
             width: 16,
@@ -320,23 +306,11 @@ class GLRaytracer{
             entity.hasOwnProperty("material")
         );
 
-        // const common_CSG_textures_settings = {
-        //     width: 16,
-        //     height: 1,
-        //     wrap: 'clamp',
-        //     min: "nearest", 
-        //     mag: "nearest"
-        // }
-
         const transformData = shapeEntities.map(entity=>
             [entity.transform.translate.x, entity.transform.translate.y, entity.transform.rotate || 0.0, 0.0]
         ).concat(new Array(16-shapeEntities.length).fill([0,0,0,0]));
 
-        // this.CSG.transform({...common_CSG_textures_settings,
-        //     format: "rgba", /*x,y,dx, dy*/
-        //     type: "float",
-        //     data: transformData
-        // });
+        
 
         const shapeData = shapeEntities.map(entity=>{
             switch (entity.shape.type) {
@@ -355,12 +329,6 @@ class GLRaytracer{
             }
         }).concat(new Array(16-shapeEntities.length).fill([0,0,0,0]));
 
-        // this.CSG.shape({...common_CSG_textures_settings,
-        //     format: "rgba", /*x,y,dx, dy*/
-        //     type: "float",
-        //     data: shapeData
-        // });
-
         const materialData = shapeEntities.map(entity=>{
             switch (entity.material.type) {
                 case "mirror":
@@ -373,12 +341,6 @@ class GLRaytracer{
                     return [-1,0,0,0];
             }
         }).concat(new Array(16-shapeEntities.length).fill([0,0,0,0]));
-
-        // this.CSG.material({...common_CSG_textures_settings,
-        //     format: "rgba", /*x,y,dx, dy*/
-        //     type: "float",
-        //     data: materialData
-        // });
 
         const CSGData = transformData.concat(shapeData).concat(materialData);
         this.CSGTexture({

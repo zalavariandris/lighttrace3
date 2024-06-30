@@ -46,6 +46,7 @@ vec4 texelFetchByIdx(sampler2D texture, vec2 resolution, float texelIdx)
 
 float rand(){
     float delta = texture2D(randomNumberPerRay, gl_FragCoord.xy).x;
+    return delta;
     return gold_noise(gl_FragCoord.xy, SEED+delta);
 }
 
@@ -346,7 +347,7 @@ IntersectionSpan intersect(Circle circle, Ray ray, int matId){
     float C = dot(u, u) - circle.r*circle.r;
     float detSq = B*B - C;
 
-    if (detSq >= -EPSILON)
+    if (detSq >= 0.0)
     {
         float det = sqrt(detSq);
         float tNear = -B - det;
@@ -355,7 +356,7 @@ IntersectionSpan intersect(Circle circle, Ray ray, int matId){
         // If t far is greater than 0 than ther is an exit point
         // If enter point is negative we are inside the shape, 
         // then Let the intersection span begin at the origin of ray
-        if(tFar>EPSILON)
+        if(tFar>0.0)
         {
             //exit point
             vec2 I2 = ray.pos+ray.dir*tFar;
@@ -489,15 +490,15 @@ IntersectionSpan intersect(Rectangle rect, Ray ray, int matId){
 
         // exit normal
         vec2 N2 = vec2(0.0);
-        if (I2.x+EPSILON >= rect.center.x - rect.width / 2.0  && I2.x-EPSILON <= rect.center.x + rect.width / 2.0 &&
-            I2.y+EPSILON >= rect.center.y - rect.height / 2.0 && I2.y-EPSILON <= rect.center.y + rect.height / 2.0) {
-            if        (abs(I2.x - rect.center.x + rect.width / 2.0) < EPSILON) {
+        if (I2.x >= rect.center.x - rect.width / 2.0  && I2.x <= rect.center.x + rect.width / 2.0 &&
+            I2.y >= rect.center.y - rect.height / 2.0 && I2.y <= rect.center.y + rect.height / 2.0) {
+            if        (abs(I2.x - rect.center.x + rect.width / 2.0) < 0.0) {
                 N2 = vec2(-1.0, 0.0);
-            } else if (abs(I2.x - rect.center.x - rect.width / 2.0) < EPSILON) {
+            } else if (abs(I2.x - rect.center.x - rect.width / 2.0) < 0.0) {
                 N2 = vec2(1.0, 0.0);
-            } else if (abs(I2.y - rect.center.y + rect.height / 2.0) < EPSILON) {
+            } else if (abs(I2.y - rect.center.y + rect.height / 2.0) < 0.0) {
                 N2 = vec2(0.0, -1.0);
-            } else if (abs(I2.y - rect.center.y - rect.height / 2.0) < EPSILON) {
+            } else if (abs(I2.y - rect.center.y - rect.height / 2.0) < 0.0) {
                 N2 = vec2(0.0, 1.0);
             }
         }
@@ -519,15 +520,15 @@ IntersectionSpan intersect(Rectangle rect, Ray ray, int matId){
 
         // enter normal
         vec2 N1 = vec2(0.0);
-        if (I1.x+EPSILON >= rect.center.x - rect.width / 2.0  && I1.x-EPSILON <= rect.center.x + rect.width / 2.0 &&
-            I1.y+EPSILON >= rect.center.y - rect.height / 2.0 && I1.y-EPSILON <= rect.center.y + rect.height / 2.0) {
-            if        (abs(I1.x - rect.center.x + rect.width / 2.0) < EPSILON) {
+        if (I1.x >= rect.center.x - rect.width / 2.0  && I1.x <= rect.center.x + rect.width / 2.0 &&
+            I1.y >= rect.center.y - rect.height / 2.0 && I1.y <= rect.center.y + rect.height / 2.0) {
+            if        (abs(I1.x - rect.center.x + rect.width / 2.0) < 0.0) {
                 N1 = vec2(-1.0, 0.0);
-            } else if (abs(I1.x - rect.center.x - rect.width / 2.0) < EPSILON) {
+            } else if (abs(I1.x - rect.center.x - rect.width / 2.0) < 0.0) {
                 N1 = vec2(1.0, 0.0);
-            } else if (abs(I1.y - rect.center.y + rect.height / 2.0) < EPSILON) {
+            } else if (abs(I1.y - rect.center.y + rect.height / 2.0) < 0.0) {
                 N1 = vec2(0.0, -1.0);
-            } else if (abs(I1.y - rect.center.y - rect.height / 2.0) < EPSILON) {
+            } else if (abs(I1.y - rect.center.y - rect.height / 2.0) < 0.0) {
                 vec2 N1 = vec2(0.0, 1.0);
             }
         }
@@ -748,7 +749,7 @@ vec2 sampleDielectric(vec2 wi, float ior)
     }
 
     // float randomNumber = gold_noise(gl_FragCoord.xy, SEED);
-    if (1.0 < fresnell) 
+    if (rand() < fresnell) 
     {
         return vec2(-wi.x, wi.y);
     }

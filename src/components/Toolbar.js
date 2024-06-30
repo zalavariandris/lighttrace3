@@ -235,7 +235,7 @@ function EditToolbar({})
                     type: "range",
                     min:0.5,
                     max:2.0,
-                    step: 0.1,
+                    step: 0.01,
                     value: selectedObject.material.ior,
                     onChange: e=>entityStore.setValue(`${selectedKey}.material.ior`, parseFloat(e.target.value))
                 }),

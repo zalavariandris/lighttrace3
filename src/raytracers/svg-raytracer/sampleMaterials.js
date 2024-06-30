@@ -85,7 +85,7 @@ function sampleDielectric(vx, vy, ior, randomNumber)
     
     // Calculate the square of the sine of the transmission angle
     // to determine if total internal reflection occurs
-    const sinThetaTSq = eta * eta * (1.0 - Math.abs(vy) * Math.abs(vy));
+    const sinThetaTSq = eta**2 * (1.0 - Math.abs(vy)**2);
 
     let cosThetaT;
     let fresnell;
@@ -115,4 +115,21 @@ function sampleDielectric(vx, vy, ior, randomNumber)
     }
 }
 
-export {sampleMirror, sampleDiffuse, sampleDielectric, sellmeierEquation, cauchyEquation};
+function snellsLaw(vx, vy, ior) 
+{
+    const eta = vy > 0.0 ? ior : 1.0 / ior;
+    const sinThetaTSq = eta * eta * (1.0 - vy * vy);
+
+    if (sinThetaTSq > 1.0) 
+    {
+        // Total internal reflection
+        return [-vx, vy];
+    } 
+    else 
+    {
+        const cosThetaT = Math.sqrt(1.0 - sinThetaTSq);
+        return [-vx * eta, -cosThetaT * Math.sign(vy)];
+    }
+}
+
+export {sampleMirror, sampleDiffuse, sampleDielectric, snellsLaw, sellmeierEquation, cauchyEquation};

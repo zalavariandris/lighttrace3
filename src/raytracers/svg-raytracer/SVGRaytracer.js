@@ -8,10 +8,10 @@ import * as vec2 from "../../vec2.js"
 import { Circle, Triangle, LineSegment, Rectangle, SphericalLens } from "./Shapes.js";
 import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../sampleLights.js";
 import { HitInfo, HitSpan, collapseSpan, firstUnion, subtractSpan, hitCircle, hitLine, hitTriangle, hitSphericalLens, hitRectangle } from "./hitTest.js"
-import { sampleMirror, sampleDiffuse, sampleDielectric, sellmeierEquation, cauchyEquation } from "./sampleMaterials.js";
+import { sampleMirror, sampleDiffuse, sampleDielectric, snellsLaw, sellmeierEquation, cauchyEquation } from "./sampleMaterials.js";
 import { myrandom} from "../../utils.js"
 
-const EPSILON = 0.001;
+const EPSILON = 10.001;
 
 const h = React.createElement;
 
@@ -37,8 +37,8 @@ function hitScene(ray, shapeEntities)
 {
     // adjust ray to avoud zero distance collisions   
     const adjustedRay = ray ? Object.freeze(new LightRay(
-        ray.x+ray.dx*EPSILON, 
-        ray.y+ray.dy*EPSILON,
+        ray.x+ray.dx, 
+        ray.y+ray.dy,
         ray.dx,
         ray.dy, 
         ray.intensity, 
@@ -53,13 +53,13 @@ function hitScene(ray, shapeEntities)
         let shapeHitSpan;
         switch (entity.shape.type) {
             case "circle":
-                shapeHitSpan = hitCircle(adjustedRay, new Circle(
+                shapeHitSpan = hitCircle(ray, new Circle(
                     cx, 
                     cy, 
                     entity.shape.radius));
                 break;
             case "rectangle":
-                shapeHitSpan = hitRectangle(adjustedRay, new Rectangle(
+                shapeHitSpan = hitRectangle(ray, new Rectangle(
                     cx, 
                     cy, 
                     angle, 
@@ -67,7 +67,7 @@ function hitScene(ray, shapeEntities)
                     entity.shape.height));
                 break;
             case "triangle":
-                shapeHitSpan = hitTriangle(adjustedRay, new Triangle(
+                shapeHitSpan = hitTriangle(ray, new Triangle(
                     cx, 
                     cy, 
                     entity.transform.rotate, 
@@ -78,10 +78,10 @@ function hitScene(ray, shapeEntities)
                 const y1 = cy - Math.sin(angle)*entity.shape.length/2;
                 const x2 = cx + Math.cos(angle)*entity.shape.length/2;
                 const y2 = cy + Math.sin(angle)*entity.shape.length/2;
-                shapeHitSpan = hitLine(adjustedRay, new LineSegment( x1, y1, x2, y2));
+                shapeHitSpan = hitLine(ray, new LineSegment( x1, y1, x2, y2));
                 break;
             case "sphericalLens":
-                shapeHitSpan = hitSphericalLens(adjustedRay, new SphericalLens(
+                shapeHitSpan = hitSphericalLens(ray, new SphericalLens(
                     cx, 
                     cy, 
                     angle, 
@@ -100,12 +100,9 @@ function hitScene(ray, shapeEntities)
 
         if(shapeHitSpan && sceneHitSpan)
         {
-            if(shapeHitSpan.enter.t>sceneHitSpan.enter.t)
-            {
+            if(shapeHitSpan.enter.t>sceneHitSpan.enter.t){
                 sceneHitSpan = subtractSpan(sceneHitSpan, shapeHitSpan);
-            }
-            else
-            {
+            }else{
                 sceneHitSpan = subtractSpan(shapeHitSpan, sceneHitSpan);
             } 
         }
@@ -148,6 +145,7 @@ const bounceRays = (ray, hit, random_number)=>{
                 );
                 const cauchyIor =  cauchyEquation(1.44, 0.02, ray.wavelength*1e-3);
                 [woX, woY] =  sampleDielectric(wiX, wiY, cauchyIor, myrandom(random_number*100+1));
+                [woX, woY] =  snellsLaw(wiX, wiY, cauchyIor);
                 break;
             default:
                 [woX, woY] =  sampleMirror(wiX, wiY);

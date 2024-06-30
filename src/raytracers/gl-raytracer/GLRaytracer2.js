@@ -3,7 +3,7 @@
  * GL Renderer
  */
 import createREGL from "regl"
-
+import _ from "lodash"
 import { drawTexture } from "./operators/drawTexture.js";
 import { drawCSGToSDF } from "./operators/drawCSGToSDF.js";
 import { intersectRaysWithSDF } from "./operators/intersectRaysWithSDF.js";
@@ -38,14 +38,6 @@ function loadImageData(imagePath){
     })
 }
 
-Array.prototype.extend = function(value, newLength)
-{
-    const oldLength = this.length;
-    this.length = newLength
-    this.fill(value, oldLength, newLength);
-    return this
-}
-
 class GLRaytracer{
     constructor(canvas)
     {
@@ -71,6 +63,7 @@ class GLRaytracer{
     initGL()
     {
         this.initRegl();
+        this.initCSGBuffers();
         this.initRaytraceBuffers();
         this.initPostProcessingBuffers();
     }
@@ -111,11 +104,44 @@ class GLRaytracer{
         });
     }
 
+    initCSGBuffers(){
+        const regl = this.regl;
+        const common_settings = {
+            width: 16,
+            height: 1,
+            wrap: 'clamp',
+            min: "nearest", 
+            mag: "nearest"
+        }
+        this.CSG = {
+            transform: regl.texture({...common_settings,
+                format: "rgba",
+                type: "float",
+            }),
+            shape: regl.texture({...common_settings,
+                format: "rgba",
+                type: "float",
+            }),
+            material: regl.texture({...common_settings,
+                format: "rgba",
+                type: "float",
+            }),
+        };
+
+        this.CSGTexture = regl.texture({
+            width: 16,
+            height: 3,
+            wrap: 'clamp',
+            min: "nearest", 
+            mag: "nearest",
+            format: "rgba",
+            type: "float",
+        });
+    }
+
     initRaytraceBuffers()
     {
         const regl = this.regl;
-
-
         this.spectrum = regl.texture({
             width: spectrumTable.length/4,
             height: 1,
@@ -137,7 +163,7 @@ class GLRaytracer{
             mag: "nearest"
         }
         this.randomNumberPerRay =  regl.texture({...common_settings,
-            format: "luminance",
+            format: "rgba",
             type: "float",
         });
         this.texturesFront = {
@@ -287,6 +313,85 @@ class GLRaytracer{
             return;
         }
 
+        /* Prepare Scene data for GPU */
+        const shapeEntities = Object.values(scene).filter(entity=>
+            entity.hasOwnProperty("shape") && 
+            entity.hasOwnProperty("transform") && 
+            entity.hasOwnProperty("material")
+        );
+
+        // const common_CSG_textures_settings = {
+        //     width: 16,
+        //     height: 1,
+        //     wrap: 'clamp',
+        //     min: "nearest", 
+        //     mag: "nearest"
+        // }
+
+        const transformData = shapeEntities.map(entity=>
+            [entity.transform.translate.x, entity.transform.translate.y, entity.transform.rotate || 0.0, 0.0]
+        ).concat(new Array(16-shapeEntities.length).fill([0,0,0,0]));
+
+        // this.CSG.transform({...common_CSG_textures_settings,
+        //     format: "rgba", /*x,y,dx, dy*/
+        //     type: "float",
+        //     data: transformData
+        // });
+
+        const shapeData = shapeEntities.map(entity=>{
+            switch (entity.shape.type) {
+                case "circle":
+                    return [0, entity.shape.radius,0,0];
+                case "rectangle":
+                    return [1, entity.shape.width, entity.shape.height, 0];
+                case "sphericalLens":
+                    return [2, entity.shape.diameter, entity.shape.edgeThickness, entity.shape.centerThickness];
+                case "triangle":
+                    return [3, entity.shape.size, 0,0];
+                case "line":
+                    return [4, entity.shape.length, 0,0];
+                default:
+                    return [0, 10,0,0];
+            }
+        }).concat(new Array(16-shapeEntities.length).fill([0,0,0,0]));
+
+        // this.CSG.shape({...common_CSG_textures_settings,
+        //     format: "rgba", /*x,y,dx, dy*/
+        //     type: "float",
+        //     data: shapeData
+        // });
+
+        const materialData = shapeEntities.map(entity=>{
+            switch (entity.material.type) {
+                case "mirror":
+                    return [1, entity.material.roughness || 0.0, 0.0, 0.0];
+                case "glass":
+                    return [2, entity.material.roughness || 0.0, entity.material.ior || 1.4, entity.material.dispersion || 0.2];
+                case "diffuse":
+                    return [3, entity.material.roughness || 0.0, 0.0, 0.0];
+                default:
+                    return [-1,0,0,0];
+            }
+        }).concat(new Array(16-shapeEntities.length).fill([0,0,0,0]));
+
+        // this.CSG.material({...common_CSG_textures_settings,
+        //     format: "rgba", /*x,y,dx, dy*/
+        //     type: "float",
+        //     data: materialData
+        // });
+
+        const CSGData = transformData.concat(shapeData).concat(materialData);
+        this.CSGTexture({
+            width: 16,
+            height: 3,
+            wrap: 'clamp',
+            min: "nearest", 
+            mag: "nearest",
+            format: "rgba", /*x,y,dx, dy*/
+            type: "float",
+            data: CSGData.flat()
+        });
+
         /* Cast initial rays */
         /* filter entities to lights */
         const lightEntities = Object.fromEntries(Object.entries(scene)
@@ -321,7 +426,6 @@ class GLRaytracer{
                 }
             }).flat(1);
 
-
         /* Upload rays the textures */
         // calc output texture resolution to hold rays data on the GPU
         const dataTextureRadius = Math.ceil(Math.sqrt(this.settings.lightSamples));
@@ -337,12 +441,12 @@ class GLRaytracer{
         this.texturesFront.rayTransform({...common_raytrace_textures_settings,
             data: rays.map(ray=>
                 [ray.x, ray.y, ray.dx, ray.dy]
-            ).extend([0,0,0,0], dataTextureRadius**2)
+            ).concat(new Array(dataTextureRadius**2-rays.length).fill([0,0,0,0]))
         });
         this.texturesFront.rayProperties({...common_raytrace_textures_settings,
             data: rays.map(ray=>
                 [ray.intensity, ray.wavelength, 0, 0]
-            ).extend([0,0,0,0], dataTextureRadius**2)
+            ).concat(new Array(dataTextureRadius**2-rays.length).fill([0,0,0,0]))
         });
         this.randomNumberPerRay({...common_raytrace_textures_settings,
             data: Array.from({length: dataTextureRadius**2}).map(_=>
@@ -350,51 +454,9 @@ class GLRaytracer{
             )
         });
 
-        /* Prepare Scene data for GPU */
-        const shapeEntities = Object.values(scene).filter(entity=>
-            entity.hasOwnProperty("shape") && 
-            entity.hasOwnProperty("transform") && 
-            entity.hasOwnProperty("material")
-        );
-
-        const transformData = shapeEntities.map(entity=>
-            [entity.transform.translate.x, entity.transform.translate.y, entity.transform.rotate || 0.0]
-        );
-
-        const shapeData = shapeEntities.map(entity=>{
-            switch (entity.shape.type) {
-                case "circle":
-                    return [0, entity.shape.radius,0,0];
-                case "rectangle":
-                    return [1, entity.shape.width, entity.shape.height, 0];
-                case "sphericalLens":
-                    return [2, entity.shape.diameter, entity.shape.edgeThickness, entity.shape.centerThickness];
-                case "triangle":
-                    return [3, entity.shape.size, 0,0];
-                case "line":
-                    return [4, entity.shape.length, 0,0];
-                default:
-                    return [0, 10,0,0];
-            }
-        });
-
-        const materialData = shapeEntities.map(entity=>{
-            switch (entity.material.type) {
-                case "glass":
-                    return [2, entity.material.roughness || 0.0, entity.material.ior || 1.0, entity.material.dispersion || 0.2];
-                case "mirror":
-                    return [1, entity.material.roughness || 0.0, 0.0, 0.0];
-                case "diffuse":
-                    return [3, entity.material.roughness || 0.0, 0.0, 0.0];
-                default:
-                    return [-1,0,0,0];
-            }
-        });
-
         /************ *
          * TRACE RAYS *
          * ********** */
-
         /* resize output framebuffers */
         regl.clear({framebuffer: this.sceneFBO, color: [0,0,0,1.0]});
         if(this.sceneFBO.width!=this.outputResolution[0] || this.sceneFBO.height!=this.outputResolution[1])
@@ -417,14 +479,14 @@ class GLRaytracer{
             });
 
             // /* draw intersection spans */
-            // this.display.hitSpans && drawLineSegments(regl, {
-            //     linesCount: rays.length,
-            //     lineSegments: this.texturesBack.hitSpan,
-            //     color: [0,1,1,0.03],
-            //     outputResolution: this.outputResolution,
-            //     viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-            //     framebuffer: this.sceneFBO
-            // });
+            this.display.hitSpans && drawLineSegments(regl, {
+                linesCount: rays.length,
+                lineSegments: this.texturesBack.hitSpan,
+                colors: this.texturesBack.rayColor,
+                outputResolution: this.outputResolution,
+                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
+                framebuffer: this.sceneFBO
+            });
 
             /* draw hitpoints */
             this.display.normals && drawRays(regl, {
@@ -456,12 +518,8 @@ class GLRaytracer{
                     rayPropertiesTexture: this.texturesFront.rayProperties,
                     randomNumberPerRay: this.randomNumberPerRay,
                     spectralTexture: this.spectrum,
-                    shapesCount: shapeData.length,
-                    ...shapeEntities.length>0 && { // include shape info in uniforms only if they exist. otherwise regl throws an error. TODO: review this
-                        CSGTransformData: transformData.flat(),
-                        CSGShapeData: shapeData.flat(),
-                        CSGMaterialData: materialData.flat()
-                    }
+                    shapesCount: shapeEntities.length,
+                    CSGTexture: this.CSGTexture
                 },
                 frag: raytracePassShader
             })();
@@ -479,7 +537,6 @@ class GLRaytracer{
         /* *************** *
          * POST PROCESSING *
          * *************** */
-
         /* accumulate */
         this.totalPasses+=1;
         regl({...QUAD,
@@ -616,6 +673,12 @@ class GLRaytracer{
         })();
         
         [this.postFrontFBO, this.postBackFBO]=[this.postBackFBO, this.postFrontFBO]
+
+        // drawTexture(regl, {
+        //     texture:this.texturesBack.rayTransform, 
+        //     outputResolution: [1024,1024],
+        //     exposure:0.1
+        // });
     }
 }
 

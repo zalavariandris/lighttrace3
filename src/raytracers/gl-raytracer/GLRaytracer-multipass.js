@@ -21,8 +21,8 @@ const intersectRaysWithCSGShader = await loadShader("./src/raytracers//gl-raytra
 const bounceRaysShader = await loadShader("./src/raytracers//gl-raytracer/shaders/bounceRays.fs")
 const wavelengthToColorShader = await loadShader("./src/raytracers//gl-raytracer/shaders/wavelengthToColor.fs");
 
-/* load spectral image */
-const spectralImage2 = await loadImageData("./src/Spectrum-cropped.png");
+
+import spectrumTable from "./spectrumTable.js";
 
 /* define maximum shape couns*/
 const MAX_SHAPES = 16;
@@ -51,7 +51,6 @@ function loadImageData(imagePath){
     })
 }
 
-import spectrumTable from "./spectrumTable.js";
 
 class GLRaytracer{
     constructor(canvas)
@@ -326,7 +325,6 @@ class GLRaytracer{
             return;
         }
        
-
         /* prepare scene data for GPU */
         const shapeEntities = Object.values(scene).filter(entity=>
             entity.hasOwnProperty("shape") && 
@@ -383,7 +381,7 @@ class GLRaytracer{
             format: "rgba",
             type: "float",
             data: CSGData
-        })
+        });
 
         /*
          * CAST INITIAL RAYS
@@ -573,12 +571,7 @@ class GLRaytracer{
                     rayDataTexture: this.rayDataTexture,
                     rayDataResolution: [this.rayDataTexture.width, this.rayDataTexture.height],
                     shapesCount: shapeData.length,
-                    CSGTexture: this.CSGTexture,
-                    ...shapeEntities.length>0 && { // include shape info in uniforms only if they exist. otherwise regl throws an error. TODO: review this
-                        transformData: transformData.flat(),
-                        shapeData: shapeData.flat(),
-                        materialData: materialData.flat()
-                    }
+                    CSGTexture: this.CSGTexture
                 },
                 frag: intersectRaysWithCSGShader
             })();
@@ -674,7 +667,7 @@ class GLRaytracer{
                 texture: this.postFbo,
                 outputResolution: [this.canvas.width, this.canvas.height],
                 totalPasses: this.totalPasses * (lineWidth*1024),
-                exposure: 0.1
+                exposure: 0.3
             },
             frag:`precision mediump float;
             varying vec2 vUV;

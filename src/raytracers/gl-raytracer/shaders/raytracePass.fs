@@ -2,19 +2,13 @@
 precision mediump float;
 #define e 2.71828
 #define PI 3.14159
-#define EPSILON 10.001
+#define EPSILON 0.001
 #define LARGE_NUMBER 9999.0
 
 #define MATERIAL_NOTHING -1
 #define MATERIAL_MIRROR 1
 #define MATERIAL_GLASS 2
 #define MATERIAL_DIFFUSE 3
-
-#define SHAPE_CIRCLE 0
-#define SHAPE_RECTANGLE 1
-#define SHAPE_SPHERICAL_LENS 2
-#define SHAPE_TRIANGLE 3
-#define SHAPE_LINE_SEGMENT 4
 
 #define MAX_SHAPES 16
 
@@ -25,6 +19,7 @@ uniform sampler2D rayPropertiesTexture;
 uniform sampler2D randomNumberPerRay;
 uniform sampler2D spectralTexture;
 
+uniform vec4 roomRect;
 uniform float shapesCount;
 uniform sampler2D CSGTexture;
 
@@ -66,84 +61,12 @@ vec2 rotate(vec2 pos, float radAngle){
     return rotate(pos, radAngle, vec2(0,0));
 }
 
-/* ************** *
- * SPECTRAL COLOR *
- * ************** */
-// Wavelength to RGB
-// Created by Alan Zucconi
-// spurce: https://www.alanzucconi.com/2017/07/15/improving-the-rainbow-2/
-float saturate (float x)
-{
-    return min(1.0, max(0.0,x));
-}
-vec3 saturate (vec3 x)
-{
-    return min(vec3(1.,1.,1.), max(vec3(0.,0.,0.),x));
-}
-vec3 bump3y (vec3 x, vec3 yoffset)
-{
-	vec3 y = vec3(1.,1.,1.) - x * x;
-    y = y-yoffset;
-	y = saturate(y);
-	return y;
-}
-vec3 spectral_zucconi6 (float w)
-{
-    // w: [400, 700]
-    // x: [0,   1]
-    float x = saturate((w - 400.0)/ 300.0);
-
-    vec3 c1 = vec3(3.54585104, 2.93225262, 2.41593945);
-    vec3 x1 = vec3(0.69549072, 0.49228336, 0.27699880);
-    vec3 y1 = vec3(0.02312639, 0.15225084, 0.52607955);
-
-    vec3 c2 = vec3(3.90307140, 3.21182957, 3.96587128);
-    vec3 x2 = vec3(0.11748627, 0.86755042, 0.66077860);
-    vec3 y2 = vec3(0.84897130, 0.88445281, 0.73949448);
-
-    return
-        bump3y(c1 * (x - x1), y1) +
-        bump3y(c2 * (x - x2), y2) ;
-}
-
-    // vec3 hueToLinearRGB(float hue) {
-    //     // hue is expected to be in the range [0, 1]
-    //     float r = abs(hue * 6.0 - 3.0) - 1.0;
-    //     float g = 2.0 - abs(hue * 6.0 - 2.0);
-    //     float b = 2.0 - abs(hue * 6.0 - 4.0);
-    //     return vec3(clamp(r, 0.0, 1.0), clamp(g, 0.0, 1.0), clamp(b, 0.0, 1.0));
-    // }
-
-vec3 spectralMap(float wavelength)
-{
-    // Calculate a random wavelength directly
-    // float randL = rand();
-    // float lambda = 360.0 + (750.0 - 360.0) * randL;
-    
-    // Convert wavelength to a spectrum offset assuming Spectrum texture is mapped linearly to wavelengths
-    float spectrumOffset = (wavelength - 360.0) / (750.0 - 360.0);
-
-    // Sample the spectrum texture to get RGB values
-    vec3 color = texture2D(spectralTexture, vec2(spectrumOffset, 0.5)).rgb;
-    return color;
-    // float x = saturate((wavelength - 400.0)/ 300.0);
-    // vec4 rgba = texture2D(spectralTexture, vec2(x, 0.5));
-    // return rgba;
-}
-
-// Convert wavelength in nanometers to RGB using a perceptually accurate method
-vec3 RGBFromWavelength(float wavelength) {
-    return spectralMap(wavelength);
-    vec3 RGB = spectral_zucconi6(wavelength);
-    return RGB;
-}
-
-/* ******** *
- * LIGHTRAY *
- * ******** */
+/* ************ *
+ * The Lightray *
+ * ************ */
 struct Ray{
-    vec2 pos;
-    vec2 dir;
+    vec2 origin;
+    vec2 direction;
     float intensity;
     float wavelength;
 };
@@ -172,13 +95,9 @@ Ray getCurrentRay()
 /* ****** *
  * SHAPES *
  * ****** */
-int unpackShapeType(int i){
-    return int(texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(16+i)).x);
-}
-
 struct Circle{
     vec2 center;
-    float r;
+    float radius;
 };
 
 Circle makeCircleFromThreePoints(vec2 S, vec2 M, vec2 E)
@@ -199,33 +118,10 @@ Circle makeCircleFromThreePoints(vec2 S, vec2 M, vec2 E)
     return Circle(C, r);
 }
 
-Circle unpackCircle(int i){
-        vec2 center = texelFetchByIdx(CSGTexture, vec2(MAX_SHAPES,3.0), float(i)).xy;
-        float radius = texelFetchByIdx(CSGTexture, vec2(MAX_SHAPES,3.0), float(1MAX_SHAPES+i)).y;
-        return Circle(
-            center,
-            radius
-        );
-}
-
-struct Line{
+struct Segment{
     vec2 A;
     vec2 B;
 };
-
-Line unpackLine(int i){
-    vec2 center =  texelFetchByIdx(CSGTexture, vec2(MAX_SHAPES,3.0), float(i)).xy;
-    float angle =  texelFetchByIdx(CSGTexture, vec2(MAX_SHAPES,3.0), float(i)).z;
-    float length = texelFetchByIdx(CSGTexture, vec2(MAX_SHAPES,3.0), float(MAX_SHAPES+i)).y;
-    float x1 = center.x - cos(angle)*length/2.0;
-    float y1 = center.y - sin(angle)*length/2.0;
-    float x2 = center.x + cos(angle)*length/2.0;
-    float y2 = center.y + sin(angle)*length/2.0;
-    return Line(
-        vec2(x1,y1), 
-        vec2(x2,y2)
-    );
-}
 
 struct Rectangle{
     vec2 center;
@@ -233,6 +129,56 @@ struct Rectangle{
     float width;
     float height;
 };
+
+
+struct Triangle{
+    vec2 center;
+    float angle;
+    float size;
+};
+
+struct SphericalLens{
+    vec2 center;
+    float angle;
+    float diameter;
+    float centerThickness;
+    float edgeThickness;
+};
+
+/* ********************** *
+ * UNPACK SHAPES FROM CSG *
+ * ********************** */
+#define SHAPE_CIRCLE 0
+#define SHAPE_RECTANGLE 1
+#define SHAPE_SPHERICAL_LENS 2
+#define SHAPE_TRIANGLE 3
+#define SHAPE_LINE_SEGMENT 4
+int unpackShapeType(int i){
+    return int(texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(16+i)).x);
+}
+
+Circle unpackCircle(int i){
+        vec2 center = texelFetchByIdx(CSGTexture, vec2(MAX_SHAPES,3.0), float(i)).xy;
+        float radius = texelFetchByIdx(CSGTexture, vec2(MAX_SHAPES,3.0), float(MAX_SHAPES+i)).y;
+        return Circle(
+            center,
+            radius
+        );
+}
+
+Segment unpackSegment(int i){
+    vec2 center =  texelFetchByIdx(CSGTexture, vec2(MAX_SHAPES,3.0), float(i)).xy;
+    float angle =  texelFetchByIdx(CSGTexture, vec2(MAX_SHAPES,3.0), float(i)).z;
+    float length = texelFetchByIdx(CSGTexture, vec2(MAX_SHAPES,3.0), float(MAX_SHAPES+i)).y;
+    float x1 = center.x - cos(angle)*length/2.0;
+    float y1 = center.y - sin(angle)*length/2.0;
+    float x2 = center.x + cos(angle)*length/2.0;
+    float y2 = center.y + sin(angle)*length/2.0;
+    return Segment(
+        vec2(x1,y1), 
+        vec2(x2,y2)
+    );
+}
 
 Rectangle unpackRectangle(int i){
     vec2 center = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(i)).xy;
@@ -245,12 +191,6 @@ Rectangle unpackRectangle(int i){
                     height);
 }
 
-struct Triangle{
-    vec2 center;
-    float angle;
-    float size;
-};
-
 Triangle unpackTriangle(int i){
     vec2 center = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(i)).xy;
     float angle = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(i)).z;
@@ -259,14 +199,6 @@ Triangle unpackTriangle(int i){
                         angle, 
                         size);
 }
-
-struct SphericalLens{
-    vec2 center;
-    float angle;
-    float diameter;
-    float centerThickness;
-    float edgeThickness;
-};
 
 SphericalLens unpackSphericalLens(int i){
     vec2 center = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(i)).xy;
@@ -281,6 +213,7 @@ SphericalLens unpackSphericalLens(int i){
                         edgeThickness);
 }
 
+
 /* ************ *
  * INTERSECTION *
  * ************ */
@@ -291,10 +224,10 @@ struct Intersection{
     int matId;
 };
 
-const Intersection NoIntersection = Intersection(-LARGE_NUMBER, vec2(0.0), vec2(0.5), -1);
+const Intersection NoIntersection = Intersection(LARGE_NUMBER, vec2(0.0), vec2(0.5), -1);
 
-bool IsValid(Intersection i){
-    return i!=NoIntersection;
+bool IsValid(Intersection intersection){
+    return intersection!=NoIntersection;
 }
 struct IntersectionSpan{
     Intersection enter;
@@ -308,10 +241,10 @@ bool IsValid(IntersectionSpan ispan){
 }
 
 IntersectionSpan intersect(Circle circle, Ray ray, int matId){
-    vec2 u = ray.pos-circle.center;
+    vec2 u = ray.origin-circle.center;
 
-    float B = dot(u, ray.dir);
-    float C = dot(u, u) - circle.r*circle.r;
+    float B = dot(u, ray.direction);
+    float C = dot(u, u) - circle.radius*circle.radius;
     float detSq = B*B - C;
 
     if (detSq >= -EPSILON)
@@ -323,10 +256,9 @@ IntersectionSpan intersect(Circle circle, Ray ray, int matId){
         // If t far is greater than 0 than ther is an exit point
         // If enter point is negative we are inside the shape, 
         // then Let the intersection span begin at the origin of ray
-        if(tFar>EPSILON)
-        {
+        if (tFar > EPSILON) {
             //exit point
-            vec2 I2 = ray.pos+ray.dir*tFar;
+            vec2 I2 = ray.origin+ray.direction*tFar;
 
             // exit normal
             vec2 N2 = (I2-circle.center);
@@ -335,16 +267,15 @@ IntersectionSpan intersect(Circle circle, Ray ray, int matId){
 
             Intersection exit = Intersection(tFar, I2, N2, matId);
 
-            if(tNear<EPSILON)
-            {
+            if (tNear<EPSILON) {
                 return IntersectionSpan(
-                    Intersection(0.0, ray.pos, vec2(0.0, 0.0), matId), 
+                    Intersection(0.0, ray.origin, vec2(0.0, 0.0), matId), 
                     exit
                 );
             }
 
             // enter point
-            vec2 I1 = ray.pos+ray.dir*tNear;
+            vec2 I1 = ray.origin+ray.direction*tNear;
 
             // enter normal
             vec2 N1 = normalize(I1-circle.center);
@@ -360,12 +291,12 @@ IntersectionSpan intersect(Circle circle, Ray ray, int matId){
     return NoIntersectionSpan;
 }
 
-IntersectionSpan intersect(Line line, Ray ray, int matId)
+IntersectionSpan intersect(Segment line, Ray ray, int matId)
 {
     vec2 tangent = line.B-line.A;
 
     // Calculate the determinant
-    float determinant = ray.dir.x * tangent.y- ray.dir.y * tangent.x;
+    float determinant = ray.direction.x * tangent.y- ray.direction.y * tangent.x;
 
     if (abs(determinant) < EPSILON){
         // ray and line are parallel
@@ -373,17 +304,16 @@ IntersectionSpan intersect(Line line, Ray ray, int matId)
     }
 
     // Calculate the intersection along the ray
-    float tNear = ((line.A.x - ray.pos.x) * tangent.y - (line.A.y - ray.pos.y) * tangent.x) / determinant;
+    float tNear = ((line.A.x - ray.origin.x) * tangent.y - (line.A.y - ray.origin.y) * tangent.x) / determinant;
     // Calculate intersection along the line
-    float tLine = ((line.A.x - ray.pos.x) * ray.dir.y - (line.A.y - ray.pos.y) * ray.dir.x) / determinant;
+    float tLine = ((line.A.x - ray.origin.x) * ray.direction.y - (line.A.y - ray.origin.y) * ray.direction.x) / determinant;
 
-    if(0.0 < tNear && 0.0 <= tLine && tLine <=1.0)
-    {
+    if (0.0 < tNear && 0.0 <= tLine && tLine <=1.0) {
         vec2 N = vec2(-tangent.y, tangent.x);
         N = normalize(-N);
-        vec2 I1 = ray.pos+ray.dir*tNear;
+        vec2 I1 = ray.origin+ray.direction*tNear;
         float tFar = tNear+EPSILON;
-        vec2 I2 = ray.pos+ray.dir*tFar;
+        vec2 I2 = ray.origin+ray.direction*tFar;
         return IntersectionSpan(
             Intersection(tNear, I1, N, matId),
             Intersection(tFar,I2, N, matId)
@@ -395,11 +325,11 @@ IntersectionSpan intersect(Line line, Ray ray, int matId)
 
 
 // HELPER for triangle intersection
-Intersection lineIntersect(Line line, Ray ray, int matId){
+Intersection lineIntersect(Segment line, Ray ray, int matId) {
     vec2 tangent = line.B-line.A;
 
     // Calculate the determinant
-    float determinant = ray.dir.x * tangent.y- ray.dir.y * tangent.x;
+    float determinant = ray.direction.x * tangent.y- ray.direction.y * tangent.x;
 
     if (abs(determinant) < 0.0){
         // ray and line are parallel
@@ -407,17 +337,16 @@ Intersection lineIntersect(Line line, Ray ray, int matId){
     }
 
     // Calculate the intersection along the ray
-    float tNear = ((line.A.x - ray.pos.x) * tangent.y - (line.A.y - ray.pos.y) * tangent.x) / determinant;
+    float tNear = ((line.A.x - ray.origin.x) * tangent.y - (line.A.y - ray.origin.y) * tangent.x) / determinant;
     // Calculate intersection along the line
-    float tLine = ((line.A.x - ray.pos.x) * ray.dir.y - (line.A.y - ray.pos.y) * ray.dir.x) / determinant;
+    float tLine = ((line.A.x - ray.origin.x) * ray.direction.y - (line.A.y - ray.origin.y) * ray.direction.x) / determinant;
 
-    if(EPSILON <= tNear && 0.0 <= tLine && tLine <=1.0)
-    {
+    if (EPSILON <= tNear && 0.0 <= tLine && tLine <=1.0) {
         vec2 N = vec2(-tangent.y, tangent.x);
         N = normalize(-N);
-        vec2 I1 = ray.pos+ray.dir*tNear;
+        vec2 I1 = ray.origin+ray.direction*tNear;
         float tFar = tNear+EPSILON;
-        vec2 I2 = ray.pos+ray.dir*tFar;
+        vec2 I2 = ray.origin+ray.direction*tFar;
         return Intersection(tNear, I1, N, matId);
     }
 
@@ -434,9 +363,9 @@ IntersectionSpan intersect(Triangle triangle, Ray ray, int matId){
         );
     }
 
-    Line segmentA = Line(vertices[0], vertices[1]);
-    Line segmentB = Line(vertices[1], vertices[2]);
-    Line segmentC = Line(vertices[2], vertices[0]);
+    Segment segmentA = Segment(vertices[0], vertices[1]);
+    Segment segmentB = Segment(vertices[1], vertices[2]);
+    Segment segmentC = Segment(vertices[2], vertices[0]);
 
     Intersection I1 = lineIntersect(segmentA, ray, matId);
     Intersection I2 = lineIntersect(segmentB, ray, matId);
@@ -445,15 +374,15 @@ IntersectionSpan intersect(Triangle triangle, Ray ray, int matId){
     // find closest entry intersection
     float tEnter = LARGE_NUMBER;
     vec2 nEnter = vec2(0.0,0.0);
-    if(IsValid(I1) && I1.t<tEnter){
+    if (IsValid(I1) && I1.t<tEnter) {
         tEnter=I1.t;
         nEnter=I1.normal;
     }
-    if(IsValid(I2) && I2.t<tEnter){
+    if (IsValid(I2) && I2.t<tEnter) {
         tEnter=I2.t;
         nEnter=I2.normal;
     }
-    if(IsValid(I3) && I3.t<tEnter){
+    if (IsValid(I3) && I3.t<tEnter) {
         tEnter=I3.t;
         nEnter=I3.normal;
     }
@@ -461,32 +390,32 @@ IntersectionSpan intersect(Triangle triangle, Ray ray, int matId){
         // find farthest exit intersection
     float tExit = tEnter;
     vec2 nExit = vec2(0.0,0.0);
-    if(IsValid(I1) && I1.t>tExit){
+    if (IsValid(I1) && I1.t>tExit) {
         tExit=I1.t;
         nExit=I1.normal;
     }
-    if(IsValid(I2) && I2.t>tExit){
+    if (IsValid(I2) && I2.t>tExit) {
         tExit=I2.t;
         nExit=I2.normal;
     }
-    if(IsValid(I3) && I3.t>tExit){
+    if (IsValid(I3) && I3.t>tExit) {
         tExit=I3.t;
         nExit=I3.normal;
     }
 
-    if(tEnter>tExit){
+    if (tEnter>tExit) {
         return NoIntersectionSpan;
     }
-    if(tEnter==LARGE_NUMBER){
+    if (tEnter==LARGE_NUMBER) {
         return NoIntersectionSpan;
     }
 
-    vec2 IEnter = ray.pos+ray.dir*tEnter;
-    vec2 IExit = ray.pos+ray.dir*tExit;
+    vec2 IEnter = ray.origin+ray.direction*tEnter;
+    vec2 IExit = ray.origin+ray.direction*tExit;
 
-    if(tExit==tEnter){
+    if (tExit==tEnter) {
         return IntersectionSpan(
-            Intersection(0.0, ray.pos, vec2(0.0), matId),
+            Intersection(0.0, ray.origin, vec2(0.0), matId),
             Intersection(tEnter, IEnter, nEnter, matId)
         );
     }
@@ -498,9 +427,11 @@ IntersectionSpan intersect(Triangle triangle, Ray ray, int matId){
 }
 
 IntersectionSpan intersect(Rectangle rect, Ray ray, int matId){
-    vec2 rayPos = rotate(ray.pos, -rect.angle, rect.center);
-    vec2 rayDir = rotate(ray.dir, -rect.angle);
+    // ray in local space
+    vec2 rayPos = rotate(ray.origin, -rect.angle, rect.center);
+    vec2 rayDir = rotate(ray.direction, -rect.angle);
 
+    // calc rectangle intersection with a ray
     float tNearX = (rect.center.x - rect.width  / 2.0 - rayPos.x) / rayDir.x;
     float tNearY = (rect.center.y - rect.height / 2.0 - rayPos.y) / rayDir.y;
     float tFarX =  (rect.center.x + rect.width  / 2.0 - rayPos.x) / rayDir.x;
@@ -508,94 +439,67 @@ IntersectionSpan intersect(Rectangle rect, Ray ray, int matId){
 
     float tNear = max(min(tNearX, tFarX), min(tNearY, tFarY));
     float tFar =  min(max(tNearX, tFarX), max(tNearY, tFarY));
+
+    // if no intersection with the rectangle then return null
+    if (tFar<0.0 || tNear>tFar) return NoIntersectionSpan;
     
-    if(tNear>tFar){
-        return NoIntersectionSpan;
+    // Calculate Exit intersection point
+    vec2 I2 = rayPos+rayDir*tFar;
+
+    // calc exit normal
+    vec2 N2 = normalize(I2-rect.center); 
+    if (abs(N2.x)/abs(N2.y)>rect.width/rect.height)
+        N2 = vec2(sign(N2.x), 0.0);
+    else
+        N2 = vec2(0.0, sign(N2.y));
+    
+    // create Intersection in world space
+    Intersection exit = Intersection(tFar, rotate(I2, rect.angle, rect.center), rotate(N2, rect.angle), matId);
+
+    if (tNear<EPSILON) {
+        // when the enter point is behind the ray's origin, 
+        // then intersection span will begin at the rays origin
+        Intersection enter = Intersection(0.0, ray.origin, vec2(0,0), matId);
+        return IntersectionSpan(enter,exit);
     }
 
-    // find closest
-    if(tFar>0.0)
-    {
-        //exit point
-        vec2 I2 = rayPos+rayDir*tFar;
+    // Calculate Enter intersection point
+    vec2 I1 = rayPos+rayDir*tNear;
 
-        // exit normal
-        vec2 N2 = vec2(0.0, 1.0);
-        if (I2.x + EPSILON >= rect.center.x - rect.width / 2.0 && I2.x - EPSILON <= rect.center.x + rect.width / 2.0 &&
-            I2.y + EPSILON >= rect.center.y - rect.height / 2.0 && I2.y - EPSILON <= rect.center.y + rect.height / 2.0) {
+    // calc enter normal
+    vec2 N1 = normalize(I1-rect.center);
+    if (abs(N1.x)/abs(N1.y) > rect.width/rect.height)
+        N1 = vec2(sign(N1.x), 0.0);
+    else
+        N1 = vec2(0.0, sign(N1.y));
+    
+    // Intersection in world space
+    Intersection enter = Intersection(tNear, rotate(I1, rect.angle, rect.center), rotate(N1, rect.angle), matId);
 
-            // Determine the normal vector based on proximity to the edges
-            if (abs(I2.x - (rect.center.x - rect.width / 2.0)) < EPSILON) {
-                N2 = vec2(-1.0, 0.0); // Left edge
-            } else if (abs(I2.x - (rect.center.x + rect.width / 2.0)) < EPSILON) {
-                N2 = vec2(1.0, 0.0); // Right edge
-            } else if (abs(I2.y - (rect.center.y - rect.height / 2.0)) < EPSILON) {
-                N2 = vec2(0.0, -1.0); // Bottom edge
-            } else if (abs(I2.y - (rect.center.y + rect.height / 2.0)) < EPSILON) {
-                N2 = vec2(0.0, 1.0); // Top edge
-            }
-        }
-
-        I2 = rotate(I2, rect.angle, rect.center);
-        N2 = rotate(N2, rect.angle);
-
-        Intersection exit = Intersection(tFar, I2, N2, matId);
-
-        if(tNear<EPSILON){
-            // when the enter point is behind the ray's origin, 
-            // then intersection span will begin at the rays origin
-            Intersection enter = Intersection(0.0, ray.pos, vec2(0,0), matId);
-            return IntersectionSpan(enter,exit);
-        }
-
-        //enter point
-        vec2 I1 = rayPos+rayDir*tNear;
-
-        // enter normal
-        vec2 N1 = vec2(0.0);
-        if (I1.x >= rect.center.x - rect.width / 2.0  && I1.x <= rect.center.x + rect.width / 2.0 &&
-            I1.y >= rect.center.y - rect.height / 2.0 && I1.y <= rect.center.y + rect.height / 2.0) {
-            if        (abs(I1.x - rect.center.x + rect.width / 2.0) < EPSILON) {
-                N1 = vec2(-1.0, 0.0);
-            } else if (abs(I1.x - rect.center.x - rect.width / 2.0) < EPSILON) {
-                N1 = vec2(1.0, 0.0);
-            } else if (abs(I1.y - rect.center.y + rect.height / 2.0) < EPSILON) {
-                N1 = vec2(0.0, -1.0);
-            } else if (abs(I1.y - rect.center.y - rect.height / 2.0) < EPSILON) {
-                vec2 N1 = vec2(0.0, 1.0);
-            }
-        }
-
-        // enter hit info
-        I1 = rotate(I1, rect.angle, rect.center);
-        N1 = rotate(N1, rect.angle);
-
-        Intersection enter = Intersection(tNear, I1, N1, matId);
-
-        // return intersection span between the enter- and exit point
-        return IntersectionSpan(enter, exit);
-    }
-    return NoIntersectionSpan;
+    // return intersection span between the enter- and exit points
+    return IntersectionSpan(enter, exit);
 }
+
 
 IntersectionSpan intersectSpan(IntersectionSpan a, IntersectionSpan b)
 {
-    if(IsValid(a) && IsValid(b)){
+    if (IsValid(a) && IsValid(b)) {
         Intersection enter = a.enter;
-        if(a.enter.t<b.enter.t){
+        if (a.enter.t<b.enter.t) {
             enter = b.enter;
         }
 
         Intersection exit = a.exit;
-        if(a.exit.t>b.exit.t){
+        if (a.exit.t>b.exit.t) {
             exit = b.exit;
         }
 
-        if(enter.t>exit.t){
+        if (enter.t>exit.t) {
             return NoIntersectionSpan;
         }
         return IntersectionSpan(enter, exit);
-    }else{
+    }
+    else {
         return NoIntersectionSpan;
     }
 }
@@ -605,16 +509,15 @@ IntersectionSpan subtractSpan(IntersectionSpan a, IntersectionSpan b){
     // Warning!: Be carefull. intersecting two spans could result in two seperate spans.
     // here we only return the closest one
 
-    if(IsValid(a) && IsValid(b))
-    {
+    if (IsValid(a) && IsValid(b)) {
         // Possible cases
         //           AAAAAAAAA
         //  1.    bb ---------
         //  2.    bbbbbbbbbb--
-        //  3.    bbbbbbbbbbbbbbbbbb
+        //  3.    bbbbbbbbbbbbbbbb
         //  4.       ----bb
-        //  5.       ------bbbbbbbbb
-        //  6.       --------   bb
+        //  5.       ------bbbbbbb
+        //  6.       ---------  bb
 
         // Invert normals of span b
         b = IntersectionSpan(
@@ -624,51 +527,50 @@ IntersectionSpan subtractSpan(IntersectionSpan a, IntersectionSpan b){
 
         // Case 1: Span b is completely before span a
         // no overlapp, return span a
-        if( b.enter.t <= a.enter.t && 
-            b.exit.t  < a.enter.t){
-                return a;
+        if (b.enter.t <= a.enter.t && 
+            b.exit.t  < a.enter.t) {
+            return a;
         }
 
         // Case 2: Span b starts before span a and ends within span a
-        if( b.enter.t <= a.enter.t &&
+        if (b.enter.t <= a.enter.t &&
             b.exit.t  >  a.enter.t && 
-            b.exit.t  <  a.exit.t){
-
+            b.exit.t  <  a.exit.t) {
             return IntersectionSpan(b.exit, a.exit);
         }
 
         // Case 3: Span b completely covers span a
         // no span remains
-        if( b.enter.t <= a.enter.t &&
-            b.exit.t  >  a.exit.t ){
+        if (b.enter.t <= a.enter.t &&
+            b.exit.t  >  a.exit.t ) {
             return NoIntersectionSpan;
         }
 
         // Case 4: Span b is completely within span a
         // keep the first part of span a
-        if( b.enter.t >= a.enter.t &&
-            b.exit.t  <  a.exit.t){
+        if (b.enter.t >= a.enter.t &&
+            b.exit.t  <  a.exit.t) {
             return IntersectionSpan(a.enter, b.enter);
         }
 
         // Case 5: Span b starts within span a and ends after span a
-        if( b.enter.t >= a.enter.t &&
+        if (b.enter.t >= a.enter.t &&
             b.enter.t <  a.exit.t &&
-            b.exit.t  >  a.exit.t ){
+            b.exit.t  >  a.exit.t ) {
             return IntersectionSpan(a.enter, b.enter);
         }
 
         // Case 6: Span b starts after span a
         // no overlapp, return span a
-        if( b.enter.t >= a.enter.t &&
-            b.exit.t  >  a.exit.t
-        ){
+        if (b.enter.t >= a.enter.t &&
+            b.exit.t  >  a.exit.t) {
             return a;
         }
     }
     // Default return if no conditions are met
     return a;
 }
+
 
 IntersectionSpan intersect(SphericalLens lens, Ray ray, int matId){
     // make circles
@@ -693,7 +595,7 @@ IntersectionSpan intersect(SphericalLens lens, Ray ray, int matId){
     Rectangle boundingBox = Rectangle(lens.center, lens.angle, max(lens.centerThickness, lens.edgeThickness), lens.diameter);
 
     bool IsConvex = lens.centerThickness>lens.edgeThickness;
-    if(IsConvex){
+    if (IsConvex) {
         // hitspans
         IntersectionSpan leftHitSpan =  intersect(leftCircle, ray, matId);
         IntersectionSpan rightHitSpan = intersect(rightCircle, ray, matId);
@@ -702,8 +604,7 @@ IntersectionSpan intersect(SphericalLens lens, Ray ray, int matId){
         // intersect cirlces with bunding box
         return intersectSpan(boundingSpan, intersectSpan(leftHitSpan, rightHitSpan));
     }
-    else
-    {
+    else {
         // hitspans
         IntersectionSpan leftHitSpan  = intersect(leftCircle, ray, matId);
         IntersectionSpan rightHitSpan = intersect(rightCircle, ray, matId);
@@ -714,6 +615,53 @@ IntersectionSpan intersect(SphericalLens lens, Ray ray, int matId){
         ispan = subtractSpan(ispan, rightHitSpan);
         return ispan;
     }
+}
+
+IntersectionSpan intersectScene(Ray ray){
+    // Ray adjustedRay = Ray(ray.pos+ray.dir*EPSILON, ray.dir, ray.intensity, ray.wavelength);
+    IntersectionSpan ispan = NoIntersectionSpan;
+    for(int i=0;i<MAX_SHAPES;i++)
+    {
+        IntersectionSpan currentSpan;
+        int shapeType = unpackShapeType(i);
+        if(shapeType==SHAPE_CIRCLE) {// CIRCLE
+            Circle circle = unpackCircle(i);
+            currentSpan = intersect(circle, ray, i);
+        }
+        else if(shapeType==SHAPE_RECTANGLE) {
+            Rectangle rect = unpackRectangle(i);
+            currentSpan = intersect(rect, ray, i);
+        }
+        else if(shapeType==SHAPE_SPHERICAL_LENS) {// SphericalLens
+            SphericalLens lens = unpackSphericalLens(i);
+            currentSpan = intersect(lens, ray, i);
+        }
+        else if(shapeType==SHAPE_TRIANGLE) {// Triangle
+            Triangle triangle = unpackTriangle(i);
+            currentSpan = intersect(triangle, ray, i);
+        }
+        else if(shapeType==SHAPE_LINE_SEGMENT) { // LineSegment
+            Segment line = unpackSegment(i);
+            currentSpan = intersect(line, ray, i);
+        }
+        else {
+            continue;
+        }
+
+        // Reduce
+        if (IsValid(ispan) && IsValid(currentSpan)) {
+            if (currentSpan.enter.t > ispan.enter.t) {
+                ispan = subtractSpan(ispan, currentSpan);
+            }
+            else {
+                ispan = subtractSpan(currentSpan, ispan);
+            }
+        }
+        else if (IsValid(currentSpan)) {
+            ispan = currentSpan;
+        }
+    }
+    return ispan;
 }
 
 /* ******** * 
@@ -813,61 +761,7 @@ vec2 snellsLaw(vec2 wi, float ior)
  * RAYTRACE *
  * ******** */
 
-IntersectionSpan intersectScene(Ray ray){
-/* *************** *
-     * intersect scene
-     * *************** */
-    // Ray adjustedRay = Ray(ray.pos+ray.dir*EPSILON, ray.dir, ray.intensity, ray.wavelength);
-    IntersectionSpan sceneIntersectionSpan = NoIntersectionSpan;
-    for(int i=0;i<MAX_SHAPES;i++)
-    {
-        if(i<int(shapesCount))
-        {
-            IntersectionSpan shapeIntersectionSpan=NoIntersectionSpan;
-            int shapeType = unpackShapeType(i);
-            if(shapeType==SHAPE_CIRCLE) // CIRCLE
-            {
-                Circle circle = unpackCircle(i);
-                shapeIntersectionSpan = intersect(circle, ray, i);
-            }
-            else if(shapeType==SHAPE_RECTANGLE){
-                Rectangle rect = unpackRectangle(i);
-                shapeIntersectionSpan = intersect(rect, ray, i);
-            }
-            else if(shapeType==SHAPE_SPHERICAL_LENS) // SphericalLens
-            {
-                SphericalLens lens = unpackSphericalLens(i);
-                shapeIntersectionSpan = intersect(lens, ray, i);
-            }
-            else if(shapeType==SHAPE_TRIANGLE) // Triangle
-            {
-                Triangle triangle = unpackTriangle(i);
-                shapeIntersectionSpan = intersect(triangle, ray, i);
-            }
-            else if(shapeType==SHAPE_LINE_SEGMENT) // LineSegment
-            {
-                Line line = unpackLine(i);
-                shapeIntersectionSpan = intersect(line, ray, i);
-            }
-            else
-            {
-                shapeIntersectionSpan = NoIntersectionSpan;
-            }
 
-            if(IsValid(sceneIntersectionSpan) && IsValid(shapeIntersectionSpan)){
-                if(shapeIntersectionSpan.enter.t > sceneIntersectionSpan.enter.t){
-                    sceneIntersectionSpan = subtractSpan(sceneIntersectionSpan, shapeIntersectionSpan);
-                }else{
-                    sceneIntersectionSpan = subtractSpan(shapeIntersectionSpan, sceneIntersectionSpan);
-                }
-            }else if(IsValid(shapeIntersectionSpan)){
-                sceneIntersectionSpan = shapeIntersectionSpan;
-            }
-            
-        }
-    }
-    return sceneIntersectionSpan;
-}
 
 Ray bounceRay(Ray ray, Intersection intersection){
     Ray secondary = NoRay;
@@ -880,13 +774,13 @@ Ray bounceRay(Ray ray, Intersection intersection){
          * ********** */
         vec2 tangent = vec2(-intersection.normal.y, intersection.normal.x); // 90deg rotation
         vec2 wiLocal = vec2(
-            dot(tangent, ray.dir), 
-            dot(intersection.normal, ray.dir)
+            dot(tangent, ray.direction), 
+            dot(intersection.normal, ray.direction)
         );  // tangent space exiting r\y directiuon
         
         // calculate exit direction in local space
         vec2 woLocal; // tangent space exit ray direction
-        int materialType = unpackMaterialType(intersection.matId);
+        int materialType = intersection.matId<0? MATERIAL_DIFFUSE : unpackMaterialType(intersection.matId);
         if(materialType==MATERIAL_MIRROR)
         {
             float roughness = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(16*2+intersection.matId)).y;
@@ -927,6 +821,77 @@ Ray bounceRay(Ray ray, Intersection intersection){
     return secondary;
 }
 
+/* ************** *
+ * SPECTRAL COLOR *
+ * ************** */
+// Wavelength to RGB
+// Created by Alan Zucconi
+// spurce: https://www.alanzucconi.com/2017/07/15/improving-the-rainbow-2/
+float saturate (float x)
+{
+    return min(1.0, max(0.0,x));
+}
+vec3 saturate (vec3 x)
+{
+    return min(vec3(1.,1.,1.), max(vec3(0.,0.,0.),x));
+}
+vec3 bump3y (vec3 x, vec3 yoffset)
+{
+	vec3 y = vec3(1.,1.,1.) - x * x;
+    y = y-yoffset;
+	y = saturate(y);
+	return y;
+}
+vec3 spectral_zucconi6 (float w)
+{
+    // w: [400, 700]
+    // x: [0,   1]
+    float x = saturate((w - 400.0)/ 300.0);
+
+    vec3 c1 = vec3(3.54585104, 2.93225262, 2.41593945);
+    vec3 x1 = vec3(0.69549072, 0.49228336, 0.27699880);
+    vec3 y1 = vec3(0.02312639, 0.15225084, 0.52607955);
+
+    vec3 c2 = vec3(3.90307140, 3.21182957, 3.96587128);
+    vec3 x2 = vec3(0.11748627, 0.86755042, 0.66077860);
+    vec3 y2 = vec3(0.84897130, 0.88445281, 0.73949448);
+
+    return
+        bump3y(c1 * (x - x1), y1) +
+        bump3y(c2 * (x - x2), y2) ;
+}
+
+    // vec3 hueToLinearRGB(float hue) {
+    //     // hue is expected to be in the range [0, 1]
+    //     float r = abs(hue * 6.0 - 3.0) - 1.0;
+    //     float g = 2.0 - abs(hue * 6.0 - 2.0);
+    //     float b = 2.0 - abs(hue * 6.0 - 4.0);
+    //     return vec3(clamp(r, 0.0, 1.0), clamp(g, 0.0, 1.0), clamp(b, 0.0, 1.0));
+    // }
+
+vec3 spectralMap(float wavelength)
+{
+    // Calculate a random wavelength directly
+    // float randL = rand();
+    // float lambda = 360.0 + (750.0 - 360.0) * randL;
+    
+    // Convert wavelength to a spectrum offset assuming Spectrum texture is mapped linearly to wavelengths
+    float spectrumOffset = (wavelength - 360.0) / (750.0 - 360.0);
+
+    // Sample the spectrum texture to get RGB values
+    vec3 color = texture2D(spectralTexture, vec2(spectrumOffset, 0.5)).rgb;
+    return color;
+    // float x = saturate((wavelength - 400.0)/ 300.0);
+    // vec4 rgba = texture2D(spectralTexture, vec2(x, 0.5));
+    // return rgba;
+}
+
+// Convert wavelength in nanometers to RGB using a perceptually accurate method
+vec3 RGBFromWavelength(float wavelength) {
+    return spectralMap(wavelength);
+    vec3 RGB = spectral_zucconi6(wavelength);
+    return RGB;
+}
 
 void main()
 {
@@ -935,6 +900,12 @@ void main()
 
 
     IntersectionSpan ispan = intersectScene(ray);
+
+    if(!IsValid(ispan)){
+        Rectangle room = Rectangle( roomRect.xy, 0.0, roomRect.z, roomRect.w);
+        ispan = intersect(room, ray, -1);
+
+    }
 
     if(IsValid(ispan))
     {
@@ -948,15 +919,15 @@ void main()
         Ray secondary = bounceRay(ray, intersection);
 
         // pack data
-        /* rayTransform */  gl_FragData[0] = vec4(secondary.pos,secondary.dir);
+        /* rayTransform */  gl_FragData[0] = vec4(secondary.origin,secondary.direction);
         /* rayProperties */ gl_FragData[1] = vec4(secondary.intensity, secondary.wavelength, 0, 0);
         /* rayColor */      gl_FragData[2] = vec4(RGBFromWavelength(ray.wavelength), ray.intensity);
         /* hitPoint */      gl_FragData[3] = vec4(intersection.pos, intersection.normal);
         /* hitSpan */       gl_FragData[4] = vec4(ispan.enter.pos, ispan.exit.pos);
-        /* rayPath */       gl_FragData[5] = vec4(ray.pos, intersection.pos);
+        /* rayPath */       gl_FragData[5] = vec4(ray.origin, intersection.pos);
     }else{
         /* rayColor */      gl_FragData[2] = vec4(RGBFromWavelength(ray.wavelength), ray.intensity);
-         /* rayPath */  gl_FragData[5] = vec4(ray.pos, ray.pos+ray.dir*9999.0);
+         /* rayPath */  gl_FragData[5] = vec4(ray.origin, ray.origin+ray.direction*9999.0);
     }
 }
 

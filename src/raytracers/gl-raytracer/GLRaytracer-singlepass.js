@@ -19,6 +19,15 @@ import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../s
 import { myrandom } from "../../utils.js";
 import spectrumTable from "./spectrumTable.js";
 
+/* define maximum shape couns*/
+const MAX_SHAPES = 16;
+
+/**
+ * load image from path as 'ImageData'
+ * @param {string} imagePath 
+ * @returns 
+ */
+
 function loadImageData(imagePath){
     return new Promise(resolve => {
         const im = new Image();
@@ -42,14 +51,14 @@ class GLRaytracer{
     constructor(canvas)
     {
         this.canvas = canvas;
-        this.outputResolution/*: number */ = [16, 16];
         this.listeners = []
         this.totalPasses = 0;
 
         // settings
         this.settings = {
             lightSamples: Math.pow(4,5),//128*128; //Math.pow(4,4);
-            maxBounce: 7
+            maxBounce: 7,
+            subsampling: 1
         };
 
         this.display = {
@@ -115,7 +124,7 @@ class GLRaytracer{
         }
 
         this.CSGTexture = regl.texture({
-            width: 16,
+            width: MAX_SHAPES,
             height: 3,
             wrap: 'clamp',
             min: "nearest", 
@@ -237,8 +246,7 @@ class GLRaytracer{
         const regl = this.regl;
         /* post processing */
         const texture_settings = {
-            width: this.outputResolution[0],
-            height: this.outputResolution[1],
+            radius: 8,
             wrap: 'clamp',
             min: "nearest", 
             mag: "nearest",
@@ -265,9 +273,12 @@ class GLRaytracer{
     resizeGL()
     {
         const [width, height] = [this.canvas.clientWidth, this.canvas.clientHeight];
-        this.canvas.width = width;
-        this.canvas.height = height;
-        this.outputResolution = [width, height]
+        this.canvas.width = width/this.settings.subsampling;
+        this.canvas.height = height/this.settings.subsampling;;
+    }
+
+    getResolution(){
+        return [this.canvas.width/this.settings.subsampling, this.canvas.height/this.settings.subsampling];
     }
 
     clear()
@@ -308,7 +319,7 @@ class GLRaytracer{
 
         const transformData = shapeEntities.map(entity=>
             [entity.transform.translate.x, entity.transform.translate.y, entity.transform.rotate || 0.0, 0.0]
-        ).concat(new Array(16-shapeEntities.length).fill([0,0,0,0]));
+        ).concat(new Array(MAX_SHAPES-shapeEntities.length).fill([0,0,0,0]));
 
         
 
@@ -340,11 +351,11 @@ class GLRaytracer{
                 default:
                     return [-1,0,0,0];
             }
-        }).concat(new Array(16-shapeEntities.length).fill([0,0,0,0]));
+        }).concat(new Array(MAX_SHAPES-shapeEntities.length).fill([0,0,0,0]));
 
         const CSGData = transformData.concat(shapeData).concat(materialData);
         this.CSGTexture({
-            width: 16,
+            width: MAX_SHAPES,
             height: 3,
             wrap: 'clamp',
             min: "nearest", 
@@ -421,11 +432,10 @@ class GLRaytracer{
          * ********** */
         /* resize output framebuffers */
         regl.clear({framebuffer: this.sceneFBO, color: [0,0,0,1.0]});
-        if(this.sceneFBO.width!=this.outputResolution[0] || this.sceneFBO.height!=this.outputResolution[1])
+        const sceneFboNeedsResize = [this.sceneFBO.width, this.sceneFBO.height]!=this.getResolution();
+        if(sceneFboNeedsResize)
         {
-            this.sceneFBO.resize(this.outputResolution[0], this.outputResolution[1]);
-            this.postFrontFBO.resize(this.outputResolution[0], this.outputResolution[1]);
-            this.postBackFBO.resize(this.outputResolution[0], this.outputResolution[1]);
+            this.sceneFBO.resize(...this.getResolution());
         }
 
         for(let i=0; i<this.settings.maxBounce; i++){
@@ -435,7 +445,7 @@ class GLRaytracer{
                 raysTexture: this.texturesFront.rayTransform,
                 raysLength: 50.0,
                 raysColor: [0.7,0.3,0,0.3],
-                outputResolution: this.outputResolution,
+                outputResolution: [this.sceneFBO.width, this.sceneFBO.height],
                 viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
                 framebuffer: this.sceneFBO
             });
@@ -445,7 +455,7 @@ class GLRaytracer{
                 linesCount: rays.length,
                 lineSegments: this.texturesBack.hitSpan,
                 colors: this.texturesBack.rayColor,
-                outputResolution: this.outputResolution,
+                outputResolution: [this.sceneFBO.width, this.sceneFBO.height],
                 viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
                 framebuffer: this.sceneFBO
             });
@@ -456,7 +466,7 @@ class GLRaytracer{
                 raysTexture: this.texturesBack.hitPoint,
                 raysLength: 20.0,
                 raysColor: [0.0, 1.0, 0.0, 0.003],
-                outputResolution: this.outputResolution,
+                outputResolution: [this.sceneFBO.width, this.sceneFBO.height],
                 viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
                 framebuffer: this.sceneFBO
             });
@@ -466,7 +476,7 @@ class GLRaytracer{
                 linesCount: rays.length,
                 lineSegments: this.texturesBack.rayPath,
                 colors: this.texturesBack.rayColor,
-                outputResolution: this.outputResolution,
+                outputResolution: [this.sceneFBO.width, this.sceneFBO.height],
                 viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
                 framebuffer: this.sceneFBO
             });
@@ -474,6 +484,7 @@ class GLRaytracer{
             regl({...QUAD, vert:PASS_THROUGH_VERTEX_SHADER,
                 framebuffer: this.raytraceBackFBO,
                 uniforms: {
+                    roomRect: [viewBox.x+viewBox.w/2, viewBox.y+viewBox.h/2, viewBox.w, viewBox.h],
                     SEED: Math.random()*this.totalPasses,
                     resolution: [this.raytraceBackFBO.width, this.raytraceBackFBO.height],
                     rayTransformTexture: this.texturesFront.rayTransform,
@@ -499,31 +510,23 @@ class GLRaytracer{
         /* *************** *
          * POST PROCESSING *
          * *************** */
+        const postFboNeedsResize = [this.postFrontFBO.width, this.postFrontFBO.height]!=[this.sceneFBO.width, this.sceneFBO.height];
+        if(postFboNeedsResize)
+        {
+            this.postFrontFBO.resize(this.sceneFBO.width, this.sceneFBO.height);
+            this.postBackFBO.resize(this.sceneFBO.width, this.sceneFBO.height);
+        }
         /* accumulate */
         this.totalPasses+=1;
         regl({...QUAD,
             framebuffer: this.postFrontFBO,
-            viewport: {x:0, y:0, width:this.outputResolution[0], height: this.outputResolution[1]},
+            viewport: {x:0, y:0, width:this.postFrontFBO.width, height: this.postFrontFBO.height},
             vert: PASS_THROUGH_VERTEX_SHADER,
             depth: { enable: false },
             uniforms:{
                 textureA: this.sceneFBO,
                 textureB: this.postBackFBO
             },
-            // blend: {
-            //     enable: true,
-            //     func: {
-            //         srcRGB: 'one',
-            //         dstRGB: 'one',
-            //         srcAlpha: 'one',
-            //         dstAlpha: 'one',
-            //     },
-            //     equation: {
-            //         rgb: 'add',
-            //         alpha: 'add'
-            //     },
-            //     color: [0,0,0,0]
-            // },
             frag:/*glsl*/`precision mediump float;
             varying vec2 vUV;
             uniform sampler2D textureA;
@@ -543,18 +546,20 @@ class GLRaytracer{
         })();
 
         /* render post processing FBO to screen */
+        this.totalPasses+=1;
+        const lineWidth = 1/this.getResolution()[0];
         regl({...QUAD,
             framebuffer: null,
-            viewport: {x:0, y:0, width:this.outputResolution[0], height: this.outputResolution[1]},
+            viewport: {x:0, y:0, width:this.canvas.width, height: this.canvas.height},
             vert: PASS_THROUGH_VERTEX_SHADER,
             depth: { enable: false },
             uniforms:{
                 texture: this.postFrontFBO,
-                outputResolution: this.outputResolution,
-                totalPasses: this.totalPasses,
-                exposure: 10.0
+                outputResolution: [this.canvas.width, this.canvas.height],
+                totalPasses: this.totalPasses * (lineWidth*1024),
+                exposure: 100.0
             },
-            frag:/*glsl*/`precision mediump float;
+            frag:`precision mediump float;
             varying vec2 vUV;
             uniform sampler2D texture;
             uniform float totalPasses;
@@ -584,7 +589,7 @@ class GLRaytracer{
                 return inverseACEScgMatrix * ACEScgRGB;
             }
 
-            vec3 sRGBFromRGB(vec3 linearRGB){
+            vec3 sRGBFromLinearRGB(vec3 linearRGB){
                 float gamma = 1.0 / 2.2;
                 vec3 sRGB = pow(linearRGB, vec3(gamma));
                 return sRGB;
@@ -616,20 +621,16 @@ class GLRaytracer{
 
             void main()
             {
-                // get linear RGB color
-                vec3 color = texture2D(texture, vUV).rgb;
-                
-                color *= 1.0/totalPasses;
+                vec3 color = texture2D(texture, vUV).rgb; // get linear RGB color
+                color *= 1.0/totalPasses; //compensate multiple passes
 
                 // apply exposure in ACEScg colorspace
                 color = ACEScgFromLinearRGB(color);
                 color*=exposure;
 
                 /* convert ACES to display colorspace*/
-                // color = sRGBFromRGB(color);
                 color = linearRGBFromACEScg(color);
-                color = sRGBFromRGB(color);
-                // color = filmic(color);
+                color = filmic(color);
                 gl_FragColor = vec4(color, 1.0);
             }`
         })();

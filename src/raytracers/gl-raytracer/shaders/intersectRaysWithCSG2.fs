@@ -13,11 +13,10 @@ uniform vec2 rayDataResolution;
 uniform vec4 roomRect;
 uniform float shapesCount;
 uniform sampler2D CSGTexture;
-uniform vec4 transformData[MAX_SHAPES];
-uniform vec4 shapeData[MAX_SHAPES];
-uniform vec4 materialData[MAX_SHAPES];
 
-/* VECTOR UTILITIES */
+/* ***** *
+ * UTILS *
+ * ***** */
 vec2 rotate(vec2 point, float radAngle, vec2 pivot)
 {
     float x = point.x;
@@ -43,6 +42,16 @@ struct Ray{
     vec2 origin;
     vec2 direction;
 };
+
+Ray sampleCurrentRay()
+{
+    vec2 texCoord = gl_FragCoord.xy / rayDataResolution;
+    vec4 rayData = texture2D(rayDataTexture, texCoord);
+    vec2 rayPos = rayData.xy;
+    vec2 rayDir = rayData.zw;
+
+    return Ray(rayPos, rayDir);
+}
 
 /* ******* *
  * SHAPES *
@@ -100,7 +109,7 @@ struct Segment{
  * ********************** */
 #define SHAPE_CIRCLE 0
 #define SHAPE_RECTANGLE 1
-#define SHAPE_SPHERICEL_LENS 2
+#define SHAPE_SPHERICAL_LENS 2
 #define SHAPE_TRIANGLE 3
 #define SHAPE_LINE_SEGMENT 4
 
@@ -161,6 +170,14 @@ Segment unpackSegment(int i){
     vec2 P1 = C-tangent*segmentLength/2.0;
     vec2 P2 = C+tangent*segmentLength/2.0;
     return Segment(P1, P2);
+}
+
+/* ************ *
+ * MATERIALS *
+ * ************ */
+int unpackMaterialType(int i){
+    float k = (float(i)+0.5)/float(MAX_SHAPES);
+    return int(texture2D(CSGTexture, vec2(k, 2.5/3.0)).x);
 }
 
 /* ************ *
@@ -571,7 +588,7 @@ IntersectionSpan intersectScene(Ray ray)
     IntersectionSpan ispan = NoIntersectionSpan;
     for (int i=0; i<MAX_SHAPES; i++) {
         IntersectionSpan currentSpan;
-        int matId = int(materialData[i].x);
+        int matId = unpackMaterialType(i);
         int shapeType = unpackShapeType(i);
         if (shapeType==SHAPE_CIRCLE) {
             Circle circle = unpackCircle(i);
@@ -581,7 +598,7 @@ IntersectionSpan intersectScene(Ray ray)
             Rectangle rect = unpackRectangle(i);
             currentSpan = intersect(rect, ray, matId);
         } 
-        else if (shapeType == SHAPE_SPHERICEL_LENS) {
+        else if (shapeType == SHAPE_SPHERICAL_LENS) {
             SphericalLens lens = unpackSphericalLens(i);
             currentSpan = intersect(lens, ray, matId);
         } 
@@ -597,7 +614,7 @@ IntersectionSpan intersectScene(Ray ray)
             continue;
         }
 
-        // Reduce item
+        // Reduce
         if (IsValid(ispan) && IsValid(currentSpan)) {
             if (currentSpan.enter.t > ispan.enter.t) {
                 ispan = subtractSpan(ispan, currentSpan);
@@ -611,16 +628,6 @@ IntersectionSpan intersectScene(Ray ray)
         }
     }
     return ispan;
-}
-
-Ray sampleCurrentRay()
-{
-    vec2 texCoord = gl_FragCoord.xy / rayDataResolution;
-    vec4 rayData = texture2D(rayDataTexture, texCoord);
-    vec2 rayPos = rayData.xy;
-    vec2 rayDir = rayData.zw;
-
-    return Ray(rayPos, rayDir);
 }
 
 void main()
@@ -638,6 +645,7 @@ void main()
         // Hit position far away
         hit.pos = incidentRay.origin+incidentRay.direction*LARGE_NUMBER;
         hit.normal = vec2(0.0);
+        hit.matId = -1;
 
         // hit the room walls
         Rectangle rect = Rectangle( roomRect.xy, 0.0, roomRect.z, roomRect.w);

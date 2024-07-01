@@ -50,7 +50,7 @@ function fitViewboxInSize(viewBox, size)
 function Viewport(props)
 {
     // sync svg- and glviewport viewbox
-    const [viewBox, setViewBox] = React.useState( {x:0, y:0, w:512, h:512});
+    const [viewBox, setViewBox] = React.useState( {x:-256, y:0, w:512, h:512});
     const settings = React.useSyncExternalStore(settingsStore.subscribe, settingsStore.getSnapshot);
 
     const ref = React.useRef(null);

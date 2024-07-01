@@ -1,4 +1,6 @@
 import _ from "lodash"
+import {mat4} from "gl-matrix"
+
 /**
 * Draw rays based on rayDataTexture and hitDataTexture
 * 

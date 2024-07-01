@@ -19,7 +19,7 @@ const defaultSettings = {
         lightSamples: 128*128,//128*128; //Math.pow(4,4);
         maxBounce: 7,
         targetPasses: 10,
-        downres: 1/2
+        subsampling: 1
     }
 };
 

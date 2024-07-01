@@ -55,7 +55,8 @@ function GLViewport({
         renderer.current.clear();
         renderer.current.settings = {
             lightSamples: settings.raytrace.lightSamples,
-            maxBounce: settings.raytrace.maxBounce  
+            maxBounce: settings.raytrace.maxBounce,
+            subsampling: settings.raytrace.subsampling
         };
 
         renderer.current.display = {

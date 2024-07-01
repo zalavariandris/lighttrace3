@@ -95,7 +95,7 @@ function samplePointLight(entity, lightSamples)
 function sampleLaserLight(entity, lightSamples)
 {
     return Array.from({length: lightSamples}).map((_, k)=>{
-        const angle = entity.transform.rotate;
+        const angle = entity.transform.rotate;//+(Math.random()-0.5)*Math.PI/600.0;
         return {
             x:entity.transform.translate.x, 
             y:entity.transform.translate.y, 

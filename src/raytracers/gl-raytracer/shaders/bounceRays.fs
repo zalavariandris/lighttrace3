@@ -81,7 +81,7 @@ vec2 sampleDielectric(vec2 wi, float ior)
     }
 
     float randomNumber = gold_noise(gl_FragCoord.xy, SEED);
-    if (1.0 < fresnell) 
+    if (randomNumber < fresnell) 
     {
         return vec2(-wi.x, wi.y);
     }

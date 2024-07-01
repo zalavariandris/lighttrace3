@@ -51,14 +51,6 @@ function Triangle({
             }
         }),
 
-        vertices.map( ([x, y], k)=>h("text", {
-            className: "presenter",
-            // x: cx+x, 
-            // y: cy+y,
-            x: cx+Math.cos(angle+k/3.0*Math.PI*2-Math.PI/2)*(size+20), 
-            y: cy+Math.sin(angle+k/3.0*Math.PI*2-Math.PI/2)*(size+20)
-        }, `P${k+1}`)),
-
         h("g", {
             className: "manipulator show-when-selected",
         }, 

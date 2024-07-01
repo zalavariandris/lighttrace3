@@ -50,13 +50,9 @@ function fitViewboxInSize(viewBox, size)
 function Viewport(props)
 {
     // sync svg- and glviewport viewbox
-    const [viewBox, setViewBox] = React.useState( JSON.parse(localStorage.getItem("viewBox")) || {x:0, y:0, w:512, h:512});
+    const [viewBox, setViewBox] = React.useState( {x:0, y:0, w:512, h:512});
     const settings = React.useSyncExternalStore(settingsStore.subscribe, settingsStore.getSnapshot);
 
-    // presistent viewbox
-    React.useEffect(()=>{
-        localStorage.setItem("viewBox", JSON.stringify(viewBox));
-    }, [viewBox]);
     const ref = React.useRef(null);
 
     // adjust viewbox on window resize
@@ -142,6 +138,28 @@ function App({})
 
     const settings = React.useSyncExternalStore(settingsStore.subscribe, settingsStore.getSnapshot);
     const stats = React.useSyncExternalStore(statsStore.subscribe, statsStore.getSnapshot);
+
+    //detect mouse idle
+    const timeout = React.useRef();
+    React.useEffect(()=>{
+        // handler resize
+        document.body.classList.add("mouse-idle");
+        function onMouseMove(e)
+        {
+            document.body.classList.remove("mouse-idle");
+            if (timeout.current) {
+                window.clearTimeout(timeout.current);
+            }
+            timeout.current = window.setTimeout(()=>{
+                document.body.classList.add("mouse-idle");
+            }, 0)
+            
+        }
+        window.addEventListener("mousemove", onMouseMove);
+        return ()=>{
+            window.removeEventListener("mousemove", onMouseMove);
+        }
+    }, []);
 
     return h("div", {},
         h(Viewport,  {id: "viewport"}),

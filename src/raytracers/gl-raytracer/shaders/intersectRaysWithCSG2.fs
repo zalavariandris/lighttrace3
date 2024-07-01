@@ -17,11 +17,36 @@ uniform vec4 transformData[MAX_SHAPES];
 uniform vec4 shapeData[MAX_SHAPES];
 uniform vec4 materialData[MAX_SHAPES];
 
+/* VECTOR UTILITIES */
+vec2 rotate(vec2 point, float radAngle, vec2 pivot)
+{
+    float x = point.x;
+    float y = point.y;
+
+    float rX = pivot.x + (x - pivot.x) * cos(radAngle) - (y - pivot.y) * sin(radAngle);
+    float rY = pivot.y + (x - pivot.x) * sin(radAngle) + (y - pivot.y) * cos(radAngle);
+
+    return vec2(rX, rY);
+}
+
+vec2 rotate(vec2 vector, float radAngle) {
+	float s = sin(radAngle);
+	float c = cos(radAngle);
+	mat2 m = mat2(c, s, -s, c);
+	return m * vector;
+}
+
+/* ************ *
+ * The Lightray *
+ * ************ */
 struct Ray{
     vec2 origin;
     vec2 direction;
 };
 
+/* ******* *
+ * SHAPES *
+ * ****** */
 struct Circle{
     vec2 center;
     float radius;
@@ -70,24 +95,14 @@ struct Segment{
     vec2 B;
 };
 
-vec2 rotate(vec2 point, float radAngle, vec2 pivot)
-{
-    float x = point.x;
-    float y = point.y;
-
-    float rX = pivot.x + (x - pivot.x) * cos(radAngle) - (y - pivot.y) * sin(radAngle);
-    float rY = pivot.y + (x - pivot.x) * sin(radAngle) + (y - pivot.y) * cos(radAngle);
-
-    return vec2(rX, rY);
-}
-
-vec2 rotate(vec2 vector, float radAngle) {
-	float s = sin(radAngle);
-	float c = cos(radAngle);
-	mat2 m = mat2(c, s, -s, c);
-	return m * vector;
-}
-
+/* ********************** *
+ * UNPACK SHAPES FROM CSG *
+ * ********************** */
+#define SHAPE_CIRCLE 0
+#define SHAPE_RECTANGLE 1
+#define SHAPE_SPHERICEL_LENS 2
+#define SHAPE_TRIANGLE 3
+#define SHAPE_LINE_SEGMENT 4
 
 int unpackShapeType(int i){
     float k = (float(i)+0.5)/float(MAX_SHAPES);
@@ -190,8 +205,7 @@ IntersectionSpan intersect(Circle circle, Ray ray, int matId){
         // If t far is greater than 0 than ther is an exit point
         // If enter point is negative we are inside the shape, 
         // then Let the intersection span begin at the origin of ray
-        if(tFar>EPSILON)
-        {
+        if (tFar > EPSILON) {
             //exit point
             vec2 I2 = ray.origin+ray.direction*tFar;
 
@@ -202,8 +216,7 @@ IntersectionSpan intersect(Circle circle, Ray ray, int matId){
 
             Intersection exit = Intersection(tFar, I2, N2, matId);
 
-            if(tNear<EPSILON)
-            {
+            if (tNear<EPSILON) {
                 return IntersectionSpan(
                     Intersection(0.0, ray.origin, vec2(0.0, 0.0), matId), 
                     exit
@@ -244,8 +257,7 @@ IntersectionSpan intersect(Segment line, Ray ray, int matId)
     // Calculate intersection along the line
     float tLine = ((line.A.x - ray.origin.x) * ray.direction.y - (line.A.y - ray.origin.y) * ray.direction.x) / determinant;
 
-    if(0.0 < tNear && 0.0 <= tLine && tLine <=1.0)
-    {
+    if (0.0 < tNear && 0.0 <= tLine && tLine <=1.0) {
         vec2 N = vec2(-tangent.y, tangent.x);
         N = normalize(-N);
         vec2 I1 = ray.origin+ray.direction*tNear;
@@ -262,7 +274,7 @@ IntersectionSpan intersect(Segment line, Ray ray, int matId)
 
 
 // HELPER for triangle intersection
-Intersection lineIntersect(Segment line, Ray ray, int matId){
+Intersection lineIntersect(Segment line, Ray ray, int matId) {
     vec2 tangent = line.B-line.A;
 
     // Calculate the determinant
@@ -278,8 +290,7 @@ Intersection lineIntersect(Segment line, Ray ray, int matId){
     // Calculate intersection along the line
     float tLine = ((line.A.x - ray.origin.x) * ray.direction.y - (line.A.y - ray.origin.y) * ray.direction.x) / determinant;
 
-    if(EPSILON <= tNear && 0.0 <= tLine && tLine <=1.0)
-    {
+    if (EPSILON <= tNear && 0.0 <= tLine && tLine <=1.0) {
         vec2 N = vec2(-tangent.y, tangent.x);
         N = normalize(-N);
         vec2 I1 = ray.origin+ray.direction*tNear;
@@ -312,15 +323,15 @@ IntersectionSpan intersect(Triangle triangle, Ray ray, int matId){
     // find closest entry intersection
     float tEnter = LARGE_NUMBER;
     vec2 nEnter = vec2(0.0,0.0);
-    if(IsValid(I1) && I1.t<tEnter){
+    if (IsValid(I1) && I1.t<tEnter) {
         tEnter=I1.t;
         nEnter=I1.normal;
     }
-    if(IsValid(I2) && I2.t<tEnter){
+    if (IsValid(I2) && I2.t<tEnter) {
         tEnter=I2.t;
         nEnter=I2.normal;
     }
-    if(IsValid(I3) && I3.t<tEnter){
+    if (IsValid(I3) && I3.t<tEnter) {
         tEnter=I3.t;
         nEnter=I3.normal;
     }
@@ -328,30 +339,30 @@ IntersectionSpan intersect(Triangle triangle, Ray ray, int matId){
         // find farthest exit intersection
     float tExit = tEnter;
     vec2 nExit = vec2(0.0,0.0);
-    if(IsValid(I1) && I1.t>tExit){
+    if (IsValid(I1) && I1.t>tExit) {
         tExit=I1.t;
         nExit=I1.normal;
     }
-    if(IsValid(I2) && I2.t>tExit){
+    if (IsValid(I2) && I2.t>tExit) {
         tExit=I2.t;
         nExit=I2.normal;
     }
-    if(IsValid(I3) && I3.t>tExit){
+    if (IsValid(I3) && I3.t>tExit) {
         tExit=I3.t;
         nExit=I3.normal;
     }
 
-    if(tEnter>tExit){
+    if (tEnter>tExit) {
         return NoIntersectionSpan;
     }
-    if(tEnter==LARGE_NUMBER){
+    if (tEnter==LARGE_NUMBER) {
         return NoIntersectionSpan;
     }
 
     vec2 IEnter = ray.origin+ray.direction*tEnter;
     vec2 IExit = ray.origin+ray.direction*tExit;
 
-    if(tExit==tEnter){
+    if (tExit==tEnter) {
         return IntersectionSpan(
             Intersection(0.0, ray.origin, vec2(0.0), matId),
             Intersection(tEnter, IEnter, nEnter, matId)
@@ -365,9 +376,11 @@ IntersectionSpan intersect(Triangle triangle, Ray ray, int matId){
 }
 
 IntersectionSpan intersect(Rectangle rect, Ray ray, int matId){
+    // ray in local space
     vec2 rayPos = rotate(ray.origin, -rect.angle, rect.center);
     vec2 rayDir = rotate(ray.direction, -rect.angle);
 
+    // calc rectangle intersection with a ray
     float tNearX = (rect.center.x - rect.width  / 2.0 - rayPos.x) / rayDir.x;
     float tNearY = (rect.center.y - rect.height / 2.0 - rayPos.y) / rayDir.y;
     float tFarX =  (rect.center.x + rect.width  / 2.0 - rayPos.x) / rayDir.x;
@@ -375,167 +388,67 @@ IntersectionSpan intersect(Rectangle rect, Ray ray, int matId){
 
     float tNear = max(min(tNearX, tFarX), min(tNearY, tFarY));
     float tFar =  min(max(tNearX, tFarX), max(tNearY, tFarY));
+
+    // if no intersection with the rectangle then return null
+    if (tFar<0.0 || tNear>tFar) return NoIntersectionSpan;
     
-    if(tNear>tFar){
-        return NoIntersectionSpan;
+    // Calculate Exit intersection point
+    vec2 I2 = rayPos+rayDir*tFar;
+
+    // calc exit normal
+    vec2 N2 = normalize(I2-rect.center); 
+    if (abs(N2.x)/abs(N2.y)>rect.width/rect.height)
+        N2 = vec2(sign(N2.x), 0.0);
+    else
+        N2 = vec2(0.0, sign(N2.y));
+    
+    // create Intersection in world space
+    Intersection exit = Intersection(tFar, rotate(I2, rect.angle, rect.center), rotate(N2, rect.angle), matId);
+
+    if (tNear<EPSILON) {
+        // when the enter point is behind the ray's origin, 
+        // then intersection span will begin at the rays origin
+        Intersection enter = Intersection(0.0, ray.origin, vec2(0,0), matId);
+        return IntersectionSpan(enter,exit);
     }
 
-    // find closest
-    if(tFar>0.0)
-    {
-        //exit point
-        vec2 I2 = rayPos+rayDir*tFar;
+    // Calculate Enter intersection point
+    vec2 I1 = rayPos+rayDir*tNear;
 
-        // exit normal
-        vec2 N2 = vec2(0);
-        if (I2.x + EPSILON >= rect.center.x - rect.width / 2.0 && I2.x - EPSILON <= rect.center.x + rect.width / 2.0 &&
-            I2.y + EPSILON >= rect.center.y - rect.height / 2.0 && I2.y - EPSILON <= rect.center.y + rect.height / 2.0) {
+    // calc enter normal
+    vec2 N1 = normalize(I1-rect.center);
+    if (abs(N1.x)/abs(N1.y) > rect.width/rect.height)
+        N1 = vec2(sign(N1.x), 0.0);
+    else
+        N1 = vec2(0.0, sign(N1.y));
+    
+    // Intersection in world space
+    Intersection enter = Intersection(tNear, rotate(I1, rect.angle, rect.center), rotate(N1, rect.angle), matId);
 
-            // Determine the normal vector based on proximity to the edges
-            if (abs(I2.x - (rect.center.x - rect.width / 2.0)) < EPSILON) {
-                N2 = vec2(-1.0, 0.0); // Left edge
-            } else if (abs(I2.x - (rect.center.x + rect.width / 2.0)) < EPSILON) {
-                N2 = vec2(1.0, 0.0); // Right edge
-            } else if (abs(I2.y - (rect.center.y - rect.height / 2.0)) < EPSILON) {
-                N2 = vec2(0.0, -1.0); // Bottom edge
-            } else if (abs(I2.y - (rect.center.y + rect.height / 2.0)) < EPSILON) {
-                N2 = vec2(0.0, 1.0); // Top edge
-            }
-        }
-
-        I2 = rotate(I2, rect.angle, rect.center);
-        N2 = rotate(N2, rect.angle);
-
-        Intersection exit = Intersection(tFar, I2, N2, matId);
-
-        if(tNear<EPSILON){
-            // when the enter point is behind the ray's origin, 
-            // then intersection span will begin at the rays origin
-            Intersection enter = Intersection(0.0, ray.origin, vec2(0,0), matId);
-            return IntersectionSpan(enter,exit);
-        }
-
-        //enter point
-        vec2 I1 = rayPos+rayDir*tNear;
-
-        // enter normal
-        vec2 N1 = vec2(0.0);
-        if (I1.x >= rect.center.x - rect.width / 2.0  && I1.x <= rect.center.x + rect.width / 2.0 &&
-            I1.y >= rect.center.y - rect.height / 2.0 && I1.y <= rect.center.y + rect.height / 2.0) {
-            if        (abs(I1.x - rect.center.x + rect.width / 2.0) < EPSILON) {
-                N1 = vec2(-1.0, 0.0);
-            } else if (abs(I1.x - rect.center.x - rect.width / 2.0) < EPSILON) {
-                N1 = vec2(1.0, 0.0);
-            } else if (abs(I1.y - rect.center.y + rect.height / 2.0) < EPSILON) {
-                N1 = vec2(0.0, -1.0);
-            } else if (abs(I1.y - rect.center.y - rect.height / 2.0) < EPSILON) {
-                vec2 N1 = vec2(0.0, 1.0);
-            }
-        }
-
-        // enter hit info
-        I1 = rotate(I1, rect.angle, rect.center);
-        N1 = rotate(N1, rect.angle);
-
-        Intersection enter = Intersection(tNear, I1, N1, matId);
-
-        // return intersection span between the enter- and exit point
-        return IntersectionSpan(enter, exit);
-    }
-    return NoIntersectionSpan;
+    // return intersection span between the enter- and exit points
+    return IntersectionSpan(enter, exit);
 }
-// IntersectionSpan intersect(Rectangle rect, Ray ray, int matId) {
-//     IntersectionSpan span;
 
-//     // Translate ray to rectangle's local space
-//     vec2 localRayOrigin = ray.origin - rect.center;
-
-//     // Rotate the ray origin and direction to rectangle's local space
-//     localRayOrigin = rotate(localRayOrigin, -rect.angle);
-//     vec2 localRayDir = rotate(ray.direction, -rect.angle);
-
-//     // Rectangle's half extents
-//     vec2 halfExtents = vec2(rect.width * 0.5, rect.height * 0.5);
-
-//     // Compute intersection with AABB
-//     vec2 invDir = 1.0 / localRayDir;
-//     vec2 tMin = (vec2(-halfExtents) - localRayOrigin) * invDir;
-//     vec2 tMax = (vec2(halfExtents) - localRayOrigin) * invDir;
-
-//     vec2 t1 = min(tMin, tMax);
-//     vec2 t2 = max(tMin, tMax);
-
-//     float tEnter = max(t1.x, t1.y);
-//     float tExit = min(t2.x, t2.y);
-
-//     if (tEnter > tExit || tExit < 0.0) {
-//         // No intersection
-//         return NoIntersectionSpan;
-//     }
-
-//     // Calculate intersection points and normals
-//     vec2 localEnterPos = localRayOrigin + tEnter * localRayDir;
-//     vec2 localExitPos = localRayOrigin + tExit * localRayDir;
-
-//     vec2 enterNormal = normalize(localEnterPos-rect.center);
-//     vec2 exitNormal = normalize(localExitPos-rect.center);
-
-//     if(enterNormal.x>enterNormal.y){
-//         enterNormal = vec2(sign(enterNormal.x),0.0);
-//     }else{
-//         enterNormal = vec2(0.0,sign(enterNormal.y));
-//     }
-
-//     if(exitNormal.x>exitNormal.y){
-//         exitNormal = vec2(sign(exitNormal.x),0.0);
-//     }else{
-//         exitNormal = vec2(0.0,sign(exitNormal.y));
-//     }
-//     // if (abs(localEnterPos.x) > halfExtents.x - EPSILON) {
-//     //     enterNormal.x = sign(localEnterPos.x);
-//     // } else {
-//     //     enterNormal.y = sign(localEnterPos.y);
-//     // }
-
-//     // if (abs(localExitPos.x) > halfExtents.x - EPSILON) {
-//     //     exitNormal.x = sign(localExitPos.x);
-//     // } else {
-//     //     exitNormal.y = sign(localExitPos.y);
-//     // }
-
-//     // Transform intersection points and normals back to world space
-//     span.enter.pos = rect.center + rotate(localEnterPos, rect.angle);
-//     span.exit.pos = rect.center + rotate(localExitPos, rect.angle);
-//     span.enter.normal = rotate(enterNormal, rect.angle);
-//     span.exit.normal = rotate(exitNormal, rect.angle);
-
-//     span.enter.t = tEnter;
-//     span.exit.t = tExit;
-//     span.enter.matId = matId;
-//     span.exit.matId = matId;
-
-//     // Assign material ID if needed, here we just set it to a default value
-//     return span;
-// }
 
 IntersectionSpan intersectSpan(IntersectionSpan a, IntersectionSpan b)
 {
-    if(IsValid(a) && IsValid(b)){
+    if (IsValid(a) && IsValid(b)) {
         Intersection enter = a.enter;
-        if(a.enter.t<b.enter.t){
+        if (a.enter.t<b.enter.t) {
             enter = b.enter;
         }
 
         Intersection exit = a.exit;
-        if(a.exit.t>b.exit.t){
+        if (a.exit.t>b.exit.t) {
             exit = b.exit;
         }
 
-        if(enter.t>exit.t){
+        if (enter.t>exit.t) {
             return NoIntersectionSpan;
         }
         return IntersectionSpan(enter, exit);
-    }else{
+    }
+    else {
         return NoIntersectionSpan;
     }
 }
@@ -545,16 +458,15 @@ IntersectionSpan subtractSpan(IntersectionSpan a, IntersectionSpan b){
     // Warning!: Be carefull. intersecting two spans could result in two seperate spans.
     // here we only return the closest one
 
-    if(IsValid(a) && IsValid(b))
-    {
+    if (IsValid(a) && IsValid(b)) {
         // Possible cases
         //           AAAAAAAAA
         //  1.    bb ---------
         //  2.    bbbbbbbbbb--
-        //  3.    bbbbbbbbbbbbbbbbbb
+        //  3.    bbbbbbbbbbbbbbbb
         //  4.       ----bb
-        //  5.       ------bbbbbbbbb
-        //  6.       --------   bb
+        //  5.       ------bbbbbbb
+        //  6.       ---------  bb
 
         // Invert normals of span b
         b = IntersectionSpan(
@@ -564,51 +476,50 @@ IntersectionSpan subtractSpan(IntersectionSpan a, IntersectionSpan b){
 
         // Case 1: Span b is completely before span a
         // no overlapp, return span a
-        if( b.enter.t <= a.enter.t && 
-            b.exit.t  < a.enter.t){
-                return a;
+        if (b.enter.t <= a.enter.t && 
+            b.exit.t  < a.enter.t) {
+            return a;
         }
 
         // Case 2: Span b starts before span a and ends within span a
-        if( b.enter.t <= a.enter.t &&
+        if (b.enter.t <= a.enter.t &&
             b.exit.t  >  a.enter.t && 
-            b.exit.t  <  a.exit.t){
-
+            b.exit.t  <  a.exit.t) {
             return IntersectionSpan(b.exit, a.exit);
         }
 
         // Case 3: Span b completely covers span a
         // no span remains
-        if( b.enter.t <= a.enter.t &&
-            b.exit.t  >  a.exit.t ){
+        if (b.enter.t <= a.enter.t &&
+            b.exit.t  >  a.exit.t ) {
             return NoIntersectionSpan;
         }
 
         // Case 4: Span b is completely within span a
         // keep the first part of span a
-        if( b.enter.t >= a.enter.t &&
-            b.exit.t  <  a.exit.t){
+        if (b.enter.t >= a.enter.t &&
+            b.exit.t  <  a.exit.t) {
             return IntersectionSpan(a.enter, b.enter);
         }
 
         // Case 5: Span b starts within span a and ends after span a
-        if( b.enter.t >= a.enter.t &&
+        if (b.enter.t >= a.enter.t &&
             b.enter.t <  a.exit.t &&
-            b.exit.t  >  a.exit.t ){
+            b.exit.t  >  a.exit.t ) {
             return IntersectionSpan(a.enter, b.enter);
         }
 
         // Case 6: Span b starts after span a
         // no overlapp, return span a
-        if( b.enter.t >= a.enter.t &&
-            b.exit.t  >  a.exit.t
-        ){
+        if (b.enter.t >= a.enter.t &&
+            b.exit.t  >  a.exit.t) {
             return a;
         }
     }
     // Default return if no conditions are met
     return a;
 }
+
 
 IntersectionSpan intersect(SphericalLens lens, Ray ray, int matId){
     // make circles
@@ -633,7 +544,7 @@ IntersectionSpan intersect(SphericalLens lens, Ray ray, int matId){
     Rectangle boundingBox = Rectangle(lens.center, lens.angle, max(lens.centerThickness, lens.edgeThickness), lens.diameter);
 
     bool IsConvex = lens.centerThickness>lens.edgeThickness;
-    if(IsConvex){
+    if (IsConvex) {
         // hitspans
         IntersectionSpan leftHitSpan =  intersect(leftCircle, ray, matId);
         IntersectionSpan rightHitSpan = intersect(rightCircle, ray, matId);
@@ -642,8 +553,7 @@ IntersectionSpan intersect(SphericalLens lens, Ray ray, int matId){
         // intersect cirlces with bunding box
         return intersectSpan(boundingSpan, intersectSpan(leftHitSpan, rightHitSpan));
     }
-    else
-    {
+    else {
         // hitspans
         IntersectionSpan leftHitSpan  = intersect(leftCircle, ray, matId);
         IntersectionSpan rightHitSpan = intersect(rightCircle, ray, matId);
@@ -658,59 +568,48 @@ IntersectionSpan intersect(SphericalLens lens, Ray ray, int matId){
 
 IntersectionSpan intersectScene(Ray ray)
 {
-    IntersectionSpan ispan = NoIntersectionSpan;// HitInfo(9999.0, vec2(ray.origin+ray.direction*9999.0), vec2(0.0), -1);
+    IntersectionSpan ispan = NoIntersectionSpan;
+    for (int i=0; i<MAX_SHAPES; i++) {
+        IntersectionSpan currentSpan;
+        int matId = int(materialData[i].x);
+        int shapeType = unpackShapeType(i);
+        if (shapeType==SHAPE_CIRCLE) {
+            Circle circle = unpackCircle(i);
+            currentSpan = intersect(circle, ray, matId);
+        } 
+        else if (shapeType == SHAPE_RECTANGLE) {
+            Rectangle rect = unpackRectangle(i);
+            currentSpan = intersect(rect, ray, matId);
+        } 
+        else if (shapeType == SHAPE_SPHERICEL_LENS) {
+            SphericalLens lens = unpackSphericalLens(i);
+            currentSpan = intersect(lens, ray, matId);
+        } 
+        else if (shapeType == SHAPE_TRIANGLE) {
+            Triangle triangle = unpackTriangle(i);
+            currentSpan = intersect(triangle, ray, matId);
+        } 
+        else if (shapeType == SHAPE_LINE_SEGMENT) {
+            Segment segment = unpackSegment(i);
+            currentSpan = intersect(segment, ray, matId);
+        } 
+        else {
+            continue;
+        }
 
-
-    for(int i=0;i<MAX_SHAPES;i++)
-    {
-        if(i<int(shapesCount))
-        {
-            IntersectionSpan currentSpan;
-            int matId = int(materialData[i].x);
-            if(shapeData[i].x==0.0) // CIRCLE
-            {
-                // upack circle
-                Circle circle = unpackCircle(i);
-                currentSpan = intersect(circle, ray, matId);
+        // Reduce item
+        if (IsValid(ispan) && IsValid(currentSpan)) {
+            if (currentSpan.enter.t > ispan.enter.t) {
+                ispan = subtractSpan(ispan, currentSpan);
             }
-            else if(shapeData[i].x==1.0) // RECTANGLE
-            {
-                Rectangle rect = unpackRectangle(i);
-                currentSpan = intersect(rect, ray, matId);
-            }
-            else if(shapeData[i].x==2.0) // SphericalLens
-            {
-                SphericalLens lens = unpackSphericalLens(i);
-                currentSpan = intersect(lens, ray, matId);
-            }
-            else if(shapeData[i].x==3.0) // Triangle
-            {
-                Triangle triangle = unpackTriangle(i);
-                currentSpan = intersect(triangle, ray, matId);
-            }
-            else if(shapeData[i].x==4.0) // LineSegment
-            {
-                Segment segment = unpackSegment(i);
-                currentSpan = intersect(segment, ray, matId);
-            }
-            else
-            {
-                continue;
-            }
-
-            // Update ROUND
-            if(IsValid(ispan) && IsValid(currentSpan)){
-                if(currentSpan.enter.t > ispan.enter.t){
-                    ispan = subtractSpan(ispan, currentSpan);
-                }else{
-                    ispan = subtractSpan(currentSpan, ispan);
-                }
-            }else if(IsValid(currentSpan)){
-                ispan = currentSpan;
+            else {
+                ispan = subtractSpan(currentSpan, ispan);
             }
         }
+        else if (IsValid(currentSpan)) {
+            ispan = currentSpan;
+        }
     }
-
     return ispan;
 }
 
@@ -731,19 +630,27 @@ void main()
     incidentRay.origin+=incidentRay.direction*EPSILON;
     IntersectionSpan ispan = intersectScene(incidentRay);
     Intersection hit = ispan.enter;
-    if(hit.t<EPSILON){
+    if (hit.t < EPSILON) {
         hit = ispan.exit;
     }
 
-    if(hit.matId<0){
-        Rectangle rect = Rectangle( roomRect.xy, 0.0, roomRect.z, roomRect.w);
-        
-        IntersectionSpan rectSpan = intersect(rect, incidentRay, -1);
+    if (hit.matId < 0) {
+        // Hit position far away
         hit.pos = incidentRay.origin+incidentRay.direction*LARGE_NUMBER;
         hit.normal = vec2(0.0);
-        // hit.pos = rectSpan.exit.pos;
-        // hit.normal = rectSpan.exit.normal;
-        // hit.matId = 2;
+
+        // hit the room walls
+        Rectangle rect = Rectangle( roomRect.xy, 0.0, roomRect.z, roomRect.w);
+        IntersectionSpan rectSpan = intersect(rect, incidentRay, 2);
+        hit = rectSpan.exit;
+        // BUG: intersecting the rectangle seem to leek. This is here, to fix those rays appearing at the sceneOrigin.
+        if (rectSpan.exit.matId < 0) {
+            hit.pos = incidentRay.origin+incidentRay.direction*LARGE_NUMBER;
+            hit.normal = vec2(0.0);
+        }
+        else {
+            hit.matId = 2;
+        }
     }
 
     gl_FragData[0] = vec4(hit.pos, hit.normal);

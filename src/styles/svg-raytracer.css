@@ -1,5 +1,15 @@
 /* SHAPES */
 
+body .presenter,
+bosy .gizmo{
+    transition: opacity 0s linear;
+    opacity: 1.0;
+}
+body.mouse-idle .presenter,
+body.mouse-idle .gizmo{
+    opacity: 0 !important;;
+    transition: opacity 0.9s linear !important;
+}
 
 g.shape .presenter{
     pointer-events: none;

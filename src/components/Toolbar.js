@@ -38,18 +38,6 @@ function SettingsToolbar({
             h("span", {style:{whiteSpace:"nowrap"}}, `bounce: ${settings.raytrace.maxBounce}`)
         ),
 
-        // h("label", null,
-        //     h("input",{
-        //         type: "range",
-        //         min:2, max:4096*2*2*2*2, step:1,
-        //         value: settings.raytrace.lightSamples,
-        //         onChange: (e)=>{
-        //             settingsStore.setValue(`raytrace.lightSamples`, parseInt(e.target.value))
-        //         }
-        //     }),
-        //     h("span", {style:{whiteSpace:"nowrap"}}, `samples: ${settings.raytrace.lightSamples}`)
-        // ),
-
         h("label", null,
             h("input",{
                 type: "range",
@@ -59,7 +47,19 @@ function SettingsToolbar({
                     settingsStore.setValue(`raytrace.lightSamples`, Math.pow(2, parseInt(e.target.value)))
                 }
             }),
-            h("span", {style:{whiteSpace:"nowrap"}}, `samples: ${settings.raytrace.lightSamples}`)
+            h("span", {style:{whiteSpace:"nowrap"}}, `lightrays: ${settings.raytrace.lightSamples}`)
+        ),
+
+        h("label", null,
+            h("input",{
+                type: "range",
+                min:1, max: 8, step:1,
+                value: settings.raytrace.subsampling,
+                onChange: (e)=>{
+                    settingsStore.setValue(`raytrace.subsampling`, parseInt(e.target.value))
+                }
+            }),
+            h("span", {style:{whiteSpace:"nowrap"}}, `subsampling: ${settings.raytrace.subsampling}`)
         ),
 
         h("label", null,
@@ -145,6 +145,7 @@ function CreateToolbar({}){
                 className: uiState.activeMouseTool=="circle" ? "active" : "",
                 onMouseDown: (e)=>uiStore.setValue("activeMouseTool", "circle")
             }, 
+            
                 h(Icon, {icon: "circle"}),
                 h("span", null, "circle")
             ),

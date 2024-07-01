@@ -66,17 +66,17 @@ function Line({
             }
         }),
 
-        h("text", {
-            className: "presenter",
-            x: x1, 
-            y: y1
-        }, "P1"),
+        // h("text", {
+        //     className: "presenter",
+        //     x: x1, 
+        //     y: y1
+        // }, "P1"),
 
-        h("text", {
-            className: "presenter",
-            x: x2, 
-            y: y2
-        }, "P2"),
+        // h("text", {
+        //     className: "presenter",
+        //     x: x2, 
+        //     y: y2
+        // }, "P2"),
 
 
         /* Manipulators */

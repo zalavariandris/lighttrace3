@@ -70,6 +70,7 @@ class GLRaytracer{
     {
         // console.log("init gl", this.outputResolution)
         this.initRegl();
+        this.initCSGBuffers();
         this.initTextures();
         this.initFramebuffers();
     }
@@ -107,6 +108,27 @@ class GLRaytracer{
                 'WEBGL_draw_buffers', // multiple render targets
                 'OES_texture_float'
             ]
+        });
+    }
+
+    initCSGBuffers(){
+        const regl = this.regl;
+        const common_settings = {
+            width: 16,
+            height: 1,
+            wrap: 'clamp',
+            min: "nearest", 
+            mag: "nearest"
+        }
+
+        this.CSGTexture = regl.texture({
+            width: 16,
+            height: 3,
+            wrap: 'clamp',
+            min: "nearest", 
+            mag: "nearest",
+            format: "rgba",
+            type: "float",
         });
     }
 
@@ -453,6 +475,7 @@ class GLRaytracer{
                     rayDataTexture: this.rayDataTexture,
                     rayDataResolution: [this.rayDataTexture.width, this.rayDataTexture.height],
                     shapesCount: shapeData.length,
+                    CSGTexture: this.CSGTexture,
                     ...shapeEntities.length>0 && { // include shape info in uniforms only if they exist. otherwise regl throws an error. TODO: review this
                         transformData: transformData.flat(),
                         shapeData: shapeData.flat(),

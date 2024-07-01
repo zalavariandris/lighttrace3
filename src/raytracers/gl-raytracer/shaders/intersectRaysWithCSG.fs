@@ -10,6 +10,7 @@ uniform sampler2D rayDataTexture;
 uniform vec2 rayDataResolution;
 
 uniform float shapesCount;
+uniform sampler2D CSGTexture;
 uniform vec3 transformData[MAX_SHAPES];
 uniform vec4 shapeData[MAX_SHAPES];
 uniform vec4 materialData[MAX_SHAPES];

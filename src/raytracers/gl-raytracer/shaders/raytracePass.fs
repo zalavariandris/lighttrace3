@@ -393,6 +393,8 @@ IntersectionSpan intersect(Line line, Ray ray, int matId)
     return NoIntersectionSpan;
 }
 
+
+// HELPER for triangle intersection
 Intersection lineIntersect(Line line, Ray ray, int matId){
     vec2 tangent = line.B-line.A;
 
@@ -518,17 +520,19 @@ IntersectionSpan intersect(Rectangle rect, Ray ray, int matId){
         vec2 I2 = rayPos+rayDir*tFar;
 
         // exit normal
-        vec2 N2 = vec2(0.0);
-        if (I2.x >= rect.center.x - rect.width / 2.0  && I2.x <= rect.center.x + rect.width / 2.0 &&
-            I2.y >= rect.center.y - rect.height / 2.0 && I2.y <= rect.center.y + rect.height / 2.0) {
-            if        (abs(I2.x - rect.center.x + rect.width / 2.0) < 0.0) {
-                N2 = vec2(-1.0, 0.0);
-            } else if (abs(I2.x - rect.center.x - rect.width / 2.0) < 0.0) {
-                N2 = vec2(1.0, 0.0);
-            } else if (abs(I2.y - rect.center.y + rect.height / 2.0) < 0.0) {
-                N2 = vec2(0.0, -1.0);
-            } else if (abs(I2.y - rect.center.y - rect.height / 2.0) < 0.0) {
-                N2 = vec2(0.0, 1.0);
+        vec2 N2 = vec2(0.0, 1.0);
+        if (I2.x + EPSILON >= rect.center.x - rect.width / 2.0 && I2.x - EPSILON <= rect.center.x + rect.width / 2.0 &&
+            I2.y + EPSILON >= rect.center.y - rect.height / 2.0 && I2.y - EPSILON <= rect.center.y + rect.height / 2.0) {
+
+            // Determine the normal vector based on proximity to the edges
+            if (abs(I2.x - (rect.center.x - rect.width / 2.0)) < EPSILON) {
+                N2 = vec2(-1.0, 0.0); // Left edge
+            } else if (abs(I2.x - (rect.center.x + rect.width / 2.0)) < EPSILON) {
+                N2 = vec2(1.0, 0.0); // Right edge
+            } else if (abs(I2.y - (rect.center.y - rect.height / 2.0)) < EPSILON) {
+                N2 = vec2(0.0, -1.0); // Bottom edge
+            } else if (abs(I2.y - (rect.center.y + rect.height / 2.0)) < EPSILON) {
+                N2 = vec2(0.0, 1.0); // Top edge
             }
         }
 
@@ -551,13 +555,13 @@ IntersectionSpan intersect(Rectangle rect, Ray ray, int matId){
         vec2 N1 = vec2(0.0);
         if (I1.x >= rect.center.x - rect.width / 2.0  && I1.x <= rect.center.x + rect.width / 2.0 &&
             I1.y >= rect.center.y - rect.height / 2.0 && I1.y <= rect.center.y + rect.height / 2.0) {
-            if        (abs(I1.x - rect.center.x + rect.width / 2.0) < 0.0) {
+            if        (abs(I1.x - rect.center.x + rect.width / 2.0) < EPSILON) {
                 N1 = vec2(-1.0, 0.0);
-            } else if (abs(I1.x - rect.center.x - rect.width / 2.0) < 0.0) {
+            } else if (abs(I1.x - rect.center.x - rect.width / 2.0) < EPSILON) {
                 N1 = vec2(1.0, 0.0);
-            } else if (abs(I1.y - rect.center.y + rect.height / 2.0) < 0.0) {
+            } else if (abs(I1.y - rect.center.y + rect.height / 2.0) < EPSILON) {
                 N1 = vec2(0.0, -1.0);
-            } else if (abs(I1.y - rect.center.y - rect.height / 2.0) < 0.0) {
+            } else if (abs(I1.y - rect.center.y - rect.height / 2.0) < EPSILON) {
                 vec2 N1 = vec2(0.0, 1.0);
             }
         }

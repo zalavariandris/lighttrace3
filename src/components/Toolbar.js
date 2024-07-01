@@ -38,13 +38,25 @@ function SettingsToolbar({
             h("span", {style:{whiteSpace:"nowrap"}}, `bounce: ${settings.raytrace.maxBounce}`)
         ),
 
+        // h("label", null,
+        //     h("input",{
+        //         type: "range",
+        //         min:2, max:4096*2*2*2*2, step:1,
+        //         value: settings.raytrace.lightSamples,
+        //         onChange: (e)=>{
+        //             settingsStore.setValue(`raytrace.lightSamples`, parseInt(e.target.value))
+        //         }
+        //     }),
+        //     h("span", {style:{whiteSpace:"nowrap"}}, `samples: ${settings.raytrace.lightSamples}`)
+        // ),
+
         h("label", null,
             h("input",{
                 type: "range",
-                min:2, max:4096*2*2*2*2, step:1,
-                value: settings.raytrace.lightSamples,
+                min:2, max:Math.log2(4096*2*2*2), step:1,
+                value: Math.log2(settings.raytrace.lightSamples),
                 onChange: (e)=>{
-                    settingsStore.setValue(`raytrace.lightSamples`, parseInt(e.target.value))
+                    settingsStore.setValue(`raytrace.lightSamples`, Math.pow(2, parseInt(e.target.value)))
                 }
             }),
             h("span", {style:{whiteSpace:"nowrap"}}, `samples: ${settings.raytrace.lightSamples}`)

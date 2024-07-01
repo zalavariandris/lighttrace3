@@ -1,7 +1,10 @@
 import React from "react";
 import Manipulator, {RotateManip} from "../Manipulators.js";
+import Sprite from "../Sprite.js"
 import {rotatePoint} from "../../utils.js"
 const h = React.createElement;
+
+
 
 function Rectangle({
     cx, cy, width, height, angle,
@@ -83,15 +86,19 @@ function Rectangle({
                     onChange(e)
                 }
             },
-                h("path", {
-                    className: "gizmo",
-                    d: "M0,-8 L0,0 L-8,00",
-                    style: {
-                        cursor: "nwse-resize",
-                        transform: ` rotate(${angle}rad) translate(${cx+width/2+4}px, ${cy+height/2+4}px)`,
-                        transformOrigin: `${cx}px ${cy}px`
-                    }
-                })
+                h(Sprite, {
+                    cx: cx+Math.cos(-angle)*width/2+Math.sin(-angle)*height/2, 
+                    cy:cy+Math.cos(-angle+Math.PI/2)*width/2+Math.sin(-angle+Math.PI/2)*height/2},
+                    h("path", {
+                        className: "gizmo",
+                        d: "M0,-16 L0,0 L-16,00",
+                        style: {
+                            cursor: "nwse-resize",
+                            transform: `rotate(${angle}rad)`,
+                            // transformOrigin: `${cx+width/2}px ${cy+height/2}px`
+                        }
+                    })
+                )
             )
         )
     )

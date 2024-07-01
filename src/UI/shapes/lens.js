@@ -1,7 +1,7 @@
 import React from "react";
 import Manipulator, {RotateManip} from "../Manipulators.js";
 import {rotatePoint, makePathFromLens} from "../../utils.js"
-
+import Sprite from "../Sprite.js"
 const h = React.createElement;
 
 function Lens({

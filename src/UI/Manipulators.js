@@ -1,6 +1,6 @@
 import _ from "lodash";
 import React, {useState} from "react"
-
+import Sprite from "./Sprite.js"
 
 const h = React.createElement;
 
@@ -214,30 +214,32 @@ function RotateManip({
         },
         ...props
     }, 
-        h("circle", {
+        h(Sprite, {
             cx:cx+Math.cos(adjustedAngle)*distance, 
             cy:cy+Math.sin(adjustedAngle)*distance,
-            r: 8,
-            className: "gizmo rotate hidden",
-            style: {
-                fill: "transparent",
-                stroke: "transparent"
-            }
-        }),
+        },
+            h("circle", {
+                cx:0, 
+                cy:0,
+                r: 8,
+                className: "gizmo rotate hidden",
+                style: {
+                    fill: "transparent",
+                    stroke: "transparent"
+                }
+            }),
 
-        h("path" /* rotate arrow */,{
-            className: "gizmo",            
-            d: describeArc(0,0, 5, 90-120, 90+120),
-            markerEnd:"url(#arrow)",
-            markerStart:"url(#arrow)",
-            style: {
-                transform: `translate(${cx+Math.cos(adjustedAngle)*distance}px, ${cy+Math.sin(adjustedAngle)*distance}px) rotate(${adjustedAngle}rad)`,
-                pointerEvents: "none",
-                stroke: "white",
-                strokeWidth: 4,
-                fill: "none"
-            }
-        })
+            h("image", {
+                className: "gizmo",  
+                href:"./icons/fa-rotate-white.svg", 
+                height:32, 
+                width:32,
+                style:{
+                    transform:"translate(-16px, -16px)"
+                }
+                
+            })
+        )
     )
 }
 

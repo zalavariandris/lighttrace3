@@ -780,14 +780,12 @@ Ray bounceRay(Ray ray, Intersection intersection){
         
         // calculate exit direction in local space
         vec2 woLocal; // tangent space exit ray direction
-        int materialType = intersection.matId<0? MATERIAL_DIFFUSE : unpackMaterialType(intersection.matId);
-        if(materialType==MATERIAL_MIRROR)
-        {
+        int materialType = unpackMaterialType(intersection.matId);
+        if(materialType==MATERIAL_MIRROR) {
             float roughness = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(16*2+intersection.matId)).y;
             woLocal = sampleMirror(wiLocal);
         }
-        else if(materialType==MATERIAL_GLASS)
-        {
+        else if(materialType==MATERIAL_GLASS) {
             // vec3 b = vec3(1.03961212, 0.231792344, 1.01046945);
             // vec3 c = vec3(0.00600069867, 0.0200179144, 103.560653);
             // float sellmeierIor =  sellmeierEquation(b, c, ray.wavelength*1e-3);
@@ -798,14 +796,12 @@ Ray bounceRay(Ray ray, Intersection intersection){
             float cauchyIor =  cauchyEquation(ior, dispersion, ray.wavelength*1e-3);
             woLocal = sampleDielectric(wiLocal, cauchyIor);
         }
-        else if(materialType==MATERIAL_DIFFUSE)
-        {
+        else if(materialType==MATERIAL_DIFFUSE) {
             float roughness = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(16*2+intersection.matId)).y;
             woLocal = sampleDiffuse(wiLocal);
         }
-        else
-        {
-            woLocal = wiLocal;
+        else {
+            woLocal = -wiLocal;
         }
         
         vec2 woWorld = woLocal.y*intersection.normal + woLocal.x*tangent; // worldSpace exiting r\y directiuon

@@ -200,8 +200,8 @@ Circle makeCircleFromThreePoints(vec2 S, vec2 M, vec2 E)
 }
 
 Circle unpackCircle(int i){
-        vec2 center = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(i)).xy;
-        float radius = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(16+i)).y;
+        vec2 center = texelFetchByIdx(CSGTexture, vec2(MAX_SHAPES,3.0), float(i)).xy;
+        float radius = texelFetchByIdx(CSGTexture, vec2(MAX_SHAPES,3.0), float(1MAX_SHAPES+i)).y;
         return Circle(
             center,
             radius
@@ -214,9 +214,9 @@ struct Line{
 };
 
 Line unpackLine(int i){
-    vec2 center = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(i)).xy;
-    float angle = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(i)).z;
-    float length = texelFetchByIdx(CSGTexture, vec2(16.0,3.0), float(16+i)).y;
+    vec2 center =  texelFetchByIdx(CSGTexture, vec2(MAX_SHAPES,3.0), float(i)).xy;
+    float angle =  texelFetchByIdx(CSGTexture, vec2(MAX_SHAPES,3.0), float(i)).z;
+    float length = texelFetchByIdx(CSGTexture, vec2(MAX_SHAPES,3.0), float(MAX_SHAPES+i)).y;
     float x1 = center.x - cos(angle)*length/2.0;
     float y1 = center.y - sin(angle)*length/2.0;
     float x2 = center.x + cos(angle)*length/2.0;

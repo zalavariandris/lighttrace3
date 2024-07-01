@@ -2,7 +2,7 @@ import entityStore from "../stores/entity-store.js"
 import settingsStore from "../stores/settings-store.js";
 import statsStore from "../stores/stats-store.js";
 import React from "react";
-import GLRaytracer from "../raytracers/gl-raytracer/GLRaytracer.js";
+import GLRaytracer from "../raytracers/gl-raytracer/GLRaytracer-multipass.js";
 
 const h = React.createElement;
 

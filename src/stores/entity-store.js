@@ -174,19 +174,19 @@ const cornelBoxScene = {
 }
 
 const lensesScene = {
-    "sun":{
-        transform: makeTransform(50, 200, 0),
-        light: makeDirectionalLight(6500, 3, 100),
+    "lightbulb":{
+        transform: makeTransform(0, 100, 0),
+        light: makePointLight(6500, 3),
         selected: false
     },
     "lens": {
-        transform: makeTransform(180, 200, 0),
+        transform: makeTransform(100, 200, 0),
         shape: makeSphericalLens(140, 20, 80),
         material: makeGlass(1.44, 0.02),
         selected: false
     },
     "concave": {
-        transform: makeTransform(280, 200, 0),
+        transform: makeTransform(-100, 200, 0),
         shape: makeSphericalLens(140, 80, 10),
         material: makeGlass(1.44, 0.02),
         selected: false

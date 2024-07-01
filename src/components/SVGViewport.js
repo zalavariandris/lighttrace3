@@ -181,7 +181,7 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                                     entityStore.setValue(`${key}.shape.radius`, e.value.r);
                                 }
                             }),
-                            h("text", {x: cx, y: cy, fill:"white"}, `${idx}`)
+                            // h("text", {x: cx, y: cy, fill:"white"}, `${idx}`)
                         )
                     case "triangle":
                         return h("g", null, 
@@ -206,7 +206,7 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                                     entityStore.setValue(`${key}.shape.size`, size);
                                 }
                             }),
-                            h("text", {x: cx, y: cy, fill:"white"}, `${idx}`)
+                            // h("text", {x: cx, y: cy, fill:"white"}, `${idx}`)
                         )
                     case "rectangle":
                         return h("g", null, 
@@ -233,7 +233,7 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                                 },
                                 onClick: e=>entityStore.setSelection([key]),
                             }),
-                            h("text", {x: cx, y: cy, fill:"white"}, `${idx}`)
+                            // h("text", {x: cx, y: cy, fill:"white"}, `${idx}`)
                         )
                     case "sphericalLens":
                         return h("g", null, 
@@ -262,7 +262,7 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                                     entityStore.setValue(`${key}.shape.centerThickness`, centerThickness);
                                 },
                             }),
-                            h("text", {x: cx, y: cy, fill:"white"}, `${idx}`)
+                            // h("text", {x: cx, y: cy, fill:"white"}, `${idx}`)
                         )
                     case "line":
                         return h("g", null, 
@@ -287,7 +287,7 @@ function SVGViewport({width, height, className, viewBox, onViewBoxChange, ...pro
                                 onClick: e=>entityStore.setSelection([key]),
                                 id: key
                             }),
-                            h("text", {x: cx, y: cy, fill:"white"}, `${idx}`)
+                            // h("text", {x: cx, y: cy, fill:"white"}, `${idx}`)
                         )
                     default:
                         break;

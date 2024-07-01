@@ -93,10 +93,10 @@ vec2 sampleDielectric(vec2 wi, float ior)
 
 void main()
 {
+
     vec2 rayDir = texture2D(incidentRaysTexture, gl_FragCoord.xy/outputResolution.xy).zw;
-    vec4 hitData = texture2D(hitDataTexture, gl_FragCoord.xy/outputResolution.xy);
-    vec2 hitNormal = hitData.zw;
-    vec2 hitPos = hitData.xy;
+    vec2 hitNormal = texture2D(hitDataTexture, gl_FragCoord.xy/outputResolution.xy).zw;
+    vec2 hitPos = texture2D(hitDataTexture, gl_FragCoord.xy/outputResolution.xy).xy;
     float hitMaterial = texture2D(hitMaterialTexture, gl_FragCoord.xy/outputResolution.xy).x;
     float wavelength = texture2D(incidentLightsTexture, gl_FragCoord.xy/outputResolution.xy).r;
 
@@ -121,8 +121,9 @@ void main()
     {
         woLocal = sampleDiffuse(wiLocal);
         // gl_FragData[0] = vec4(hitPos, sampleDiffuse(rayDir, hitNormal));
+    }else{
+        woLocal = sampleDiffuse(wiLocal);
     }
     vec2 woWorld = woLocal.y*hitNormal + woLocal.x*tangent; // worldSpace exiting r\y directiuon
     gl_FragData[0] = vec4(hitPos, woWorld);
-
 }

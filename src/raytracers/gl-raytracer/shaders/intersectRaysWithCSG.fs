@@ -2,8 +2,8 @@
 precision mediump float;
 #define e 2.71828
 #define PI 3.14159
-#define MAX_CIRCLES 10
-#define MAX_SHAPES 10
+
+#define MAX_SHAPES 16
 #define EPSILON 0.001
 
 uniform sampler2D rayDataTexture;
@@ -11,7 +11,7 @@ uniform vec2 rayDataResolution;
 
 uniform float shapesCount;
 uniform sampler2D CSGTexture;
-uniform vec3 transformData[MAX_SHAPES];
+uniform vec4 transformData[MAX_SHAPES];
 uniform vec4 shapeData[MAX_SHAPES];
 uniform vec4 materialData[MAX_SHAPES];
 
@@ -308,6 +308,65 @@ HitInfo hitTest(Ray incidentRay, SphericalLens lens){
     return HitInfo(hit.t, rotate(hit.position, lens.angle, lens.center), rotate(hit.normal, lens.angle), hit.matID);
 }
 
+int unpackMaterialType(int i){
+    float k = (float(i)+0.5)/float(MAX_SHAPES);
+    return int(texture2D(CSGTexture, vec2(k, 2.5/3.0)).x);
+}
+
+Circle unpackCircle(int i){
+    float k = (float(i)+0.5)/float(MAX_SHAPES);
+    vec2 center = texture2D(CSGTexture, vec2(k, 0.5/3.0)).xy;
+    float radius = texture2D(CSGTexture, vec2(k, 1.5/3.0)).y;
+    return Circle(
+        center,
+        radius
+    );
+}
+
+Triangle unpackTriangle(int i){
+    float k = (float(i)+0.5)/float(MAX_SHAPES);
+    vec2 center = texture2D(CSGTexture, vec2(k, 0.5/3.0)).xy;
+    float angle = texture2D(CSGTexture, vec2(k, 0.5/3.0)).z;
+    float size = texture2D(CSGTexture, vec2(k, 1.5/3.0)).y;
+    return Triangle(center, angle, size);
+}
+
+SphericalLens unpackSphericalLens(int i){
+    float k = (float(i)+0.5)/float(MAX_SHAPES);
+    vec2 center = texture2D(CSGTexture, vec2(k, 0.5/3.0)).xy;
+    float angle = texture2D(CSGTexture, vec2(k, 0.5/3.0)).z;
+    float dimeter = texture2D(CSGTexture, vec2(k, 1.5/3.0)).y;
+    float centerThickness = texture2D(CSGTexture, vec2(k, 1.5/3.0)).w;
+    float edgeThickness = texture2D(CSGTexture, vec2(k, 1.5/3.0)).z;
+
+    return SphericalLens(center, 
+                        angle, 
+                        dimeter, 
+                        centerThickness, 
+                        edgeThickness);
+}
+
+Rectangle unpackRectangle(int i){
+    float k = (float(i)+0.5)/float(MAX_SHAPES);
+    vec2 center = texture2D(CSGTexture, vec2(k, 0.5/3.0)).xy;
+    float angle = texture2D(CSGTexture, vec2(k, 0.5/3.0)).z;
+    float width = texture2D(CSGTexture, vec2(k, 1.5/3.0)).y;
+    float height = texture2D(CSGTexture, vec2(k, 1.5/3.0)).z;
+    return Rectangle(center, angle, width, height);
+}
+
+Segment unpackSegment(int i){
+    float k = (float(i)+0.5)/float(MAX_SHAPES);
+    vec2 C = texture2D(CSGTexture, vec2(k, 0.5/3.0)).xy;
+    float angle = texture2D(CSGTexture, vec2(k, 0.5/3.0)).z;
+    float segmentLength = texture2D(CSGTexture, vec2(k, 1.5/3.0)).y;
+    
+    vec2 tangent = vec2(cos(angle), sin(angle));
+    vec2 P1 = C-tangent*segmentLength/2.0;
+    vec2 P2 = C+tangent*segmentLength/2.0;
+    return Segment(P1, P2);
+}
+
 HitInfo intersectScene(Ray ray)
 {
     HitInfo hitInfo = HitInfo(9999.0, vec2(ray.origin+ray.direction*9999.0), vec2(0.0), -1);
@@ -318,58 +377,31 @@ HitInfo intersectScene(Ray ray)
         if(i<int(shapesCount))
         {
             HitInfo currentHit;
+            int materialType = unpackMaterialType(i);
             if(shapeData[i].x==0.0) // CIRCLE
             {
                 // upack circle
-                vec2 center = transformData[i].xy;
-                float angle = transformData[i].z;
-                float radius = shapeData[i].y;
-
-                // intersect Circle
-                currentHit = hitTest(ray, Circle(center, radius));
+                Circle circle = unpackCircle(i);
+                currentHit = hitTest(ray, circle);
             }
             else if(shapeData[i].x==1.0) // RECTANGLE
             {
-                // upack rectangle
-                Rectangle rect = Rectangle(transformData[i].xy, 
-                                           transformData[i].z, 
-                                           shapeData[i].y, 
-                                           shapeData[i].z);
-                // intersect Rectangle
+                Rectangle rect = unpackRectangle(i);
                 currentHit = hitTest(ray, rect);
             }
             else if(shapeData[i].x==2.0) // SphericalLens
             {
-                // Unpack Spherical Lens
-                SphericalLens lens = SphericalLens(transformData[i].xy, 
-                                                   transformData[i].z, 
-                                                   shapeData[i].y, 
-                                                   shapeData[i].w,
-                                                   shapeData[i].z);
-                // intersect Lens
+                SphericalLens lens = unpackSphericalLens(i);
                 currentHit = hitTest(ray, lens);
-
             }
             else if(shapeData[i].x==3.0) // Triangle
             {
-                // Unpack Spherical Lens
-                Triangle triangle = Triangle(transformData[i].xy, 
-                                           transformData[i].z, 
-                                           shapeData[i].y);
-                // intersect Lens
+                Triangle triangle = unpackTriangle(i);
                 currentHit = hitTest(ray, triangle);
             }
             else if(shapeData[i].x==4.0) // LineSegment
             {
-                // Unpack Spherical Lens
-                vec2 C = transformData[i].xy;
-                float angle = transformData[i].z;
-                float segmentLength = shapeData[i].y;
-                vec2 tangent = vec2(cos(angle), sin(angle));
-                vec2 P1 = C-tangent*segmentLength/2.0;
-                vec2 P2 = C+tangent*segmentLength/2.0;
-                Segment segment = Segment(P1, P2);
-                // intersect Lens
+                Segment segment = unpackSegment(i);
                 currentHit = hitTest(ray, segment);
             }
             else

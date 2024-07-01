@@ -12,7 +12,7 @@ import { drawRays} from "./operators/drawRays.js"
 import QUAD from "./QUAD.js"
 import { loadShader } from "./shaders/load-shader.js"
 const PASS_THROUGH_VERTEX_SHADER = await loadShader("./src/raytracers/gl-raytracer/shaders/PASS_THROUGH_VERTEX_SHADER.fs");
-const intersectRaysWithCSGShader = await loadShader("./src/raytracers//gl-raytracer/shaders/intersectRaysWithCSG.fs");
+const intersectRaysWithCSGShader = await loadShader("./src/raytracers//gl-raytracer/shaders/intersectRaysWithCSG2.fs");
 const bounceRaysShader = await loadShader("./src/raytracers//gl-raytracer/shaders/bounceRays.fs")
 const wavelengthToColorShader = await loadShader("./src/raytracers//gl-raytracer/shaders/wavelengthToColor.fs");
 
@@ -63,9 +63,14 @@ class GLRaytracer{
         // settings
         this.settings = {
             lightSamples: Math.pow(4,5),//128*128; //Math.pow(4,4);
-            debug: true,
-            maxBounce: 7,
-            downres: 1,
+            maxBounce: 7
+        };
+
+        this.display = {
+            rays: true,
+            hitSpans: true,
+            normals: true,
+            paths: true
         };
     }
 
@@ -486,6 +491,7 @@ class GLRaytracer{
             regl({...QUAD, vert:PASS_THROUGH_VERTEX_SHADER,
                 framebuffer: this.hitDataFbo,
                 uniforms: {
+                    roomRect: [viewBox.x+viewBox.w/2, viewBox.y+viewBox.h/2, viewBox.w, viewBox.h],
                     rayDataTexture: this.rayDataTexture,
                     rayDataResolution: [this.rayDataTexture.width, this.rayDataTexture.height],
                     shapesCount: shapeData.length,
@@ -517,7 +523,7 @@ class GLRaytracer{
                 Draw rays to sceneFBO;
             */
             /* draw hitPoints */
-            drawRays(regl, {
+            this.display.normals && drawRays(regl, {
                 raysCount: rays.length,
                 raysTexture: this.hitDataTexture,
                 raysLength: 5.0,
@@ -527,8 +533,8 @@ class GLRaytracer{
                 framebuffer: this.sceneFbo
             });
 
-            /* draw rays */
-            drawLinesBetweenPoints(regl, {
+            /* draw lightpaths */
+            this.display.paths && drawLinesBetweenPoints(regl, {
                 linesCount: rays.length,
                 startpoints: this.rayDataTexture,
                 endpoints: this.hitDataTexture,

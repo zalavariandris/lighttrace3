@@ -18,7 +18,7 @@ function Sprite({cx, cy, children}){
     return h("g", {
         ref,
         style:{
-            transform: `scale(${1/zoom.current})`,
+            transform: `scale(${1/zoom.current}) translate(${cx}px, ${cy}px)`,
             transformOrigin: `${cx}px ${cy}px`
         }
     }, children);

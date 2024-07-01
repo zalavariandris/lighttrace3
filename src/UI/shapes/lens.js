@@ -69,7 +69,8 @@ function Lens({
         }, 
             h(RotateManip,{
                 cx,cy,angle,
-                distance: Math.max(centerThickness/2+16, edgeThickness/2),
+                axis: "Y",
+                distance: diameter/2,
                 onChange: e=>{
                     e.value = {
                         cx,cy,
@@ -93,14 +94,19 @@ function Lens({
                 },
                 className:"gizmo"
             }, 
-                h('circle', {
-                    className: "handle",
-                    cx:cx+Math.cos(angle)*centerThickness/2, 
-                    cy:cy+Math.sin(angle)*centerThickness/2,
-                    r: 5,
-                    vectorEffect: "non-scaling-stroke",
-                    style: {cursor: "ew-resize"}
-                })
+                h(Sprite, {
+                    cx:cx+Math.cos(angle)*centerThickness/2,
+                    cy:cy+Math.sin(angle)*centerThickness/2
+                },
+                    h('circle', {
+                        className: "handle",
+                        cx:0, 
+                        cy:0,
+                        r: 5,
+                        vectorEffect: "non-scaling-stroke",
+                        style: {cursor: "ew-resize"}
+                    })
+                )
             ),
 
             h(Manipulator /*  manip edgeThickness and diameter*/, {
@@ -122,14 +128,19 @@ function Lens({
                     onChange(e);
                 }
             },
-                h('circle', {
-                    className: "gizmo",
-                    cx:cx+Math.cos(angle)*edgeThickness/2+Math.cos(angle+Math.PI/2)*diameter/2, 
-                    cy:cy+Math.sin(angle)*edgeThickness/2+Math.sin(angle+Math.PI/2)*diameter/2,
-                    r: 5,
-                    vectorEffect: "non-scaling-stroke",
-                    style: {cursor: "nwse-resize"}
-                }),
+                h(Sprite, {
+                    cx:cx+Math.cos(angle)*edgeThickness/2+Math.cos(angle+Math.PI/2)*diameter/2,
+                    cy:cy+Math.sin(angle)*edgeThickness/2+Math.sin(angle+Math.PI/2)*diameter/2
+                },
+                    h('circle', {
+                        className: "gizmo",
+                        cx:0.0, 
+                        cy:0.0,
+                        r: 8,
+                        vectorEffect: "non-scaling-stroke",
+                        style: {cursor: "nwse-resize"}
+                    })
+                )
             )
         )
     )

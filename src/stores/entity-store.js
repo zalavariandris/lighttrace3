@@ -108,6 +108,12 @@ function makeLaserLight(temperature=6500, intensity=3) {
     };
 }
 
+function makeCamera(fovX){
+    return {
+        fovX: fovX
+    }
+}
+
 /* *************** *
  * TEMPLATE SCENES *
  * *************** */
@@ -141,6 +147,10 @@ const defaultScene = {
         shape: makeSphericalLens(140, 5, 80),
         material: makeGlass(1.44, 0.02),
         selected: false
+    },
+    "camera":{
+        transform: makeTransform(0,0,0),
+        camera: makeCamera(512)
     }
 };
 
@@ -170,6 +180,10 @@ const cornelBoxScene = {
         shape: makeCircle(50),
         material: makeMirror(),
         selected: false
+    },
+    "camera":{
+        transform: makeTransform(0,0,0),
+        camera: makeCamera(512)
     }
 }
 
@@ -190,6 +204,10 @@ const lensesScene = {
         shape: makeSphericalLens(140, 80, 10),
         material: makeGlass(1.44, 0.02),
         selected: false
+    },
+    "camera":{
+        transform: makeTransform(0,0,0),
+        camera: makeCamera(512)
     }
 }
 
@@ -205,6 +223,10 @@ const prismScene = {
         shape: makeTriangle(50),
         material: makeGlass(1.44, 0.02),
         selected: false
+    },
+    "camera":{
+        transform: makeTransform(0,0,0),
+        camera: makeCamera(512)
     }
 }
 
@@ -229,6 +251,10 @@ const lightsScene = {
         shape: makeLineSegment(400.0),
         material: makeDiffuse(),
         selected: false
+    },
+    "camera":{
+        transform: makeTransform(0,0,0),
+        camera: makeCamera(512)
     }
 }
 const shapesScene = {
@@ -271,6 +297,10 @@ const shapesScene = {
         shape: makeSphericalLens(40, 40, 20),
         material: makeGlass(),
         selected: false
+    },
+    "camera":{
+        transform: makeTransform(0,0,0),
+        camera: makeCamera(512)
     }
 }
 
@@ -278,7 +308,7 @@ const shapesScene = {
  * ENTITY STORE *
  * *****    ******* */
 let scene;
-scene = JSON.parse(localStorage.getItem("scene"));
+// scene = JSON.parse(localStorage.getItem("scene"));
 if(!scene)
 {
     scene = cornelBoxScene;

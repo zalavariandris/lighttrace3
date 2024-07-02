@@ -47,8 +47,9 @@ function fitViewboxInSize(viewBox, size)
     return newViewBox
 }
 
-function Viewport(props)
+function Viewport({...props})
 {
+    const scene = React.useSyncExternalStore(entityStore.subscribe, entityStore.getSnapshot);
     // sync svg- and glviewport viewbox
     const [viewBox, setViewBox] = React.useState( {x:-256, y:0, w:512, h:512});
     const settings = React.useSyncExternalStore(settingsStore.subscribe, settingsStore.getSnapshot);
@@ -89,10 +90,12 @@ function Viewport(props)
             style:{
                 position: "fixed",
                 top: "0px", 
-                right: "0px"
+                right: "0px",
+                zIndex:10,
+                fontSize:10
             }
         }, 
-            `zoom: ${(zoom*100).toFixed()}%`
+            `${(zoom*100).toFixed()}%`
         ),
 
         h(ErrorBoundary, {

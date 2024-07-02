@@ -5,7 +5,8 @@ class ErrorBoundary extends React.Component {
       super(props);
       this.state = {
         hasError: false,
-        errorInfo: ""
+        error:null,
+        info:null
       };
     }
   
@@ -22,9 +23,9 @@ class ErrorBoundary extends React.Component {
       //   in App
       this.setState((state, props)=>{
         console.log("set state from", state)
-        return {...state, errorInfo: info.componentStack};
+        return {...state, error: error, info: info};
       })
-      console.error(error, info.componentStack);
+      console.error(error, info);
     }
   
     render() {
@@ -33,6 +34,7 @@ class ErrorBoundary extends React.Component {
         return h("div", {
           style: {
             display: "flex",
+            flexDirection:"column",
             justifyContent: "center",
             alignItems:"center",
             padding: "2rem",
@@ -41,7 +43,8 @@ class ErrorBoundary extends React.Component {
             background: "red", color:"white"
           }
         },
-          `ERROR ${this.state.errorInfo}`
+          h("h2", null, `${this.state.error}`),
+          h("div", {style: {whiteSpace: "pre-wrap", fontSize:"10px"}}, `${this.state.info ? this.state.info.componentStack : ""}`)
         )
       }
   

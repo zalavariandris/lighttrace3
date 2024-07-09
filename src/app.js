@@ -57,19 +57,19 @@ function Viewport({...props})
     const ref = React.useRef(null);
 
     // adjust viewbox on window resize
-    React.useEffect( ()=>{
-        function resizeHandler(e)
-        {
-            setViewBox( fitViewboxInSize(viewBox, {width: ref.current.clientWidth, height: ref.current.clientHeight}) );
-        }
-        setViewBox( fitViewboxInSize(viewBox, {width: ref.current.clientWidth, height: ref.current.clientHeight}) );
+    // React.useEffect( ()=>{
+    //     function resizeHandler(e)
+    //     {
+    //         setViewBox( fitViewboxInSize(viewBox, {width: ref.current.clientWidth, height: ref.current.clientHeight}) );
+    //     }
+    //     setViewBox( fitViewboxInSize(viewBox, {width: ref.current.clientWidth, height: ref.current.clientHeight}) );
 
-        window.addEventListener("resize", resizeHandler);
+    //     window.addEventListener("resize", resizeHandler);
 
-        return ()=>{
-            window.removeEventListener("resize", resizeHandler);
-        }
-    }, []);
+    //     return ()=>{
+    //         window.removeEventListener("resize", resizeHandler);
+    //     }
+    // }, []);
 
     // display zoom level
     const svgRef = React.useRef(null)
@@ -118,7 +118,7 @@ function Viewport({...props})
             h(SVGViewport, {
                 ref:svgRef,
                 viewBox: viewBox,
-                preserveAspectRatio: "none",
+                // preserveAspectRatio: "none",
                 onViewBoxChange: viewBox=>setViewBox(viewBox),
                 style: {
                     position: "absolute", 

@@ -8,6 +8,7 @@ import { drawCSGToSDF } from "./operators/drawCSGToSDF.js";
 import { intersectRaysWithSDF } from "./operators/intersectRaysWithSDF.js";
 import { drawLinesBetweenPoints} from "./operators/drawLines.js";
 import { drawRays} from "./operators/drawRays.js"
+import {mat4} from "gl-matrix"
 
 import QUAD from "./QUAD.js"
 import { samplePointLight, sampleLaserLight, sampleDirectionalLight } from "../sampleLights.js";
@@ -603,15 +604,88 @@ class GLRaytracer{
             });
 
             /* draw lightpaths */
-            this.display.paths && drawLinesBetweenPoints(regl, {
-                linesCount: rays.length,
-                startpoints: this.rayDataTexture,
-                endpoints: this.hitDataTexture,
-                colors: this.rayColorsDataTexture,
-                outputResolution: [this.sceneFbo.width, this.sceneFbo.height],
-                viewport: {x: viewBox.x, y: viewBox.y, width: viewBox.w, height: viewBox.h},
-                framebuffer: this.sceneFbo
-            });
+            const projection = mat4.create();
+            mat4.ortho(projection, viewBox.x, viewBox.x+viewBox.w,viewBox.y,viewBox.y+viewBox.h,-1.0, 1.0);
+            regl({
+                framebuffer: this.sceneFbo,
+                viewport: {x: 0, y: 0, width: this.sceneFbo.width, height: this.sceneFbo.height },
+                depth: { enable: false },
+                blend: {
+                    enable: true,
+                    func: {
+                        srcRGB: 'src alpha',
+                        dstRGB: 'one',
+                        srcAlpha: 'src alpha',
+                        dstAlpha: 'one',
+                    }
+                },
+                primitive: "lines",
+                attributes: {
+                    vertexIdx: _.range(rays.length*2),
+                },
+                count: rays.length*2,
+                uniforms:{
+                    startpointsTexture: this.rayDataTexture,
+                    endpointsTexture: this.hitDataTexture,
+                    colorsTexture: this.rayColorsDataTexture,
+                    resolution: [this.rayDataTexture.width, this.rayDataTexture.height],
+                    projection: projection,
+                    correctRasterizationBias: true
+                },
+                vert: /*glsl*/`precision mediump float;
+                    attribute float vertexIdx;
+                    uniform sampler2D startpointsTexture;
+                    uniform sampler2D endpointsTexture;
+                    uniform sampler2D colorsTexture;
+                    uniform vec2 resolution;
+                    uniform mat4 projection;
+                    uniform bool correctRasterizationBias;
+                    
+                    varying vec4 vColor;
+                    
+                    vec4 texelFetchByIdx(sampler2D texture, vec2 resolution, float texelIdx)
+                    {
+                        float pixelX = mod(texelIdx, resolution.x);
+                        float pixelY = floor(texelIdx / resolution.x);
+                        vec2 texCoords = (vec2(pixelX, pixelY) + 0.5) / resolution;
+                        return texture2D(texture, texCoords);
+                    }
+
+                    void main()
+                    {
+                        float lineIdx = floor(vertexIdx/2.0);
+
+                        // Set vertex position
+                        vec2 startPoint = texelFetchByIdx(startpointsTexture, resolution, lineIdx).xy;
+                        vec2 endPoint = texelFetchByIdx(endpointsTexture, resolution, lineIdx).xy;
+
+                        // Set vertex position
+                        bool IsLineStartPoint = mod(vertexIdx, 2.0) < 1.0;
+                        if (IsLineStartPoint) {
+                            gl_Position = projection * vec4(startPoint, 0.0, 1.0);
+                        }
+                        else {
+                            gl_Position = projection * vec4(endPoint, 0.0, 1.0);
+                        }
+
+                        // Set vertex colors
+                        vec4 lineColor = texelFetchByIdx(colorsTexture, resolution, lineIdx);
+                        if (correctRasterizationBias) {
+                            vec2 dir = endPoint-startPoint;
+                            float biasCorrection = clamp(length(dir)/max(abs(dir.x), abs(dir.y)), 1.0, 1.414214);
+                            lineColor*= vec4(biasCorrection, biasCorrection, biasCorrection, 1.0);
+                        }
+                        vColor =  lineColor;
+                    }`,
+
+                frag: /*glsl*/`precision mediump float;
+                varying vec4 vColor;
+                void main()
+                {
+                    gl_FragColor = vColor;
+                }`
+            })();
+
 
             /* Swap Raytrace Buffers */
             [this.rayDataFbo, this.secondaryRayDataFbo]             = [this.secondaryRayDataFbo, this.rayDataFbo];
